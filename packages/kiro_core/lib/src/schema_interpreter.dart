@@ -1,0 +1,1058 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
+import 'dart:io' show Platform;
+import 'dart:developer' as developer;
+import 'dart:convert';
+import 'package:kiro_ui_tokens/kiro_ui_tokens.dart';
+import 'template_engine.dart';
+import 'renderer_registry.dart';
+import 'widgets/error_widgets.dart';
+
+/// Core schema interpreter that converts JSON UI schemas to Flutter widgets
+/// 
+/// Note: For very large schemas (>100KB), consider using IsolateParser
+/// to parse JSON strings in a separate isolate before passing to interpretSchema.
+class SchemaInterpreter {
+  static const String supportedVersion = '1.0';
+  
+  // Performance monitoring
+  int? _parseStartTime;
+  int? _parseEndTime;
+  bool _showPerformanceMetrics = false;
+
+  // Current schema state for delta updates
+  Map<String, dynamic>? _currentSchema;
+
+  // Event bridge for handling UI events (optional)
+  final dynamic eventBridge;
+
+  // Render context for template resolution
+  RenderContext _renderContext = RenderContext();
+
+  // Renderer registry for custom widget types
+  final RendererRegistry? registry;
+
+  /// Creates a SchemaInterpreter
+  /// 
+  /// Parameters:
+  /// - eventBridge: Optional EventBridge instance for handling UI events
+  /// - registry: Optional RendererRegistry for custom widget renderers
+  SchemaInterpreter({this.eventBridge, this.registry});
+
+  /// Enable or disable performance metrics display in debug mode
+  void setShowPerformanceMetrics(bool show) {
+    _showPerformanceMetrics = show;
+  }
+
+  /// Get the current schema (for testing and debugging)
+  Map<String, dynamic>? get currentSchema => _currentSchema;
+
+  /// Get the current render context (for testing and debugging)
+  RenderContext get renderContext => _renderContext;
+
+  /// Sets a variable in the render context
+  void setContextVariable(String name, dynamic value) {
+    _renderContext.set(name, value);
+  }
+
+  /// Sets multiple variables in the render context
+  void setContextVariables(Map<String, dynamic> variables) {
+    _renderContext.setAll(variables);
+  }
+
+  /// Gets a variable from the render context
+  dynamic getContextVariable(String name) {
+    return _renderContext.get(name);
+  }
+
+  /// Clears all variables in the render context
+  void clearContext() {
+    _renderContext.clear();
+  }
+
+  /// Validates and interprets a JSON schema string or Map
+  /// Returns a Flutter Widget
+  /// 
+  /// If jsonString is provided, it will be parsed first
+  /// The schema must contain:
+  /// - schemaVersion: Version string (currently supports "1.0")
+  /// - root: Root schema node with type, props, and children
+  Widget interpretSchemaFromJson(String jsonString) {
+    try {
+      final schema = jsonDecode(jsonString) as Map<String, dynamic>;
+      return interpretSchema(schema);
+    } catch (e, stackTrace) {
+      developer.log(
+        'Invalid JSON: $e',
+        name: 'SchemaInterpreter',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      return ErrorOverlay(
+        title: 'Invalid JSON',
+        message: 'Failed to parse schema JSON',
+        stackTrace: 'Error: $e\n\nStack trace:\n$stackTrace',
+        onRetry: null,
+        onDismiss: null,
+      );
+    }
+  }
+
+  /// Interprets a JSON schema and returns a Flutter Widget
+  /// 
+  /// The schema must contain:
+  /// - schemaVersion: Version string (currently supports "1.0")
+  /// - root: Root schema node with type, props, and children
+  Widget interpretSchema(Map<String, dynamic> schema) {
+    // Record start time for performance monitoring
+    _parseStartTime = DateTime.now().millisecondsSinceEpoch;
+    try {
+      // Validate schema structure
+      final validationError = _validateSchema(schema);
+      if (validationError != null) {
+        return validationError;
+      }
+
+      // Validate schema version
+      final schemaVersion = schema['schemaVersion'] as String?;
+      if (schemaVersion == null) {
+        developer.log(
+          'Missing schemaVersion field',
+          name: 'SchemaInterpreter',
+        );
+        return ErrorOverlay(
+          title: 'Schema Error',
+          message: 'Missing schemaVersion field in schema',
+          onRetry: null,
+          onDismiss: null,
+        );
+      }
+
+      if (schemaVersion != supportedVersion) {
+        developer.log(
+          'Unsupported schema version: $schemaVersion (supported: $supportedVersion)',
+          name: 'SchemaInterpreter',
+          level: 900, // Warning level
+        );
+        // Show warning but attempt to render anyway
+        return Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              color: Colors.orange.shade100,
+              child: Row(
+                children: [
+                  const Icon(Icons.warning, color: Colors.orange),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Warning: Unsupported schema version $schemaVersion (expected $supportedVersion). Rendering may be incorrect.',
+                      style: const TextStyle(color: Colors.orange),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(child: _buildNode(schema['root'] as Map<String, dynamic>)),
+          ],
+        );
+      }
+
+      // Extract root node
+      final root = schema['root'];
+      if (root == null) {
+        developer.log(
+          'Missing root node in schema',
+          name: 'SchemaInterpreter',
+        );
+        return ErrorOverlay(
+          title: 'Schema Error',
+          message: 'Missing root node in schema',
+          onRetry: null,
+          onDismiss: null,
+        );
+      }
+
+      if (root is! Map<String, dynamic>) {
+        developer.log(
+          'Root node is not a valid object',
+          name: 'SchemaInterpreter',
+        );
+        return ErrorOverlay(
+          title: 'Schema Error',
+          message: 'Root node is not a valid object',
+          onRetry: null,
+          onDismiss: null,
+        );
+      }
+
+      // Build widget tree from root node
+      developer.log('Building widget tree from schema', name: 'SchemaInterpreter');
+      final widget = _buildNode(root);
+      
+      // Store current schema for delta updates
+      _currentSchema = Map<String, dynamic>.from(schema);
+      
+      // Record end time and calculate performance metrics
+      _parseEndTime = DateTime.now().millisecondsSinceEpoch;
+      _logPerformanceMetrics();
+      
+      return widget;
+    } catch (e, stackTrace) {
+      developer.log(
+        'Error interpreting schema: $e',
+        name: 'SchemaInterpreter',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      return ErrorOverlay(
+        title: 'Schema Interpretation Error',
+        message: e.toString(),
+        stackTrace: stackTrace.toString(),
+        onRetry: null,
+        onDismiss: null,
+      );
+    }
+  }
+
+  /// Validates schema structure before interpretation
+  /// Returns an error widget if validation fails, null otherwise
+  Widget? _validateSchema(Map<String, dynamic> schema) {
+    // Check if schema is empty
+    if (schema.isEmpty) {
+      developer.log(
+        'Empty schema provided',
+        name: 'SchemaInterpreter',
+      );
+      return ErrorOverlay(
+        title: 'Invalid Schema',
+        message: 'Schema is empty',
+        onRetry: null,
+        onDismiss: null,
+      );
+    }
+
+    // Validate required fields exist
+    if (!schema.containsKey('schemaVersion')) {
+      developer.log(
+        'Schema missing schemaVersion field',
+        name: 'SchemaInterpreter',
+      );
+      return ErrorOverlay(
+        title: 'Invalid Schema',
+        message: 'Schema is missing required field: schemaVersion',
+        onRetry: null,
+        onDismiss: null,
+      );
+    }
+
+    if (!schema.containsKey('root')) {
+      developer.log(
+        'Schema missing root field',
+        name: 'SchemaInterpreter',
+      );
+      return ErrorOverlay(
+        title: 'Invalid Schema',
+        message: 'Schema is missing required field: root',
+        onRetry: null,
+        onDismiss: null,
+      );
+    }
+
+    return null;
+  }
+
+  /// Logs performance metrics for schema parsing and rendering
+  void _logPerformanceMetrics() {
+    if (_parseStartTime != null && _parseEndTime != null) {
+      final duration = _parseEndTime! - _parseStartTime!;
+      final durationSeconds = duration / 1000.0;
+      
+      developer.log(
+        'Schema parsing and rendering completed in ${durationSeconds.toStringAsFixed(3)}s',
+        name: 'SchemaInterpreter.Performance',
+      );
+      
+      // Log warning if time exceeds 2 seconds
+      if (durationSeconds > 2.0) {
+        developer.log(
+          'WARNING: Schema parsing took longer than 2 seconds (${durationSeconds.toStringAsFixed(3)}s)',
+          name: 'SchemaInterpreter.Performance',
+          level: 900, // Warning level
+        );
+      }
+      
+      // Display metrics in debug mode if enabled
+      if (_showPerformanceMetrics) {
+        developer.log(
+          'Performance Metrics:\n'
+          '  - Total time: ${durationSeconds.toStringAsFixed(3)}s\n'
+          '  - Start: $_parseStartTime\n'
+          '  - End: $_parseEndTime',
+          name: 'SchemaInterpreter.Performance',
+        );
+      }
+    }
+  }
+
+  /// Recursively builds a widget from a schema node
+  Widget _buildNode(Map<String, dynamic> node, {RenderContext? context}) {
+    try {
+      // Use provided context or default to root context
+      final currentContext = context ?? _renderContext;
+
+      // Extract node properties
+      final type = node['type'] as String?;
+      if (type == null) {
+        developer.log(
+          'Missing type field in node',
+          name: 'SchemaInterpreter',
+        );
+        return SchemaErrorWidget(
+          nodeType: 'unknown',
+          errorMessage: 'Missing type field in node',
+        );
+      }
+
+      final propsRaw = node['props'];
+      final props = propsRaw is Map
+          ? Map<String, dynamic>.from(propsRaw)
+          : <String, dynamic>{};
+      
+      // Validate required props for specific types
+      _validateRequiredProps(type, props);
+      
+      // Resolve template placeholders in props
+      final resolvedProps = TemplateEngine.resolveMap(props, currentContext);
+      
+      final childrenData = node['children'] as List<dynamic>? ?? [];
+
+      // Build children widgets recursively with the same context
+      final children = childrenData
+          .whereType<Map<String, dynamic>>()
+          .map((childNode) => _buildNode(childNode, context: currentContext))
+          .toList();
+
+      // Render widget based on type
+      return _renderWidget(type, resolvedProps, children);
+    } catch (e, stackTrace) {
+      developer.log(
+        'Error building node: $e',
+        name: 'SchemaInterpreter',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      return SchemaErrorWidget(
+        nodeType: node['type']?.toString() ?? 'unknown',
+        errorMessage: 'Node build error: $e',
+      );
+    }
+  }
+
+  /// Validates required props for specific widget types
+  /// Logs warnings if required props are missing
+  void _validateRequiredProps(String type, Map<String, dynamic> props) {
+    switch (type) {
+      case 'Text':
+        if (!props.containsKey('text')) {
+          developer.log(
+            'Warning: Text widget missing required prop "text"',
+            name: 'SchemaInterpreter',
+            level: 900, // Warning level
+          );
+        }
+        break;
+      case 'Button':
+        if (!props.containsKey('title')) {
+          developer.log(
+            'Warning: Button widget missing recommended prop "title"',
+            name: 'SchemaInterpreter',
+            level: 900,
+          );
+        }
+        break;
+      case 'Image':
+        if (!props.containsKey('src')) {
+          developer.log(
+            'Warning: Image widget missing required prop "src"',
+            name: 'SchemaInterpreter',
+            level: 900,
+          );
+        }
+        break;
+    }
+  }
+
+  /// Renders a widget based on type, props, and children
+  Widget _renderWidget(
+    String type,
+    Map<String, dynamic> props,
+    List<Widget> children,
+  ) {
+    // Check registry for custom renderers first
+    if (registry != null && registry!.hasRenderer(type)) {
+      developer.log(
+        'Using custom renderer for type: $type',
+        name: 'SchemaInterpreter',
+      );
+      
+      final customWidget = registry!.render(type, props, children);
+      if (customWidget != null) {
+        return customWidget;
+      }
+      
+      // If custom renderer returned null or threw an error, fall through to default handling
+      developer.log(
+        'Custom renderer for $type returned null, falling back to default handling',
+        name: 'SchemaInterpreter',
+        level: 900, // Warning level
+      );
+    }
+    
+    // Use default renderers for core primitives
+    switch (type) {
+      case 'View':
+        return _renderView(props, children);
+      case 'Text':
+        return _renderText(props);
+      case 'Button':
+        return _renderButton(props);
+      case 'List':
+        return _renderList(props, children);
+      case 'Image':
+        return _renderImage(props);
+      case 'Input':
+        return _renderInput(props);
+      default:
+        developer.log(
+          'Unknown widget type: $type',
+          name: 'SchemaInterpreter',
+          level: 900, // Warning level
+        );
+        return SchemaErrorWidget(
+          nodeType: type,
+          errorMessage: 'This widget type is not supported',
+          isWarning: true,
+        );
+    }
+  }
+
+  /// Renders a View as a Container widget
+  Widget _renderView(Map<String, dynamic> props, List<Widget> children) {
+    // Extract padding using design tokens
+    EdgeInsets? padding;
+    if (props.containsKey('padding')) {
+      padding = LumoraSpacing.parse(props['padding']);
+    }
+
+    // Extract margin using design tokens
+    EdgeInsets? margin;
+    if (props.containsKey('margin')) {
+      margin = LumoraSpacing.parse(props['margin']);
+    }
+
+    // Extract backgroundColor using design tokens
+    Color? backgroundColor;
+    if (props.containsKey('backgroundColor')) {
+      final colorValue = props['backgroundColor'];
+      if (colorValue is String) {
+        backgroundColor = _parseColor(colorValue);
+      }
+    }
+
+    // Build child widget
+    Widget? child;
+    if (children.length == 1) {
+      child = children.first;
+    } else if (children.length > 1) {
+      child = Column(
+        mainAxisSize: MainAxisSize.min,
+        children: children,
+      );
+    }
+
+    return Container(
+      padding: padding,
+      margin: margin,
+      color: backgroundColor,
+      child: child,
+    );
+  }
+
+  /// Renders a Text widget
+  Widget _renderText(Map<String, dynamic> props) {
+    // Extract text content
+    final text = props['text'] as String? ?? '';
+
+    // Extract style properties
+    TextStyle? textStyle;
+    if (props.containsKey('style')) {
+      final styleProps = props['style'];
+      if (styleProps is Map<String, dynamic>) {
+        textStyle = _buildTextStyle(styleProps);
+      }
+    }
+
+    return Text(
+      text,
+      style: textStyle,
+    );
+  }
+
+  /// Renders a Button with platform-appropriate styling
+  /// Uses Material Design on Android and Cupertino on iOS
+  Widget _renderButton(Map<String, dynamic> props) {
+    // Extract title
+    final title = props['title'] as String? ?? 'Button';
+
+    // Extract onTap handler
+    VoidCallback? onPressed;
+    if (props.containsKey('onTap')) {
+      final onTapValue = props['onTap'];
+      if (onTapValue is String) {
+        // Use EventBridge to create handler if available
+        if (eventBridge != null && eventBridge.createHandler != null) {
+          try {
+            onPressed = eventBridge.createHandler(onTapValue);
+          } catch (e) {
+            developer.log(
+              'Failed to create event handler: $e',
+              name: 'SchemaInterpreter',
+            );
+            // Fall back to logging
+            onPressed = () {
+              developer.log(
+                'Button tapped: $onTapValue',
+                name: 'SchemaInterpreter',
+              );
+            };
+          }
+        } else {
+          // No event bridge available, just log
+          onPressed = () {
+            developer.log(
+              'Button tapped: $onTapValue (no event bridge)',
+              name: 'SchemaInterpreter',
+            );
+          };
+        }
+      }
+    }
+
+    // Use platform-adaptive button styling
+    if (_isIOS()) {
+      // iOS: Use Cupertino button
+      return CupertinoButton.filled(
+        onPressed: onPressed,
+        child: Text(title),
+      );
+    } else {
+      // Android and others: Use Material Design button
+      return ElevatedButton(
+        onPressed: onPressed,
+        child: Text(title),
+      );
+    }
+  }
+
+  /// Checks if the current platform is iOS
+  bool _isIOS() {
+    try {
+      return Platform.isIOS;
+    } catch (e) {
+      // Platform check might fail in some environments (e.g., web)
+      return false;
+    }
+  }
+
+  /// Checks if the current platform is Android
+  bool _isAndroid() {
+    try {
+      return Platform.isAndroid;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// Renders a List as a ListView widget
+  /// Uses ListView.builder for lazy rendering when children count exceeds 20
+  Widget _renderList(Map<String, dynamic> props, List<Widget> children) {
+    // Use lazy rendering for large lists (more than 20 items)
+    if (children.length > 20) {
+      developer.log(
+        'Using lazy rendering for list with ${children.length} items',
+        name: 'SchemaInterpreter',
+      );
+      
+      return ListView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: children.length,
+        itemBuilder: (context, index) {
+          return children[index];
+        },
+      );
+    }
+    
+    // Use regular ListView for small lists
+    return ListView(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      children: children,
+    );
+  }
+
+  /// Renders an Image widget with network caching
+  Widget _renderImage(Map<String, dynamic> props) {
+    final src = props['src'] as String?;
+    if (src == null || src.isEmpty) {
+      return SchemaErrorWidget(
+        nodeType: 'Image',
+        errorMessage: 'Missing required prop: src',
+      );
+    }
+
+    final width = props['width'] as num?;
+    final height = props['height'] as num?;
+
+    return Image.network(
+      src,
+      width: width?.toDouble(),
+      height: height?.toDouble(),
+      errorBuilder: (context, error, stackTrace) {
+        return SchemaErrorWidget(
+          nodeType: 'Image',
+          errorMessage: 'Failed to load image from: $src',
+        );
+      },
+    );
+  }
+
+  /// Renders an Input as a TextField widget
+  Widget _renderInput(Map<String, dynamic> props) {
+    final placeholder = props['placeholder'] as String?;
+    final value = props['value'] as String?;
+
+    final controller = TextEditingController(text: value);
+
+    return TextField(
+      controller: controller,
+      decoration: InputDecoration(
+        hintText: placeholder,
+        border: const OutlineInputBorder(),
+      ),
+      onChanged: (text) {
+        developer.log(
+          'Input changed: $text',
+          name: 'SchemaInterpreter',
+        );
+      },
+    );
+  }
+
+  /// Builds a TextStyle from style properties
+  /// Supports design token typography names and individual style properties
+  TextStyle _buildTextStyle(Map<String, dynamic> styleProps) {
+    // Check if a typography token name is provided
+    if (styleProps.containsKey('typography')) {
+      final typographyName = styleProps['typography'] as String?;
+      if (typographyName != null) {
+        final baseStyle = LumoraTypography.parse(typographyName);
+        if (baseStyle != null) {
+          // Apply any additional overrides on top of the base style
+          return _applyStyleOverrides(baseStyle, styleProps);
+        }
+      }
+    }
+
+    // Build style from individual properties
+    double? fontSize;
+    if (styleProps.containsKey('fontSize')) {
+      final value = styleProps['fontSize'];
+      if (value is num) {
+        fontSize = value.toDouble();
+      }
+    }
+
+    FontWeight? fontWeight;
+    if (styleProps.containsKey('fontWeight')) {
+      final value = styleProps['fontWeight'] as String?;
+      if (value == 'bold') {
+        fontWeight = FontWeight.bold;
+      } else if (value == 'normal') {
+        fontWeight = FontWeight.normal;
+      }
+    }
+
+    Color? color;
+    if (styleProps.containsKey('color')) {
+      final value = styleProps['color'] as String?;
+      if (value != null) {
+        color = _parseColor(value);
+      }
+    }
+
+    return TextStyle(
+      fontSize: fontSize,
+      fontWeight: fontWeight,
+      color: color,
+    );
+  }
+
+  /// Applies style property overrides to a base TextStyle
+  TextStyle _applyStyleOverrides(TextStyle baseStyle, Map<String, dynamic> styleProps) {
+    double? fontSize;
+    if (styleProps.containsKey('fontSize')) {
+      final value = styleProps['fontSize'];
+      if (value is num) {
+        fontSize = value.toDouble();
+      }
+    }
+
+    FontWeight? fontWeight;
+    if (styleProps.containsKey('fontWeight')) {
+      final value = styleProps['fontWeight'] as String?;
+      if (value == 'bold') {
+        fontWeight = FontWeight.bold;
+      } else if (value == 'normal') {
+        fontWeight = FontWeight.normal;
+      }
+    }
+
+    Color? color;
+    if (styleProps.containsKey('color')) {
+      final value = styleProps['color'] as String?;
+      if (value != null) {
+        color = _parseColor(value);
+      }
+    }
+
+    return baseStyle.copyWith(
+      fontSize: fontSize,
+      fontWeight: fontWeight,
+      color: color,
+    );
+  }
+
+  /// Parses a color string using design tokens
+  /// Supports hex colors, named colors, and design token names
+  Color _parseColor(String colorString) {
+    try {
+      // Use design token parser which handles both hex and named colors
+      return LumoraColors.parse(colorString);
+    } catch (e) {
+      developer.log(
+        'Failed to parse color: $colorString',
+        name: 'SchemaInterpreter',
+      );
+      return LumoraColors.black;
+    }
+  }
+
+
+
+  /// Applies a delta update to the current schema
+  /// 
+  /// Supports both JSON Patch (RFC 6902) and JSON Merge Patch (RFC 7396) formats.
+  /// Returns the updated widget tree, or null if no current schema exists.
+  /// 
+  /// JSON Patch format: Array of operations with op, path, and value fields
+  /// JSON Merge Patch format: Object with partial schema updates
+  Widget? applyDelta(Map<String, dynamic> delta) {
+    if (_currentSchema == null) {
+      developer.log(
+        'Cannot apply delta: no current schema',
+        name: 'SchemaInterpreter',
+      );
+      return null;
+    }
+
+    try {
+      developer.log('Applying delta update', name: 'SchemaInterpreter');
+      
+      // Detect delta format
+      if (delta.containsKey('operations') && delta['operations'] is List) {
+        // JSON Patch format
+        _applyJsonPatch(delta['operations'] as List<dynamic>);
+      } else {
+        // JSON Merge Patch format
+        _applyJsonMergePatch(delta);
+      }
+
+      // Rebuild widget tree from updated schema
+      return interpretSchema(_currentSchema!);
+    } catch (e, stackTrace) {
+      developer.log(
+        'Error applying delta: $e',
+        name: 'SchemaInterpreter',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      return ErrorOverlay(
+        title: 'Delta Application Error',
+        message: e.toString(),
+        stackTrace: stackTrace.toString(),
+        onRetry: null,
+        onDismiss: null,
+      );
+    }
+  }
+
+  /// Applies JSON Patch operations (RFC 6902)
+  void _applyJsonPatch(List<dynamic> operations) {
+    for (final operation in operations) {
+      if (operation is! Map<String, dynamic>) {
+        developer.log(
+          'Invalid patch operation: not a map',
+          name: 'SchemaInterpreter',
+        );
+        continue;
+      }
+
+      final op = operation['op'] as String?;
+      final path = operation['path'] as String?;
+
+      if (op == null || path == null) {
+        developer.log(
+          'Invalid patch operation: missing op or path',
+          name: 'SchemaInterpreter',
+        );
+        continue;
+      }
+
+      developer.log(
+        'Applying patch operation: $op at $path',
+        name: 'SchemaInterpreter',
+      );
+
+      switch (op) {
+        case 'add':
+          _patchAdd(path, operation['value']);
+          break;
+        case 'remove':
+          _patchRemove(path);
+          break;
+        case 'replace':
+          _patchReplace(path, operation['value']);
+          break;
+        case 'move':
+          _patchMove(path, operation['from'] as String?);
+          break;
+        case 'copy':
+          _patchCopy(path, operation['from'] as String?);
+          break;
+        case 'test':
+          _patchTest(path, operation['value']);
+          break;
+        default:
+          developer.log(
+            'Unknown patch operation: $op',
+            name: 'SchemaInterpreter',
+          );
+      }
+    }
+  }
+
+  /// Applies JSON Merge Patch (RFC 7396)
+  void _applyJsonMergePatch(Map<String, dynamic> patch) {
+    _currentSchema = _mergePatch(_currentSchema!, patch);
+  }
+
+  /// Recursively merges patch into target
+  Map<String, dynamic> _mergePatch(
+    Map<String, dynamic> target,
+    Map<String, dynamic> patch,
+  ) {
+    final result = Map<String, dynamic>.from(target);
+
+    for (final key in patch.keys) {
+      final patchValue = patch[key];
+
+      if (patchValue == null) {
+        // null means remove the key
+        result.remove(key);
+      } else if (patchValue is Map<String, dynamic> &&
+          result[key] is Map<String, dynamic>) {
+        // Recursively merge nested objects
+        result[key] = _mergePatch(
+          result[key] as Map<String, dynamic>,
+          patchValue,
+        );
+      } else {
+        // Replace value
+        result[key] = patchValue;
+      }
+    }
+
+    return result;
+  }
+
+  /// Resolves a JSON Pointer path to a value in the schema
+  dynamic _resolvePath(String path) {
+    if (path == '') {
+      return _currentSchema;
+    }
+
+    final parts = path.split('/').skip(1); // Skip empty first element
+    dynamic current = _currentSchema;
+
+    for (final part in parts) {
+      final unescaped = _unescapeJsonPointer(part);
+
+      if (current is Map<String, dynamic>) {
+        current = current[unescaped];
+      } else if (current is List) {
+        final index = int.tryParse(unescaped);
+        if (index != null && index >= 0 && index < current.length) {
+          current = current[index];
+        } else {
+          return null;
+        }
+      } else {
+        return null;
+      }
+    }
+
+    return current;
+  }
+
+  /// Sets a value at the specified JSON Pointer path
+  void _setPath(String path, dynamic value) {
+    if (path == '') {
+      if (value is Map<String, dynamic>) {
+        _currentSchema = value;
+      }
+      return;
+    }
+
+    final parts = path.split('/').skip(1).toList();
+    final lastPart = _unescapeJsonPointer(parts.removeLast());
+    
+    dynamic current = _currentSchema;
+    
+    for (final part in parts) {
+      final unescaped = _unescapeJsonPointer(part);
+      
+      if (current is Map<String, dynamic>) {
+        if (!current.containsKey(unescaped)) {
+          current[unescaped] = <String, dynamic>{};
+        }
+        current = current[unescaped];
+      } else if (current is List) {
+        final index = int.tryParse(unescaped);
+        if (index != null && index >= 0 && index < current.length) {
+          current = current[index];
+        }
+      }
+    }
+
+    if (current is Map<String, dynamic>) {
+      current[lastPart] = value;
+    } else if (current is List) {
+      final index = int.tryParse(lastPart);
+      if (index != null) {
+        if (index == current.length) {
+          current.add(value);
+        } else if (index >= 0 && index < current.length) {
+          current[index] = value;
+        }
+      }
+    }
+  }
+
+  /// Removes a value at the specified JSON Pointer path
+  void _removePath(String path) {
+    if (path == '') {
+      return;
+    }
+
+    final parts = path.split('/').skip(1).toList();
+    final lastPart = _unescapeJsonPointer(parts.removeLast());
+    
+    dynamic current = _currentSchema;
+    
+    for (final part in parts) {
+      final unescaped = _unescapeJsonPointer(part);
+      
+      if (current is Map<String, dynamic>) {
+        current = current[unescaped];
+      } else if (current is List) {
+        final index = int.tryParse(unescaped);
+        if (index != null && index >= 0 && index < current.length) {
+          current = current[index];
+        }
+      }
+      
+      if (current == null) {
+        return;
+      }
+    }
+
+    if (current is Map<String, dynamic>) {
+      current.remove(lastPart);
+    } else if (current is List) {
+      final index = int.tryParse(lastPart);
+      if (index != null && index >= 0 && index < current.length) {
+        current.removeAt(index);
+      }
+    }
+  }
+
+  /// Unescapes JSON Pointer tokens
+  String _unescapeJsonPointer(String token) {
+    return token.replaceAll('~1', '/').replaceAll('~0', '~');
+  }
+
+  /// JSON Patch: add operation
+  void _patchAdd(String path, dynamic value) {
+    _setPath(path, value);
+  }
+
+  /// JSON Patch: remove operation
+  void _patchRemove(String path) {
+    _removePath(path);
+  }
+
+  /// JSON Patch: replace operation
+  void _patchReplace(String path, dynamic value) {
+    _removePath(path);
+    _setPath(path, value);
+  }
+
+  /// JSON Patch: move operation
+  void _patchMove(String path, String? from) {
+    if (from == null) {
+      developer.log(
+        'Move operation missing from path',
+        name: 'SchemaInterpreter',
+      );
+      return;
+    }
+
+    final value = _resolvePath(from);
+    _removePath(from);
+    _setPath(path, value);
+  }
+
+  /// JSON Patch: copy operation
+  void _patchCopy(String path, String? from) {
+    if (from == null) {
+      developer.log(
+        'Copy operation missing from path',
+        name: 'SchemaInterpreter',
+      );
+      return;
+    }
+
+    final value = _resolvePath(from);
+    _setPath(path, value);
+  }
+
+  /// JSON Patch: test operation
+  void _patchTest(String path, dynamic value) {
+    final current = _resolvePath(path);
+    if (current != value) {
+      throw Exception('Test operation failed at $path');
+    }
+  }
+}

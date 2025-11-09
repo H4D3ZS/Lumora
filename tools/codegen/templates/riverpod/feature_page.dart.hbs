@@ -1,0 +1,44 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:kiro_ui_tokens/kiro_ui_tokens.dart';
+import '../providers/{{featureNameLower}}_provider.dart';
+
+class {{featureName}}Page extends ConsumerWidget {
+  const {{featureName}}Page({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch({{featureName}}Provider);
+    final notifier = ref.read({{featureName}}Provider.notifier);
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('{{featureTitle}}'),
+      ),
+      body: {{#if stateFields}}_buildContent(context, state, notifier){{else}}_buildAsyncContent(context, state, notifier){{/if}},
+    );
+  }
+
+  {{#if stateFields}}
+  Widget _buildContent(BuildContext context, {{featureName}}State state, {{featureName}}Notifier notifier) {
+    return {{{widgetCode}}};
+  }
+  {{else}}
+  Widget _buildAsyncContent(BuildContext context, AsyncValue<void> state, {{featureName}}Notifier notifier) {
+    return state.when(
+      data: (_) => _buildContent(context, notifier),
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, stack) => Center(
+        child: Text(
+          'Error: $error',
+          style: const TextStyle(color: Colors.red),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildContent(BuildContext context, {{featureName}}Notifier notifier) {
+    return {{{widgetCode}}};
+  }
+  {{/if}}
+}

@@ -1,0 +1,21 @@
+{
+  "name": "{{appName}}",
+  "version": "1.0.0",
+  "description": "Lumora mobile-first Flutter application",
+  "main": "index.js",
+  "scripts": {
+    "dev": "kiro tsx2schema --watch src/App.tsx schema/app.json",
+    "build": "kiro tsx2schema src/App.tsx schema/app.json",
+    "generate": "kiro schema2dart schema/app.json mobile/lib/features/app --adapter={{adapter}} --feature=app"
+  },
+  "keywords": [
+    "lumora",
+    "flutter",
+    "mobile-first"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@lumora/codegen": "^1.0.0"
+  }
+}

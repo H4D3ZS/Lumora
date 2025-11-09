@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'dart:io' show Platform;
 
 /// Shows a retry dialog for WebSocket connection failures
+/// Uses Material Design dialogs on all platforms for consistency
 Future<bool?> showConnectionRetryDialog(
   BuildContext context, {
   required String errorMessage,

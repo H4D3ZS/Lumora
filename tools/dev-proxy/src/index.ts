@@ -65,10 +65,9 @@ app.post('/session/new', (req: Request, res: Response) => {
       token: session.token
     });
 
-    // Print QR code to console
+    // Print QR code to console (token is not logged for security)
     console.log('\n=== New Session Created ===');
     console.log(`Session ID: ${session.sessionId}`);
-    console.log(`Token: ${session.token}`);
     console.log(`Expires: ${new Date(session.expiresAt).toISOString()}`);
     console.log('\nScan this QR code with Flutter-Dev-Client:\n');
     qrcode.generate(qrPayload, { small: true });
@@ -212,6 +211,27 @@ app.get('/health', (req: Request, res: Response) => {
   res.json({
     status: 'ok',
     activeSessions: sessionManager.getActiveSessionCount(),
+    timestamp: Date.now()
+  });
+});
+
+/**
+ * Performance metrics endpoint
+ */
+app.get('/metrics', (req: Request, res: Response) => {
+  const memoryUsage = sessionManager.getMemoryUsage();
+  const connectionCount = wsBroker.getConnectionCount();
+  
+  res.json({
+    sessions: {
+      active: memoryUsage.sessionCount,
+      totalClients: memoryUsage.clientCount,
+      estimatedMemoryBytes: memoryUsage.estimatedBytes,
+      estimatedMemoryKB: (memoryUsage.estimatedBytes / 1024).toFixed(2)
+    },
+    websocket: {
+      activeConnections: connectionCount
+    },
     timestamp: Date.now()
   });
 });

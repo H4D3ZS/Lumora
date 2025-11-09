@@ -13,6 +13,7 @@ class IsolateParser {
   /// 
   /// Returns the parsed Map<String, dynamic> or throws an error
   static Future<Map<String, dynamic>> parseSchema(String jsonString) async {
+    final startTime = DateTime.now().millisecondsSinceEpoch;
     final sizeInBytes = utf8.encode(jsonString).length;
     
     developer.log(
@@ -20,28 +21,50 @@ class IsolateParser {
       name: 'IsolateParser',
     );
 
+    Map<String, dynamic> result;
+    
     // Use isolate parsing for large schemas
     if (sizeInBytes > isolateThreshold) {
       developer.log(
-        'Using isolate parsing for large schema',
+        'Using isolate parsing for large schema (>${(isolateThreshold / 1024).toStringAsFixed(0)} KB)',
         name: 'IsolateParser',
       );
-      return _parseInIsolate(jsonString);
+      result = await _parseInIsolate(jsonString);
+      
+      final duration = DateTime.now().millisecondsSinceEpoch - startTime;
+      developer.log(
+        'Isolate parsing completed in ${duration}ms',
+        name: 'IsolateParser.Performance',
+      );
     } else {
       // Parse directly on main thread for small schemas
       developer.log(
         'Parsing on main thread',
         name: 'IsolateParser',
       );
-      return jsonDecode(jsonString) as Map<String, dynamic>;
+      result = jsonDecode(jsonString) as Map<String, dynamic>;
+      
+      final duration = DateTime.now().millisecondsSinceEpoch - startTime;
+      developer.log(
+        'Main thread parsing completed in ${duration}ms',
+        name: 'IsolateParser.Performance',
+      );
     }
+    
+    return result;
   }
 
   /// Parses JSON in a separate isolate
   static Future<Map<String, dynamic>> _parseInIsolate(String jsonString) async {
     final receivePort = ReceivePort();
+    final isolateStartTime = DateTime.now().millisecondsSinceEpoch;
     
     try {
+      developer.log(
+        'Spawning isolate for JSON parsing',
+        name: 'IsolateParser',
+      );
+      
       // Spawn isolate with entry point
       await Isolate.spawn(
         _isolateEntryPoint,
@@ -51,16 +74,32 @@ class IsolateParser {
         ),
       );
 
+      final spawnDuration = DateTime.now().millisecondsSinceEpoch - isolateStartTime;
+      developer.log(
+        'Isolate spawned in ${spawnDuration}ms',
+        name: 'IsolateParser.Performance',
+      );
+
       // Wait for result from isolate
       final completer = Completer<Map<String, dynamic>>();
       
       receivePort.listen((message) {
         if (message is Map<String, dynamic>) {
           if (message.containsKey('error')) {
+            developer.log(
+              'Isolate parsing failed: ${message['error']}',
+              name: 'IsolateParser',
+              level: 1000, // Error level
+            );
             completer.completeError(
               Exception(message['error']),
             );
           } else {
+            final totalDuration = DateTime.now().millisecondsSinceEpoch - isolateStartTime;
+            developer.log(
+              'Isolate parsing successful (total: ${totalDuration}ms)',
+              name: 'IsolateParser.Performance',
+            );
             completer.complete(message['result'] as Map<String, dynamic>);
           }
         }
@@ -69,6 +108,12 @@ class IsolateParser {
 
       return await completer.future;
     } catch (e) {
+      developer.log(
+        'Isolate parsing error: $e',
+        name: 'IsolateParser',
+        error: e,
+        level: 1000,
+      );
       receivePort.close();
       rethrow;
     }

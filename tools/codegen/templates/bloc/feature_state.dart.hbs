@@ -1,0 +1,44 @@
+import 'package:equatable/equatable.dart';
+
+abstract class {{featureName}}State extends Equatable {
+  const {{featureName}}State();
+
+  @override
+  List<Object?> get props => [];
+}
+
+class {{featureName}}Initial extends {{featureName}}State {
+  const {{featureName}}Initial();
+}
+
+class {{featureName}}Loading extends {{featureName}}State {
+  const {{featureName}}Loading();
+}
+
+class {{featureName}}Loaded extends {{featureName}}State {
+  {{#if stateFields}}
+  {{#each stateFields}}
+  final {{this.type}} {{this.name}};
+  {{/each}}
+
+  const {{featureName}}Loaded({
+    {{#each stateFields}}
+    {{#if @index}}, {{/if}}required this.{{this.name}}
+    {{/each}}
+  });
+
+  @override
+  List<Object?> get props => [{{#each stateFields}}{{#if @index}}, {{/if}}{{this.name}}{{/each}}];
+  {{else}}
+  const {{featureName}}Loaded();
+  {{/if}}
+}
+
+class {{featureName}}Error extends {{featureName}}State {
+  final String message;
+
+  const {{featureName}}Error(this.message);
+
+  @override
+  List<Object?> get props => [message];
+}

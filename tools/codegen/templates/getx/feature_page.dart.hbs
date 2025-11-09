@@ -1,0 +1,39 @@
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:kiro_ui_tokens/kiro_ui_tokens.dart';
+import '../controllers/{{featureNameLower}}_controller.dart';
+
+class {{featureName}}Page extends GetView<{{featureName}}Controller> {
+  const {{featureName}}Page({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('{{featureTitle}}'),
+      ),
+      body: Obx(() {
+        if (controller.isLoading) {
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
+        }
+
+        if (controller.error != null) {
+          return Center(
+            child: Text(
+              'Error: ${controller.error}',
+              style: const TextStyle(color: Colors.red),
+            ),
+          );
+        }
+
+        return _buildContent(context);
+      }),
+    );
+  }
+
+  Widget _buildContent(BuildContext context) {
+    return {{{widgetCode}}};
+  }
+}

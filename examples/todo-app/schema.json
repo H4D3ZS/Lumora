@@ -1,0 +1,516 @@
+{
+  "schemaVersion": "1.0",
+  "root": {
+    "type": "View",
+    "props": {
+      "padding": 20,
+      "backgroundColor": "#F8F9FA"
+    },
+    "children": [
+      {
+        "type": "View",
+        "props": {
+          "padding": 16,
+          "backgroundColor": "#007AFF",
+          "style": {
+            "borderRadius": 12,
+            "marginBottom": 20
+          }
+        },
+        "children": [
+          {
+            "type": "Text",
+            "props": {
+              "text": "📝 My Todo List",
+              "style": {
+                "fontSize": 28,
+                "fontWeight": "bold",
+                "color": "#FFFFFF"
+              }
+            },
+            "children": []
+          },
+          {
+            "type": "Text",
+            "props": {
+              "text": "Stay organized and productive",
+              "style": {
+                "fontSize": 14,
+                "color": "#E3F2FD",
+                "marginTop": 4
+              }
+            },
+            "children": []
+          }
+        ]
+      },
+      {
+        "type": "View",
+        "props": {
+          "padding": 16,
+          "backgroundColor": "#FFFFFF",
+          "style": {
+            "borderRadius": 8,
+            "marginBottom": 20
+          }
+        },
+        "children": [
+          {
+            "type": "Text",
+            "props": {
+              "text": "Add New Task",
+              "style": {
+                "fontSize": 16,
+                "fontWeight": "600",
+                "color": "#333",
+                "marginBottom": 12
+              }
+            },
+            "children": []
+          },
+          {
+            "type": "Input",
+            "props": {
+              "placeholder": "What needs to be done?",
+              "style": {
+                "padding": 12,
+                "backgroundColor": "#F5F5F5",
+                "borderRadius": 6,
+                "marginBottom": 12
+              }
+            },
+            "children": []
+          },
+          {
+            "type": "Button",
+            "props": {
+              "title": "Add Task",
+              "onTap": "emit:addTodo:{}",
+              "style": {
+                "backgroundColor": "#28A745",
+                "padding": 12,
+                "borderRadius": 6
+              }
+            },
+            "children": []
+          }
+        ]
+      },
+      {
+        "type": "View",
+        "props": {
+          "style": {
+            "marginBottom": 20
+          }
+        },
+        "children": [
+          {
+            "type": "Text",
+            "props": {
+              "text": "Active Tasks",
+              "style": {
+                "fontSize": 18,
+                "fontWeight": "600",
+                "color": "#333",
+                "marginBottom": 12
+              }
+            },
+            "children": []
+          },
+          {
+            "type": "List",
+            "props": {},
+            "children": [
+              {
+                "type": "View",
+                "props": {
+                  "padding": 16,
+                  "backgroundColor": "#FFFFFF",
+                  "style": {
+                    "marginBottom": 8,
+                    "borderRadius": 8
+                  }
+                },
+                "children": [
+                  {
+                    "type": "View",
+                    "props": {
+                      "style": {
+                        "flexDirection": "row",
+                        "alignItems": "center",
+                        "justifyContent": "space-between"
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "View",
+                        "props": {
+                          "style": {
+                            "flex": 1
+                          }
+                        },
+                        "children": [
+                          {
+                            "type": "Text",
+                            "props": {
+                              "text": "Complete project documentation",
+                              "style": {
+                                "fontSize": 16,
+                                "color": "#333",
+                                "marginBottom": 4
+                              }
+                            },
+                            "children": []
+                          },
+                          {
+                            "type": "Text",
+                            "props": {
+                              "text": "Due: Today",
+                              "style": {
+                                "fontSize": 12,
+                                "color": "#999"
+                              }
+                            },
+                            "children": []
+                          }
+                        ]
+                      },
+                      {
+                        "type": "Button",
+                        "props": {
+                          "title": "✓",
+                          "onTap": "emit:completeTodo:{id:1}",
+                          "style": {
+                            "backgroundColor": "#28A745",
+                            "padding": 8,
+                            "minWidth": 40
+                          }
+                        },
+                        "children": []
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "View",
+                "props": {
+                  "padding": 16,
+                  "backgroundColor": "#FFFFFF",
+                  "style": {
+                    "marginBottom": 8,
+                    "borderRadius": 8
+                  }
+                },
+                "children": [
+                  {
+                    "type": "View",
+                    "props": {
+                      "style": {
+                        "flexDirection": "row",
+                        "alignItems": "center",
+                        "justifyContent": "space-between"
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "View",
+                        "props": {
+                          "style": {
+                            "flex": 1
+                          }
+                        },
+                        "children": [
+                          {
+                            "type": "Text",
+                            "props": {
+                              "text": "Review pull requests",
+                              "style": {
+                                "fontSize": 16,
+                                "color": "#333",
+                                "marginBottom": 4
+                              }
+                            },
+                            "children": []
+                          },
+                          {
+                            "type": "Text",
+                            "props": {
+                              "text": "Due: Tomorrow",
+                              "style": {
+                                "fontSize": 12,
+                                "color": "#999"
+                              }
+                            },
+                            "children": []
+                          }
+                        ]
+                      },
+                      {
+                        "type": "Button",
+                        "props": {
+                          "title": "✓",
+                          "onTap": "emit:completeTodo:{id:2}",
+                          "style": {
+                            "backgroundColor": "#28A745",
+                            "padding": 8,
+                            "minWidth": 40
+                          }
+                        },
+                        "children": []
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "View",
+                "props": {
+                  "padding": 16,
+                  "backgroundColor": "#FFFFFF",
+                  "style": {
+                    "marginBottom": 8,
+                    "borderRadius": 8
+                  }
+                },
+                "children": [
+                  {
+                    "type": "View",
+                    "props": {
+                      "style": {
+                        "flexDirection": "row",
+                        "alignItems": "center",
+                        "justifyContent": "space-between"
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "View",
+                        "props": {
+                          "style": {
+                            "flex": 1
+                          }
+                        },
+                        "children": [
+                          {
+                            "type": "Text",
+                            "props": {
+                              "text": "Update dependencies",
+                              "style": {
+                                "fontSize": 16,
+                                "color": "#333",
+                                "marginBottom": 4
+                              }
+                            },
+                            "children": []
+                          },
+                          {
+                            "type": "Text",
+                            "props": {
+                              "text": "Due: This week",
+                              "style": {
+                                "fontSize": 12,
+                                "color": "#999"
+                              }
+                            },
+                            "children": []
+                          }
+                        ]
+                      },
+                      {
+                        "type": "Button",
+                        "props": {
+                          "title": "✓",
+                          "onTap": "emit:completeTodo:{id:3}",
+                          "style": {
+                            "backgroundColor": "#28A745",
+                            "padding": 8,
+                            "minWidth": 40
+                          }
+                        },
+                        "children": []
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "View",
+        "props": {
+          "padding": 16,
+          "backgroundColor": "#E8F5E9",
+          "style": {
+            "borderRadius": 8
+          }
+        },
+        "children": [
+          {
+            "type": "Text",
+            "props": {
+              "text": "✓ Completed Tasks",
+              "style": {
+                "fontSize": 16,
+                "fontWeight": "600",
+                "color": "#2E7D32",
+                "marginBottom": 8
+              }
+            },
+            "children": []
+          },
+          {
+            "type": "Text",
+            "props": {
+              "text": "3 tasks completed today",
+              "style": {
+                "fontSize": 14,
+                "color": "#66BB6A"
+              }
+            },
+            "children": []
+          },
+          {
+            "type": "Button",
+            "props": {
+              "title": "View All",
+              "onTap": "emit:viewCompleted:{}",
+              "style": {
+                "backgroundColor": "#4CAF50",
+                "marginTop": 12,
+                "padding": 10,
+                "borderRadius": 6
+              }
+            },
+            "children": []
+          }
+        ]
+      },
+      {
+        "type": "View",
+        "props": {
+          "style": {
+            "marginTop": 20,
+            "padding": 16,
+            "backgroundColor": "#FFFFFF",
+            "borderRadius": 8
+          }
+        },
+        "children": [
+          {
+            "type": "View",
+            "props": {
+              "style": {
+                "flexDirection": "row",
+                "justifyContent": "space-around"
+              }
+            },
+            "children": [
+              {
+                "type": "View",
+                "props": {
+                  "style": {
+                    "alignItems": "center"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "Text",
+                    "props": {
+                      "text": "3",
+                      "style": {
+                        "fontSize": 24,
+                        "fontWeight": "bold",
+                        "color": "#007AFF"
+                      }
+                    },
+                    "children": []
+                  },
+                  {
+                    "type": "Text",
+                    "props": {
+                      "text": "Active",
+                      "style": {
+                        "fontSize": 12,
+                        "color": "#999"
+                      }
+                    },
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "type": "View",
+                "props": {
+                  "style": {
+                    "alignItems": "center"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "Text",
+                    "props": {
+                      "text": "3",
+                      "style": {
+                        "fontSize": 24,
+                        "fontWeight": "bold",
+                        "color": "#28A745"
+                      }
+                    },
+                    "children": []
+                  },
+                  {
+                    "type": "Text",
+                    "props": {
+                      "text": "Done",
+                      "style": {
+                        "fontSize": 12,
+                        "color": "#999"
+                      }
+                    },
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "type": "View",
+                "props": {
+                  "style": {
+                    "alignItems": "center"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "Text",
+                    "props": {
+                      "text": "6",
+                      "style": {
+                        "fontSize": 24,
+                        "fontWeight": "bold",
+                        "color": "#333"
+                      }
+                    },
+                    "children": []
+                  },
+                  {
+                    "type": "Text",
+                    "props": {
+                      "text": "Total",
+                      "style": {
+                        "fontSize": 12,
+                        "color": "#999"
+                      }
+                    },
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

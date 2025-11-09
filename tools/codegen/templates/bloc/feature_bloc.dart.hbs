@@ -1,0 +1,47 @@
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '{{featureName}}_event.dart';
+import '{{featureName}}_state.dart';
+
+class {{featureName}}Bloc extends Bloc<{{featureName}}Event, {{featureName}}State> {
+  {{featureName}}Bloc() : super(const {{featureName}}Initial()) {
+    on<Load{{featureName}}>(_onLoad{{featureName}});
+    {{#each events}}
+    on<{{this.name}}>(_on{{this.name}});
+    {{/each}}
+  }
+
+  Future<void> _onLoad{{featureName}}(
+    Load{{featureName}} event,
+    Emitter<{{featureName}}State> emit,
+  ) async {
+    emit(const {{featureName}}Loading());
+    
+    try {
+      // TODO: Implement load logic
+      {{#if stateFields}}
+      emit(const {{featureName}}Loaded(
+        {{#each stateFields}}
+        {{#if @index}}, {{/if}}{{this.name}}: {{this.defaultValue}}
+        {{/each}}
+      ));
+      {{else}}
+      emit(const {{featureName}}Loaded());
+      {{/if}}
+    } catch (e) {
+      emit({{featureName}}Error(e.toString()));
+    }
+  }
+
+  {{#each events}}
+  Future<void> _on{{this.name}}(
+    {{this.name}} event,
+    Emitter<{{../featureName}}State> emit,
+  ) async {
+    // TODO: Implement {{this.name}} logic
+    {{#if this.params}}
+    // Available parameters: {{#each this.params}}{{this.name}}{{#unless @last}}, {{/unless}}{{/each}}
+    {{/if}}
+  }
+
+  {{/each}}
+}

@@ -8,4 +8,4 @@ export 'dev_proxy_connection.dart';
 export 'session_manager.dart';
 export 'message_parser.dart';
 export 'kiro_client_service.dart';
-export 'event_bridge.dart';
+export 'platform_config.dart';

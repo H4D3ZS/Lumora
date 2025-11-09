@@ -1,0 +1,136 @@
+{
+  "schemaVersion": "1.0",
+  "root": {
+    "type": "View",
+    "props": {
+      "padding": 20,
+      "backgroundColor": "#F5F5F5"
+    },
+    "children": [
+      {
+        "type": "Text",
+        "props": {
+          "text": "Welcome to Lumora",
+          "style": {
+            "fontSize": 28,
+            "fontWeight": "bold",
+            "color": "#333"
+          }
+        },
+        "children": []
+      },
+      {
+        "type": "Text",
+        "props": {
+          "text": "A mobile-first Flutter development framework",
+          "style": {
+            "fontSize": 16,
+            "color": "#666",
+            "marginTop": 8
+          }
+        },
+        "children": []
+      },
+      {
+        "type": "Button",
+        "props": {
+          "title": "Get Started",
+          "onTap": "emit:getStarted:{}",
+          "style": {
+            "marginTop": 20,
+            "backgroundColor": "#007AFF"
+          }
+        },
+        "children": []
+      },
+      {
+        "type": "List",
+        "props": {
+          "style": {
+            "marginTop": 30
+          }
+        },
+        "children": [
+          {
+            "type": "View",
+            "props": {
+              "padding": 12,
+              "backgroundColor": "#FFFFFF",
+              "style": {
+                "marginBottom": 8
+              }
+            },
+            "children": [
+              {
+                "type": "Text",
+                "props": {
+                  "text": "✓ Instant preview on device",
+                  "style": {
+                    "fontSize": 14
+                  }
+                },
+                "children": []
+              }
+            ]
+          },
+          {
+            "type": "View",
+            "props": {
+              "padding": 12,
+              "backgroundColor": "#FFFFFF",
+              "style": {
+                "marginBottom": 8
+              }
+            },
+            "children": [
+              {
+                "type": "Text",
+                "props": {
+                  "text": "✓ Live hot reload",
+                  "style": {
+                    "fontSize": 14
+                  }
+                },
+                "children": []
+              }
+            ]
+          },
+          {
+            "type": "View",
+            "props": {
+              "padding": 12,
+              "backgroundColor": "#FFFFFF",
+              "style": {
+                "marginBottom": 8
+              }
+            },
+            "children": [
+              {
+                "type": "Text",
+                "props": {
+                  "text": "✓ Production-ready Dart code",
+                  "style": {
+                    "fontSize": 14
+                  }
+                },
+                "children": []
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "Input",
+        "props": {
+          "placeholder": "Enter your email",
+          "style": {
+            "marginTop": 20,
+            "padding": 12,
+            "backgroundColor": "#FFFFFF"
+          }
+        },
+        "children": []
+      }
+    ]
+  }
+}

@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:kiro_core/kiro_core.dart';
 import 'services/kiro_client_service.dart';
 import 'services/session_manager.dart';
-import 'services/event_bridge.dart';
-import 'services/dev_proxy_connection.dart';
-import 'interpreter/schema_interpreter.dart';
-import 'interpreter/delta_debouncer.dart';
+import 'services/dev_proxy_connection.dart' as proxy;
+import 'services/platform_config.dart';
 import 'widgets/connection_dialogs.dart';
 
 void main() {
@@ -21,6 +20,8 @@ class KiroDevClientApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
+        // Platform-adaptive styling
+        platform: TargetPlatform.android,
       ),
       home: const ConnectionScreen(),
     );
@@ -46,7 +47,8 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
   bool _showOfflineIndicator = false;
 
   // Default connection parameters (will be replaced with QR scan)
-  final String _wsUrl = 'ws://10.0.2.2:3000/ws';
+  // Use platform-specific WebSocket URL
+  String? _customWsUrl; // Can be set via QR scan for physical devices
   final String _sessionId = 'test-session';
   final String _token = 'test-token';
 
@@ -67,8 +69,12 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
     });
 
     try {
+      // Get platform-specific WebSocket URL
+      final wsUrl = PlatformConfig.getWebSocketUrl(customUrl: _customWsUrl);
+      debugPrint('Connecting to: $wsUrl (Platform: ${PlatformConfig.getPlatformName()})');
+      
       _service = KiroClientService(
-        wsUrl: _wsUrl,
+        wsUrl: wsUrl,
         sessionId: _sessionId,
         token: _token,
       );
@@ -82,12 +88,12 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
       // Listen to connection state changes
       _service!.connection.stateChanges.listen((state) {
         setState(() {
-          _showOfflineIndicator = (state == ConnectionState.disconnected || 
-                                   state == ConnectionState.error);
+          _showOfflineIndicator = (state == proxy.ConnectionState.disconnected || 
+                                   state == proxy.ConnectionState.error);
         });
 
         // Handle connection errors
-        if (state == ConnectionState.error) {
+        if (state == proxy.ConnectionState.error) {
           _handleConnectionError();
         }
       });
@@ -225,6 +231,17 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
     });
   }
 
+  /// Sets custom WebSocket URL (for physical devices or custom configurations)
+  void _setCustomWebSocketUrl(String url) {
+    if (PlatformConfig.isValidWebSocketUrl(url)) {
+      setState(() {
+        _customWsUrl = url;
+      });
+    } else {
+      debugPrint('Invalid WebSocket URL: $url');
+    }
+  }
+
   /// Applies a batch of delta updates
   void _applyDeltaBatch(List<Map<String, dynamic>> deltas) {
     if (deltas.isEmpty) {
@@ -287,7 +304,7 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
           OfflineIndicator(isVisible: _showOfflineIndicator),
           Expanded(
             child: _isParsing
-          ? Center(
+              ? Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [

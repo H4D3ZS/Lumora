@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
+import 'dart:io' show Platform;
 import 'dart:developer' as developer;
 import 'dart:convert';
+import 'package:kiro_ui_tokens/kiro_ui_tokens.dart';
 import 'template_engine.dart';
 import 'renderer_registry.dart';
+import 'json_patch_utils.dart';
 import '../widgets/error_widgets.dart';
 
 /// Core schema interpreter that converts JSON UI schemas to Flutter widgets
@@ -12,10 +16,26 @@ import '../widgets/error_widgets.dart';
 class SchemaInterpreter {
   static const String supportedVersion = '1.0';
   
+  /// Whitelist of allowed widget types for security
+  /// Only these types can be rendered by default (unless custom renderers are registered)
+  static const Set<String> allowedWidgetTypes = {
+    'View',
+    'Text',
+    'Button',
+    'List',
+    'Image',
+    'Input',
+  };
+  
   // Performance monitoring
   int? _parseStartTime;
   int? _parseEndTime;
+  int? _widgetBuildStartTime;
+  int? _widgetBuildEndTime;
   bool _showPerformanceMetrics = false;
+  
+  // Performance metrics storage
+  final List<PerformanceMetric> _performanceHistory = [];
 
   // Current schema state for delta updates
   Map<String, dynamic>? _currentSchema;
@@ -40,6 +60,9 @@ class SchemaInterpreter {
   void setShowPerformanceMetrics(bool show) {
     _showPerformanceMetrics = show;
   }
+
+  /// Get performance history
+  List<PerformanceMetric> get performanceHistory => List.unmodifiable(_performanceHistory);
 
   /// Get the current schema (for testing and debugging)
   Map<String, dynamic>? get currentSchema => _currentSchema;
@@ -185,7 +208,9 @@ class SchemaInterpreter {
 
       // Build widget tree from root node
       developer.log('Building widget tree from schema', name: 'SchemaInterpreter');
+      _widgetBuildStartTime = DateTime.now().millisecondsSinceEpoch;
       final widget = _buildNode(root);
+      _widgetBuildEndTime = DateTime.now().millisecondsSinceEpoch;
       
       // Store current schema for delta updates
       _currentSchema = Map<String, dynamic>.from(schema);
@@ -262,28 +287,55 @@ class SchemaInterpreter {
   /// Logs performance metrics for schema parsing and rendering
   void _logPerformanceMetrics() {
     if (_parseStartTime != null && _parseEndTime != null) {
-      final duration = _parseEndTime! - _parseStartTime!;
-      final durationSeconds = duration / 1000.0;
+      final totalDuration = _parseEndTime! - _parseStartTime!;
+      final totalDurationSeconds = totalDuration / 1000.0;
+      
+      // Calculate widget build time
+      int? widgetBuildDuration;
+      if (_widgetBuildStartTime != null && _widgetBuildEndTime != null) {
+        widgetBuildDuration = _widgetBuildEndTime! - _widgetBuildStartTime!;
+      }
+      
+      // Calculate parsing time (total - widget build)
+      final parsingDuration = widgetBuildDuration != null 
+          ? totalDuration - widgetBuildDuration 
+          : totalDuration;
       
       developer.log(
-        'Schema parsing and rendering completed in ${durationSeconds.toStringAsFixed(3)}s',
+        'Schema parsing and rendering completed in ${totalDurationSeconds.toStringAsFixed(3)}s',
         name: 'SchemaInterpreter.Performance',
       );
       
       // Log warning if time exceeds 2 seconds
-      if (durationSeconds > 2.0) {
+      if (totalDurationSeconds > 2.0) {
         developer.log(
-          'WARNING: Schema parsing took longer than 2 seconds (${durationSeconds.toStringAsFixed(3)}s)',
+          'WARNING: Schema parsing took longer than 2 seconds (${totalDurationSeconds.toStringAsFixed(3)}s)',
           name: 'SchemaInterpreter.Performance',
           level: 900, // Warning level
         );
+      }
+      
+      // Store performance metric
+      final metric = PerformanceMetric(
+        timestamp: _parseStartTime!,
+        totalDurationMs: totalDuration,
+        parsingDurationMs: parsingDuration,
+        widgetBuildDurationMs: widgetBuildDuration,
+      );
+      _performanceHistory.add(metric);
+      
+      // Keep only last 50 metrics
+      if (_performanceHistory.length > 50) {
+        _performanceHistory.removeAt(0);
       }
       
       // Display metrics in debug mode if enabled
       if (_showPerformanceMetrics) {
         developer.log(
           'Performance Metrics:\n'
-          '  - Total time: ${durationSeconds.toStringAsFixed(3)}s\n'
+          '  - Total time: ${totalDurationSeconds.toStringAsFixed(3)}s\n'
+          '  - Parsing time: ${(parsingDuration / 1000.0).toStringAsFixed(3)}s\n'
+          '  - Widget build time: ${widgetBuildDuration != null ? (widgetBuildDuration / 1000.0).toStringAsFixed(3) : 'N/A'}s\n'
           '  - Start: $_parseStartTime\n'
           '  - End: $_parseEndTime',
           name: 'SchemaInterpreter.Performance',
@@ -386,6 +438,9 @@ class SchemaInterpreter {
     Map<String, dynamic> props,
     List<Widget> children,
   ) {
+    // Sanitize props to prevent injection attacks
+    final sanitizedProps = _sanitizeProps(props);
+    
     // Check registry for custom renderers first
     if (registry != null && registry!.hasRenderer(type)) {
       developer.log(
@@ -393,7 +448,7 @@ class SchemaInterpreter {
         name: 'SchemaInterpreter',
       );
       
-      final customWidget = registry!.render(type, props, children);
+      final customWidget = registry!.render(type, sanitizedProps, children);
       if (customWidget != null) {
         return customWidget;
       }
@@ -406,20 +461,34 @@ class SchemaInterpreter {
       );
     }
     
+    // Security: Check if type is in whitelist
+    if (!allowedWidgetTypes.contains(type) && (registry == null || !registry!.hasRenderer(type))) {
+      developer.log(
+        'Widget type not in whitelist: $type',
+        name: 'SchemaInterpreter',
+        level: 900, // Warning level
+      );
+      return SchemaErrorWidget(
+        nodeType: type,
+        errorMessage: 'This widget type is not allowed for security reasons',
+        isWarning: true,
+      );
+    }
+    
     // Use default renderers for core primitives
     switch (type) {
       case 'View':
-        return _renderView(props, children);
+        return _renderView(sanitizedProps, children);
       case 'Text':
-        return _renderText(props);
+        return _renderText(sanitizedProps);
       case 'Button':
-        return _renderButton(props);
+        return _renderButton(sanitizedProps);
       case 'List':
-        return _renderList(props, children);
+        return _renderList(sanitizedProps, children);
       case 'Image':
-        return _renderImage(props);
+        return _renderImage(sanitizedProps);
       case 'Input':
-        return _renderInput(props);
+        return _renderInput(sanitizedProps);
       default:
         developer.log(
           'Unknown widget type: $type',
@@ -434,18 +503,94 @@ class SchemaInterpreter {
     }
   }
 
-  /// Renders a View as a Container widget
-  Widget _renderView(Map<String, dynamic> props, List<Widget> children) {
-    // Extract padding
-    EdgeInsets? padding;
-    if (props.containsKey('padding')) {
-      final paddingValue = props['padding'];
-      if (paddingValue is num) {
-        padding = EdgeInsets.all(paddingValue.toDouble());
+  /// Sanitizes props to prevent injection attacks
+  /// 
+  /// Security measures:
+  /// - Removes any props that could execute code
+  /// - Validates string values don't contain dangerous patterns
+  /// - Ensures URLs are safe (for Image src)
+  Map<String, dynamic> _sanitizeProps(Map<String, dynamic> props) {
+    final sanitized = <String, dynamic>{};
+    
+    for (final entry in props.entries) {
+      final key = entry.key;
+      final value = entry.value;
+      
+      // Skip any props that could be dangerous
+      if (key.toLowerCase().contains('script') || 
+          key.toLowerCase().contains('eval') ||
+          key.toLowerCase().contains('function')) {
+        developer.log(
+          'Blocked potentially dangerous prop: $key',
+          name: 'SchemaInterpreter.Security',
+          level: 900,
+        );
+        continue;
+      }
+      
+      // Sanitize string values
+      if (value is String) {
+        sanitized[key] = _sanitizeString(value);
+      } else if (value is Map) {
+        // Recursively sanitize nested maps
+        sanitized[key] = _sanitizeProps(Map<String, dynamic>.from(value));
+      } else if (value is List) {
+        // Sanitize list items
+        sanitized[key] = value.map((item) {
+          if (item is String) {
+            return _sanitizeString(item);
+          } else if (item is Map) {
+            return _sanitizeProps(Map<String, dynamic>.from(item));
+          }
+          return item;
+        }).toList();
+      } else {
+        // Keep other types as-is (numbers, booleans, null)
+        sanitized[key] = value;
       }
     }
+    
+    return sanitized;
+  }
 
-    // Extract backgroundColor
+  /// Sanitizes a string value to prevent injection attacks
+  /// 
+  /// Note: This is a basic sanitization. For production use, consider
+  /// more comprehensive sanitization based on your security requirements.
+  String _sanitizeString(String value) {
+    // Remove any potential script tags or dangerous patterns
+    String sanitized = value;
+    
+    // Remove script tags (case-insensitive)
+    sanitized = sanitized.replaceAll(RegExp(r'<script[^>]*>.*?</script>', caseSensitive: false), '');
+    
+    // Remove javascript: protocol
+    sanitized = sanitized.replaceAll(RegExp(r'javascript:', caseSensitive: false), '');
+    
+    // Remove data: protocol with javascript
+    sanitized = sanitized.replaceAll(RegExp(r'data:text/html[^,]*,.*?<script', caseSensitive: false), '');
+    
+    // For template placeholders, we allow them as they're resolved safely
+    // The TemplateEngine already handles safe variable lookup
+    
+    return sanitized;
+  }
+
+  /// Renders a View as a Container widget
+  Widget _renderView(Map<String, dynamic> props, List<Widget> children) {
+    // Extract padding using design tokens
+    EdgeInsets? padding;
+    if (props.containsKey('padding')) {
+      padding = LumoraSpacing.parse(props['padding']);
+    }
+
+    // Extract margin using design tokens
+    EdgeInsets? margin;
+    if (props.containsKey('margin')) {
+      margin = LumoraSpacing.parse(props['margin']);
+    }
+
+    // Extract backgroundColor using design tokens
     Color? backgroundColor;
     if (props.containsKey('backgroundColor')) {
       final colorValue = props['backgroundColor'];
@@ -467,6 +612,7 @@ class SchemaInterpreter {
 
     return Container(
       padding: padding,
+      margin: margin,
       color: backgroundColor,
       child: child,
     );
@@ -492,7 +638,8 @@ class SchemaInterpreter {
     );
   }
 
-  /// Renders a Button as an ElevatedButton widget
+  /// Renders a Button with platform-appropriate styling
+  /// Uses Material Design on Android and Cupertino on iOS
   Widget _renderButton(Map<String, dynamic> props) {
     // Extract title
     final title = props['title'] as String? ?? 'Button';
@@ -531,10 +678,39 @@ class SchemaInterpreter {
       }
     }
 
-    return ElevatedButton(
-      onPressed: onPressed,
-      child: Text(title),
-    );
+    // Use platform-adaptive button styling
+    if (_isIOS()) {
+      // iOS: Use Cupertino button
+      return CupertinoButton.filled(
+        onPressed: onPressed,
+        child: Text(title),
+      );
+    } else {
+      // Android and others: Use Material Design button
+      return ElevatedButton(
+        onPressed: onPressed,
+        child: Text(title),
+      );
+    }
+  }
+
+  /// Checks if the current platform is iOS
+  bool _isIOS() {
+    try {
+      return Platform.isIOS;
+    } catch (e) {
+      // Platform check might fail in some environments (e.g., web)
+      return false;
+    }
+  }
+
+  /// Checks if the current platform is Android
+  bool _isAndroid() {
+    try {
+      return Platform.isAndroid;
+    } catch (e) {
+      return false;
+    }
   }
 
   /// Renders a List as a ListView widget
@@ -614,7 +790,21 @@ class SchemaInterpreter {
   }
 
   /// Builds a TextStyle from style properties
+  /// Supports design token typography names and individual style properties
   TextStyle _buildTextStyle(Map<String, dynamic> styleProps) {
+    // Check if a typography token name is provided
+    if (styleProps.containsKey('typography')) {
+      final typographyName = styleProps['typography'] as String?;
+      if (typographyName != null) {
+        final baseStyle = LumoraTypography.parse(typographyName);
+        if (baseStyle != null) {
+          // Apply any additional overrides on top of the base style
+          return _applyStyleOverrides(baseStyle, styleProps);
+        }
+      }
+    }
+
+    // Build style from individual properties
     double? fontSize;
     if (styleProps.containsKey('fontSize')) {
       final value = styleProps['fontSize'];
@@ -648,24 +838,53 @@ class SchemaInterpreter {
     );
   }
 
-  /// Parses a color string (hex format)
+  /// Applies style property overrides to a base TextStyle
+  TextStyle _applyStyleOverrides(TextStyle baseStyle, Map<String, dynamic> styleProps) {
+    double? fontSize;
+    if (styleProps.containsKey('fontSize')) {
+      final value = styleProps['fontSize'];
+      if (value is num) {
+        fontSize = value.toDouble();
+      }
+    }
+
+    FontWeight? fontWeight;
+    if (styleProps.containsKey('fontWeight')) {
+      final value = styleProps['fontWeight'] as String?;
+      if (value == 'bold') {
+        fontWeight = FontWeight.bold;
+      } else if (value == 'normal') {
+        fontWeight = FontWeight.normal;
+      }
+    }
+
+    Color? color;
+    if (styleProps.containsKey('color')) {
+      final value = styleProps['color'] as String?;
+      if (value != null) {
+        color = _parseColor(value);
+      }
+    }
+
+    return baseStyle.copyWith(
+      fontSize: fontSize,
+      fontWeight: fontWeight,
+      color: color,
+    );
+  }
+
+  /// Parses a color string using design tokens
+  /// Supports hex colors, named colors, and design token names
   Color _parseColor(String colorString) {
     try {
-      // Remove # if present
-      String hexColor = colorString.replaceAll('#', '');
-      
-      // Add alpha if not present
-      if (hexColor.length == 6) {
-        hexColor = 'FF$hexColor';
-      }
-      
-      return Color(int.parse(hexColor, radix: 16));
+      // Use design token parser which handles both hex and named colors
+      return LumoraColors.parse(colorString);
     } catch (e) {
       developer.log(
         'Failed to parse color: $colorString',
         name: 'SchemaInterpreter',
       );
-      return Colors.black;
+      return LumoraColors.black;
     }
   }
 
@@ -720,25 +939,28 @@ class SchemaInterpreter {
 
   /// Applies JSON Patch operations (RFC 6902)
   void _applyJsonPatch(List<dynamic> operations) {
-    for (final operation in operations) {
-      if (operation is! Map<String, dynamic>) {
-        developer.log(
-          'Invalid patch operation: not a map',
-          name: 'SchemaInterpreter',
-        );
-        continue;
-      }
+    // Validate operations
+    if (!JsonPatchUtils.isValidPatch(operations)) {
+      developer.log(
+        'Invalid JSON Patch: validation failed',
+        name: 'SchemaInterpreter',
+        level: 900,
+      );
+      return;
+    }
 
-      final op = operation['op'] as String?;
-      final path = operation['path'] as String?;
+    // Optimize operations before applying
+    final validOps = operations.whereType<Map<String, dynamic>>().toList();
+    final optimizedOps = JsonPatchUtils.optimizeOperations(validOps);
 
-      if (op == null || path == null) {
-        developer.log(
-          'Invalid patch operation: missing op or path',
-          name: 'SchemaInterpreter',
-        );
-        continue;
-      }
+    developer.log(
+      'Applying ${optimizedOps.length} optimized patch operations (from ${operations.length} original)',
+      name: 'SchemaInterpreter',
+    );
+
+    for (final operation in optimizedOps) {
+      final op = operation['op'] as String;
+      final path = operation['path'] as String;
 
       developer.log(
         'Applying patch operation: $op at $path',
@@ -974,5 +1196,32 @@ class SchemaInterpreter {
     if (current != value) {
       throw Exception('Test operation failed at $path');
     }
+  }
+}
+
+/// Performance metric data class
+class PerformanceMetric {
+  final int timestamp;
+  final int totalDurationMs;
+  final int parsingDurationMs;
+  final int? widgetBuildDurationMs;
+
+  PerformanceMetric({
+    required this.timestamp,
+    required this.totalDurationMs,
+    required this.parsingDurationMs,
+    this.widgetBuildDurationMs,
+  });
+
+  double get totalDurationSeconds => totalDurationMs / 1000.0;
+  double get parsingDurationSeconds => parsingDurationMs / 1000.0;
+  double? get widgetBuildDurationSeconds => 
+      widgetBuildDurationMs != null ? widgetBuildDurationMs! / 1000.0 : null;
+
+  @override
+  String toString() {
+    return 'PerformanceMetric(total: ${totalDurationSeconds.toStringAsFixed(3)}s, '
+        'parsing: ${parsingDurationSeconds.toStringAsFixed(3)}s, '
+        'widgetBuild: ${widgetBuildDurationSeconds?.toStringAsFixed(3) ?? 'N/A'}s)';
   }
 }

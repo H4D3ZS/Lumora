@@ -14,6 +14,16 @@ export declare class WebSocketBroker {
      */
     private handleConnection;
     /**
+     * Check if origin is allowed (for CSRF protection)
+     * In development, we allow localhost and local network IPs
+     */
+    private isAllowedOrigin;
+    /**
+     * Check rate limit for a client
+     * Returns true if within limit, false if exceeded
+     */
+    private checkRateLimit;
+    /**
      * Handle incoming WebSocket message
      */
     private handleMessage;

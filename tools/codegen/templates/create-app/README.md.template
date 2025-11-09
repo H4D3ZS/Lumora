@@ -1,0 +1,122 @@
+# {{appName}}
+
+A Lumora mobile-first Flutter application using {{adapter}} state management.
+
+## Quick Start
+
+### 1. Install Dependencies
+
+```bash
+# Install Node.js dependencies
+npm install
+
+# Install Flutter dependencies
+cd mobile
+flutter pub get
+cd ..
+```
+
+### 2. Start Development
+
+```bash
+# Terminal 1: Start the dev proxy
+cd ../../tools/dev-proxy
+npm start
+
+# Terminal 2: Watch TSX files and generate schemas
+npm run dev
+
+# Terminal 3: Run Flutter app
+cd mobile
+flutter run
+```
+
+### 3. Connect Device
+
+1. Scan the QR code from the dev-proxy terminal
+2. Your Flutter app will connect automatically
+3. Edit `web/src/App.tsx` to see live updates
+
+## Project Structure
+
+```
+{{appName}}/
+├── web/                    # Web/TSX source files
+│   ├── src/
+│   │   └── App.tsx        # Main UI component
+│   └── schema/            # Generated JSON schemas
+├── mobile/                # Flutter application
+│   ├── lib/
+│   │   ├── main.dart     # App entry point
+│   │   └── features/     # Generated feature code
+│   └── pubspec.yaml
+└── kiro.config.json      # Lumora configuration
+```
+
+## Available Scripts
+
+- `npm run dev` - Watch TSX files and auto-generate schemas
+- `npm run build` - Build schema from TSX (one-time)
+- `npm run generate` - Generate Dart code from schema
+
+## State Management
+
+This project uses **{{adapter}}** for state management.
+
+{{#if_bloc}}
+### Bloc Pattern
+
+- Events: Define user actions
+- States: Define UI states
+- Bloc: Business logic and state transitions
+
+Learn more: https://bloclibrary.dev/
+{{/if_bloc}}
+
+{{#if_riverpod}}
+### Riverpod Pattern
+
+- Providers: Expose state and business logic
+- ConsumerWidget: React to state changes
+- StateNotifier: Manage complex state
+
+Learn more: https://riverpod.dev/
+{{/if_riverpod}}
+
+{{#if_provider}}
+### Provider Pattern
+
+- ChangeNotifier: Manage state
+- ChangeNotifierProvider: Provide state to widgets
+- Consumer: Listen to state changes
+
+Learn more: https://pub.dev/packages/provider
+{{/if_provider}}
+
+{{#if_getx}}
+### GetX Pattern
+
+- Controllers: Manage state and logic
+- GetX/Obx: Reactive widgets
+- Get.to(): Navigation
+
+Learn more: https://pub.dev/packages/get
+{{/if_getx}}
+
+## Next Steps
+
+1. Edit `web/src/App.tsx` to design your UI
+2. Run `npm run generate` to create production Dart code
+3. Implement business logic in the generated files
+4. Build and deploy your Flutter app
+
+## Documentation
+
+- [Lumora Framework](../../README.md)
+- [Codegen Tool](../../tools/codegen/README.md)
+- [Dev Proxy](../../tools/dev-proxy/README.md)
+- [Flutter Dev Client](../../apps/flutter-dev-client/README.md)
+
+## License
+
+MIT

@@ -1,0 +1,63 @@
+import 'package:get/get.dart';
+
+class {{featureName}}Controller extends GetxController {
+  {{#if stateFields}}
+  {{#each stateFields}}
+  final _{{this.name}} = {{this.defaultValue}}.obs;
+  {{this.type}} get {{this.name}} => _{{this.name}}.value;
+  set {{this.name}}({{this.type}} value) => _{{this.name}}.value = value;
+  {{/each}}
+  {{/if}}
+
+  final _isLoading = false.obs;
+  bool get isLoading => _isLoading.value;
+
+  final _error = Rxn<String>();
+  String? get error => _error.value;
+
+  @override
+  void onInit() {
+    super.onInit();
+    load();
+  }
+
+  Future<void> load() async {
+    _isLoading.value = true;
+    _error.value = null;
+
+    try {
+      // TODO: Implement load logic
+      {{#if stateFields}}
+      {{#each stateFields}}
+      _{{this.name}}.value = {{this.defaultValue}};
+      {{/each}}
+      {{/if}}
+      _isLoading.value = false;
+    } catch (e) {
+      _error.value = e.toString();
+      _isLoading.value = false;
+    }
+  }
+
+  {{#each methods}}
+  Future<void> {{this.name}}({{#if this.params}}{{#each this.params}}{{#if @index}}, {{/if}}{{this.type}} {{this.name}}{{/each}}{{/if}}) async {
+    // TODO: Implement {{this.name}} logic
+    {{#if this.params}}
+    // Available parameters: {{#each this.params}}{{this.name}}{{#unless @last}}, {{/unless}}{{/each}}
+    {{/if}}
+  }
+
+  {{/each}}
+
+  @override
+  void onClose() {
+    {{#if stateFields}}
+    {{#each stateFields}}
+    _{{this.name}}.close();
+    {{/each}}
+    {{/if}}
+    _isLoading.close();
+    _error.close();
+    super.onClose();
+  }
+}

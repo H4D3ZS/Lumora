@@ -1,0 +1,665 @@
+{
+  "schemaVersion": "1.0",
+  "root": {
+    "type": "View",
+    "props": {
+      "padding": 0,
+      "backgroundColor": "#E5DDD5"
+    },
+    "children": [
+      {
+        "type": "View",
+        "props": {
+          "padding": 16,
+          "backgroundColor": "#075E54",
+          "style": {
+            "paddingTop": 40
+          }
+        },
+        "children": [
+          {
+            "type": "View",
+            "props": {
+              "style": {
+                "flexDirection": "row",
+                "alignItems": "center"
+              }
+            },
+            "children": [
+              {
+                "type": "View",
+                "props": {
+                  "style": {
+                    "flex": 1
+                  }
+                },
+                "children": [
+                  {
+                    "type": "Text",
+                    "props": {
+                      "text": "💬 Team Chat",
+                      "style": {
+                        "fontSize": 20,
+                        "fontWeight": "bold",
+                        "color": "#FFFFFF"
+                      }
+                    },
+                    "children": []
+                  },
+                  {
+                    "type": "Text",
+                    "props": {
+                      "text": "5 members online",
+                      "style": {
+                        "fontSize": 12,
+                        "color": "#B2DFDB",
+                        "marginTop": 2
+                      }
+                    },
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "type": "Button",
+                "props": {
+                  "title": "⋮",
+                  "onTap": "emit:openMenu:{}",
+                  "style": {
+                    "backgroundColor": "transparent",
+                    "padding": 8
+                  }
+                },
+                "children": []
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "View",
+        "props": {
+          "style": {
+            "flex": 1,
+            "padding": 16
+          }
+        },
+        "children": [
+          {
+            "type": "List",
+            "props": {},
+            "children": [
+              {
+                "type": "View",
+                "props": {
+                  "style": {
+                    "marginBottom": 12,
+                    "alignItems": "flex-start"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "View",
+                    "props": {
+                      "padding": 12,
+                      "backgroundColor": "#FFFFFF",
+                      "style": {
+                        "borderRadius": 8,
+                        "maxWidth": 280
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "Text",
+                        "props": {
+                          "text": "Sarah",
+                          "style": {
+                            "fontSize": 12,
+                            "fontWeight": "600",
+                            "color": "#075E54",
+                            "marginBottom": 4
+                          }
+                        },
+                        "children": []
+                      },
+                      {
+                        "type": "Text",
+                        "props": {
+                          "text": "Hey team! How's the project coming along?",
+                          "style": {
+                            "fontSize": 15,
+                            "color": "#303030",
+                            "lineHeight": 20
+                          }
+                        },
+                        "children": []
+                      },
+                      {
+                        "type": "Text",
+                        "props": {
+                          "text": "10:30 AM",
+                          "style": {
+                            "fontSize": 11,
+                            "color": "#999",
+                            "marginTop": 4,
+                            "textAlign": "right"
+                          }
+                        },
+                        "children": []
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "View",
+                "props": {
+                  "style": {
+                    "marginBottom": 12,
+                    "alignItems": "flex-end"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "View",
+                    "props": {
+                      "padding": 12,
+                      "backgroundColor": "#DCF8C6",
+                      "style": {
+                        "borderRadius": 8,
+                        "maxWidth": 280
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "Text",
+                        "props": {
+                          "text": "Great! We're making good progress on the MVP.",
+                          "style": {
+                            "fontSize": 15,
+                            "color": "#303030",
+                            "lineHeight": 20
+                          }
+                        },
+                        "children": []
+                      },
+                      {
+                        "type": "Text",
+                        "props": {
+                          "text": "10:32 AM ✓✓",
+                          "style": {
+                            "fontSize": 11,
+                            "color": "#666",
+                            "marginTop": 4,
+                            "textAlign": "right"
+                          }
+                        },
+                        "children": []
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "View",
+                "props": {
+                  "style": {
+                    "marginBottom": 12,
+                    "alignItems": "flex-start"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "View",
+                    "props": {
+                      "padding": 12,
+                      "backgroundColor": "#FFFFFF",
+                      "style": {
+                        "borderRadius": 8,
+                        "maxWidth": 280
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "Text",
+                        "props": {
+                          "text": "Mike",
+                          "style": {
+                            "fontSize": 12,
+                            "fontWeight": "600",
+                            "color": "#075E54",
+                            "marginBottom": 4
+                          }
+                        },
+                        "children": []
+                      },
+                      {
+                        "type": "Text",
+                        "props": {
+                          "text": "I just pushed the new features to the repo. Can someone review?",
+                          "style": {
+                            "fontSize": 15,
+                            "color": "#303030",
+                            "lineHeight": 20
+                          }
+                        },
+                        "children": []
+                      },
+                      {
+                        "type": "Text",
+                        "props": {
+                          "text": "10:35 AM",
+                          "style": {
+                            "fontSize": 11,
+                            "color": "#999",
+                            "marginTop": 4,
+                            "textAlign": "right"
+                          }
+                        },
+                        "children": []
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "View",
+                "props": {
+                  "style": {
+                    "marginBottom": 12,
+                    "alignItems": "flex-end"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "View",
+                    "props": {
+                      "padding": 12,
+                      "backgroundColor": "#DCF8C6",
+                      "style": {
+                        "borderRadius": 8,
+                        "maxWidth": 280
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "Text",
+                        "props": {
+                          "text": "I'll take a look right now! 👍",
+                          "style": {
+                            "fontSize": 15,
+                            "color": "#303030",
+                            "lineHeight": 20
+                          }
+                        },
+                        "children": []
+                      },
+                      {
+                        "type": "Text",
+                        "props": {
+                          "text": "10:36 AM ✓✓",
+                          "style": {
+                            "fontSize": 11,
+                            "color": "#666",
+                            "marginTop": 4,
+                            "textAlign": "right"
+                          }
+                        },
+                        "children": []
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "View",
+                "props": {
+                  "style": {
+                    "marginBottom": 12,
+                    "alignItems": "flex-start"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "View",
+                    "props": {
+                      "padding": 12,
+                      "backgroundColor": "#FFFFFF",
+                      "style": {
+                        "borderRadius": 8,
+                        "maxWidth": 280
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "Text",
+                        "props": {
+                          "text": "Emma",
+                          "style": {
+                            "fontSize": 12,
+                            "fontWeight": "600",
+                            "color": "#075E54",
+                            "marginBottom": 4
+                          }
+                        },
+                        "children": []
+                      },
+                      {
+                        "type": "Text",
+                        "props": {
+                          "text": "The design mockups are ready. I'll share them in the design channel.",
+                          "style": {
+                            "fontSize": 15,
+                            "color": "#303030",
+                            "lineHeight": 20
+                          }
+                        },
+                        "children": []
+                      },
+                      {
+                        "type": "Text",
+                        "props": {
+                          "text": "10:40 AM",
+                          "style": {
+                            "fontSize": 11,
+                            "color": "#999",
+                            "marginTop": 4,
+                            "textAlign": "right"
+                          }
+                        },
+                        "children": []
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "View",
+                "props": {
+                  "style": {
+                    "marginBottom": 12,
+                    "alignItems": "center"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "View",
+                    "props": {
+                      "padding": 8,
+                      "backgroundColor": "#FFF9C4",
+                      "style": {
+                        "borderRadius": 6
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "Text",
+                        "props": {
+                          "text": "📌 Meeting scheduled for 2:00 PM today",
+                          "style": {
+                            "fontSize": 13,
+                            "color": "#F57F17",
+                            "textAlign": "center"
+                          }
+                        },
+                        "children": []
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "View",
+                "props": {
+                  "style": {
+                    "marginBottom": 12,
+                    "alignItems": "flex-start"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "View",
+                    "props": {
+                      "padding": 12,
+                      "backgroundColor": "#FFFFFF",
+                      "style": {
+                        "borderRadius": 8,
+                        "maxWidth": 280
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "Text",
+                        "props": {
+                          "text": "Alex",
+                          "style": {
+                            "fontSize": 12,
+                            "fontWeight": "600",
+                            "color": "#075E54",
+                            "marginBottom": 4
+                          }
+                        },
+                        "children": []
+                      },
+                      {
+                        "type": "Text",
+                        "props": {
+                          "text": "Perfect timing! I have some updates to share in the meeting.",
+                          "style": {
+                            "fontSize": 15,
+                            "color": "#303030",
+                            "lineHeight": 20
+                          }
+                        },
+                        "children": []
+                      },
+                      {
+                        "type": "Text",
+                        "props": {
+                          "text": "10:45 AM",
+                          "style": {
+                            "fontSize": 11,
+                            "color": "#999",
+                            "marginTop": 4,
+                            "textAlign": "right"
+                          }
+                        },
+                        "children": []
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "View",
+                "props": {
+                  "style": {
+                    "marginBottom": 12,
+                    "alignItems": "flex-end"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "View",
+                    "props": {
+                      "padding": 12,
+                      "backgroundColor": "#DCF8C6",
+                      "style": {
+                        "borderRadius": 8,
+                        "maxWidth": 280
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "Text",
+                        "props": {
+                          "text": "Sounds good! See you all at 2 PM 🚀",
+                          "style": {
+                            "fontSize": 15,
+                            "color": "#303030",
+                            "lineHeight": 20
+                          }
+                        },
+                        "children": []
+                      },
+                      {
+                        "type": "Text",
+                        "props": {
+                          "text": "10:46 AM ✓✓",
+                          "style": {
+                            "fontSize": 11,
+                            "color": "#666",
+                            "marginTop": 4,
+                            "textAlign": "right"
+                          }
+                        },
+                        "children": []
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "View",
+        "props": {
+          "padding": 12,
+          "backgroundColor": "#F0F0F0",
+          "style": {
+            "borderTopWidth": 1,
+            "borderTopColor": "#DDD"
+          }
+        },
+        "children": [
+          {
+            "type": "Text",
+            "props": {
+              "text": "Sarah is typing...",
+              "style": {
+                "fontSize": 13,
+                "color": "#666",
+                "fontStyle": "italic"
+              }
+            },
+            "children": []
+          }
+        ]
+      },
+      {
+        "type": "View",
+        "props": {
+          "padding": 12,
+          "backgroundColor": "#F0F0F0",
+          "style": {
+            "flexDirection": "row",
+            "alignItems": "center"
+          }
+        },
+        "children": [
+          {
+            "type": "View",
+            "props": {
+              "style": {
+                "flex": 1,
+                "marginRight": 8
+              }
+            },
+            "children": [
+              {
+                "type": "Input",
+                "props": {
+                  "placeholder": "Type a message...",
+                  "style": {
+                    "padding": 12,
+                    "backgroundColor": "#FFFFFF",
+                    "borderRadius": 20,
+                    "fontSize": 15
+                  }
+                },
+                "children": []
+              }
+            ]
+          },
+          {
+            "type": "Button",
+            "props": {
+              "title": "📤",
+              "onTap": "emit:sendMessage:{}",
+              "style": {
+                "backgroundColor": "#075E54",
+                "padding": 12,
+                "borderRadius": 20,
+                "minWidth": 48
+              }
+            },
+            "children": []
+          }
+        ]
+      },
+      {
+        "type": "View",
+        "props": {
+          "padding": 8,
+          "backgroundColor": "#F0F0F0",
+          "style": {
+            "flexDirection": "row",
+            "justifyContent": "space-around"
+          }
+        },
+        "children": [
+          {
+            "type": "Button",
+            "props": {
+              "title": "📎",
+              "onTap": "emit:attachFile:{}",
+              "style": {
+                "backgroundColor": "transparent",
+                "padding": 8
+              }
+            },
+            "children": []
+          },
+          {
+            "type": "Button",
+            "props": {
+              "title": "📷",
+              "onTap": "emit:takePhoto:{}",
+              "style": {
+                "backgroundColor": "transparent",
+                "padding": 8
+              }
+            },
+            "children": []
+          },
+          {
+            "type": "Button",
+            "props": {
+              "title": "🎤",
+              "onTap": "emit:recordVoice:{}",
+              "style": {
+                "backgroundColor": "transparent",
+                "padding": 8
+              }
+            },
+            "children": []
+          },
+          {
+            "type": "Button",
+            "props": {
+              "title": "😊",
+              "onTap": "emit:openEmoji:{}",
+              "style": {
+                "backgroundColor": "transparent",
+                "padding": 8
+              }
+            },
+            "children": []
+          }
+        ]
+      }
+    ]
+  }
+}

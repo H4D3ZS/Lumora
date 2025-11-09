@@ -2,8 +2,6 @@ import 'dart:convert';
 import 'dart:developer' as developer;
 import 'package:flutter/foundation.dart';
 
-import 'dev_proxy_connection.dart';
-
 /// Model representing a UI event from the Flutter client
 class UIEvent {
   final String action;
@@ -27,16 +25,23 @@ class UIEvent {
       };
 }
 
-/// EventBridge handles sending UI events from Flutter widgets back to Dev-Proxy
+/// Interface for connection objects that can send messages
+/// This allows EventBridge to work with any connection implementation
+abstract class MessageSender {
+  void sendMessage(Map<String, dynamic> envelope);
+  String get sessionId;
+}
+
+/// EventBridge handles sending UI events from Flutter widgets
 /// Events are triggered by user interactions (taps, input changes, etc.)
 class EventBridge {
-  final DevProxyConnection connection;
+  final MessageSender connection;
 
   EventBridge({required this.connection});
 
-  /// Emits a UI event through the WebSocket connection
+  /// Emits a UI event through the connection
   /// 
-  /// Creates a WebSocket envelope with type "event" and sends it to Dev-Proxy
+  /// Creates a WebSocket envelope with type "event" and sends it
   /// which will broadcast it to all connected editor clients in the session
   /// 
   /// Parameters:

@@ -1,0 +1,50 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:kiro_ui_tokens/kiro_ui_tokens.dart';
+import '../bloc/{{featureNameLower}}_bloc.dart';
+import '../bloc/{{featureNameLower}}_event.dart';
+import '../bloc/{{featureNameLower}}_state.dart';
+
+class {{featureName}}Page extends StatelessWidget {
+  const {{featureName}}Page({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (context) => {{featureName}}Bloc()..add(const Load{{featureName}}()),
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('{{featureTitle}}'),
+        ),
+        body: BlocBuilder<{{featureName}}Bloc, {{featureName}}State>(
+          builder: (context, state) {
+            if (state is {{featureName}}Loading) {
+              return const Center(
+                child: CircularProgressIndicator(),
+              );
+            }
+
+            if (state is {{featureName}}Error) {
+              return Center(
+                child: Text(
+                  'Error: ${state.message}',
+                  style: const TextStyle(color: Colors.red),
+                ),
+              );
+            }
+
+            if (state is {{featureName}}Loaded) {
+              return _buildContent(context, state);
+            }
+
+            return const SizedBox.shrink();
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildContent(BuildContext context, {{featureName}}Loaded state) {
+    return {{{widgetCode}}};
+  }
+}

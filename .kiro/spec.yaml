@@ -1,0 +1,210 @@
+name: kiro-stack-mvp
+version: 1.0.0
+description: Mobile-first Flutter development framework with React/TSX authoring and instant preview
+
+features:
+  flutter_dev_client:
+    description: Native Flutter mobile application that connects to Dev-Proxy and renders JSON UI schemas as native widgets in real-time
+    components:
+      - WebSocket connection manager with automatic reconnection
+      - Schema interpreter for converting JSON to Flutter widgets
+      - Event bridge for sending UI events back to editor
+      - Renderer registry for custom widget extensions
+      - Template engine for dynamic placeholder resolution
+      - Performance optimizations (isolate parsing, lazy rendering, delta debouncing)
+    dependencies:
+      - dev_proxy
+      - kiro_core
+      - kiro_ui_tokens
+    platforms:
+      - Android (minSdk 21)
+      - iOS (12.0+)
+    key_files:
+      - apps/flutter-dev-client/lib/main.dart
+      - apps/flutter-dev-client/lib/services/dev_proxy_connection.dart
+      - apps/flutter-dev-client/lib/services/kiro_client_service.dart
+      - apps/flutter-dev-client/lib/interpreter/schema_interpreter.dart
+      - apps/flutter-dev-client/lib/interpreter/renderer_registry.dart
+
+  tsx_to_schema:
+    description: Command-line tool that parses React TSX files and converts them to normalized JSON UI schemas
+    components:
+      - Babel-based TSX parser with AST traversal
+      - JSX to schema converter
+      - Prop extraction and serialization
+      - Watch mode for continuous regeneration
+      - Schema validation and versioning
+    dependencies:
+      - "@babel/parser"
+      - "@babel/traverse"
+      - chokidar (for watch mode)
+    key_files:
+      - tools/codegen/src/tsx-parser.js
+      - tools/codegen/cli.js
+    commands:
+      - "kiro codegen tsx2schema <input.tsx> <output.json>"
+      - "kiro codegen tsx2schema --watch <input.tsx> <output.json>"
+
+  qr_dev_flow:
+    description: Session-based development workflow using QR codes for instant device connection
+    components:
+      - Session management with ephemeral tokens
+      - QR code generation for connection info
+      - WebSocket broker for real-time communication
+      - Multi-session isolation
+      - Connection health monitoring (ping/pong)
+    dependencies:
+      - express
+      - ws (WebSocket library)
+      - qrcode-terminal
+    key_files:
+      - tools/dev-proxy/src/index.ts
+      - tools/dev-proxy/src/session-manager.ts
+      - tools/dev-proxy/src/websocket-broker.ts
+    endpoints:
+      - "GET /session/new - Create new development session"
+      - "POST /send/:sessionId - Push schema to connected devices"
+      - "WebSocket /ws - Real-time bidirectional communication"
+
+  schema_to_dart:
+    description: Code generator that transforms JSON schemas into production Dart code with state management
+    components:
+      - Schema to Dart converter with ui-mapping.json
+      - Handlebars templates for multiple state adapters
+      - Clean Architecture file structure generation
+      - Support for Bloc, Riverpod, Provider, and GetX
+    dependencies:
+      - handlebars
+    key_files:
+      - tools/codegen/src/schema-to-dart.js
+      - tools/codegen/src/dart-generator.js
+      - tools/codegen/ui-mapping.json
+      - tools/codegen/templates/bloc/
+      - tools/codegen/templates/riverpod/
+      - tools/codegen/templates/provider/
+      - tools/codegen/templates/getx/
+    commands:
+      - "kiro codegen schema2dart <schema.json> <output-dir> --adapter=bloc"
+
+  create_app:
+    description: Project scaffolding tool that generates new Lumora applications with best practices
+    components:
+      - Project template structure
+      - Configuration file generation (kiro.config.json)
+      - Package initialization (package.json, pubspec.yaml)
+      - Example TSX files and Flutter app structure
+    key_files:
+      - tools/codegen/src/create-app.js
+      - tools/codegen/templates/create-app/
+    commands:
+      - "kiro create-app <app-name> --adapter=riverpod"
+
+  kiro_core:
+    description: Reusable Flutter package containing core schema interpretation and rendering logic
+    components:
+      - SchemaInterpreter class
+      - RendererRegistry for custom widgets
+      - EventBridge for UI event handling
+      - TemplateEngine for placeholder resolution
+      - DeltaDebouncer for performance
+      - IsolateParser for large schemas
+    key_files:
+      - packages/kiro_core/lib/kiro_core.dart
+      - packages/kiro_core/lib/src/schema_interpreter.dart
+      - packages/kiro_core/lib/src/renderer_registry.dart
+      - packages/kiro_core/lib/src/event_bridge.dart
+      - packages/kiro_core/lib/src/template_engine.dart
+
+  kiro_ui_tokens:
+    description: Design token system for consistent styling across platform
+    components:
+      - Color constants
+      - Typography definitions (TextStyle)
+      - Spacing constants (EdgeInsets)
+    key_files:
+      - packages/kiro_ui_tokens/lib/kiro_ui_tokens.dart
+      - packages/kiro_ui_tokens/lib/src/colors.dart
+      - packages/kiro_ui_tokens/lib/src/typography.dart
+      - packages/kiro_ui_tokens/lib/src/spacing.dart
+
+hooks:
+  create_app_hook:
+    description: Scaffolds a new Lumora application with chosen state adapter
+    trigger: manual
+    purpose: Quick project initialization with best practices
+    file: .kiro/hooks/create-app-hook.md
+
+  proxy_launch_hook:
+    description: Starts the Dev-Proxy server and creates a new development session
+    trigger: manual
+    purpose: Launch development environment with QR code for device connection
+    file: .kiro/hooks/proxy-launch-hook.md
+
+  codegen_hook:
+    description: Runs codegen tools to convert TSX to schema or generate Dart code
+    trigger: manual or file save
+    purpose: Automate schema generation and code transformation
+    file: .kiro/hooks/codegen-hook.md
+
+architecture:
+  pattern: Hub-and-spoke with Dev-Proxy as central coordinator
+  communication: WebSocket-based real-time bidirectional messaging
+  runtime_modes:
+    - fast_path: JSON schema interpretation for instant preview
+    - native_path: Dart code generation for production deployment
+  state_management:
+    - Bloc (structured, testable)
+    - Riverpod (modular, performant)
+    - Provider (simple, lightweight)
+    - GetX (minimal boilerplate)
+
+quality_benchmarks:
+  session_creation: "< 100ms"
+  schema_push_latency: "< 500ms (local network)"
+  large_schema_parsing: "< 2s (500KB payload)"
+  delta_application: "< 100ms"
+  code_generation: "< 5s (typical app)"
+  quickstart_commands: "< 5 commands"
+  app_scaffolding: "< 30s"
+
+requirements_mapping:
+  - requirement: 1
+    features: [qr_dev_flow]
+  - requirement: 2
+    features: [flutter_dev_client, qr_dev_flow]
+  - requirement: 3
+    features: [tsx_to_schema]
+  - requirement: 4
+    features: [qr_dev_flow]
+  - requirement: 5
+    features: [flutter_dev_client, kiro_core]
+  - requirement: 6
+    features: [flutter_dev_client, qr_dev_flow]
+  - requirement: 7
+    features: [flutter_dev_client, kiro_core]
+  - requirement: 8
+    features: [flutter_dev_client, kiro_core]
+  - requirement: 9
+    features: [schema_to_dart]
+  - requirement: 10
+    features: [qr_dev_flow]
+  - requirement: 11
+    features: [flutter_dev_client, kiro_core]
+  - requirement: 12
+    features: [schema_to_dart]
+  - requirement: 13
+    features: [kiro_ui_tokens, flutter_dev_client, schema_to_dart]
+  - requirement: 14
+    features: [qr_dev_flow]
+  - requirement: 15
+    features: [flutter_dev_client]
+  - requirement: 16
+    features: [create_app]
+  - requirement: 17
+    features: [flutter_dev_client, kiro_core]
+  - requirement: 18
+    features: [tsx_to_schema]
+  - requirement: 19
+    features: [flutter_dev_client]
+  - requirement: 20
+    features: [all]

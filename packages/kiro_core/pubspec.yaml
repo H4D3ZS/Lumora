@@ -1,0 +1,24 @@
+name: kiro_core
+description: Core schema interpretation and rendering engine for Lumora framework
+version: 1.0.0
+publish_to: 'none'
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  
+  # Design tokens
+  kiro_ui_tokens:
+    path: ../lumora_ui_tokens
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true

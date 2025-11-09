@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_dev_client/interpreter/schema_interpreter.dart';
+import 'package:kiro_core/kiro_core.dart';
 
 void main() {
   group('SchemaInterpreter Template Integration', () {

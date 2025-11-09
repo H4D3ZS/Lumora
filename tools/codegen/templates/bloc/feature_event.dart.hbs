@@ -1,0 +1,30 @@
+import 'package:equatable/equatable.dart';
+
+abstract class {{featureName}}Event extends Equatable {
+  const {{featureName}}Event();
+
+  @override
+  List<Object?> get props => [];
+}
+
+class Load{{featureName}} extends {{featureName}}Event {
+  const Load{{featureName}}();
+}
+
+{{#each events}}
+class {{this.name}} extends {{../featureName}}Event {
+  {{#if this.params}}
+  {{#each this.params}}
+  final {{this.type}} {{this.name}};
+  {{/each}}
+
+  const {{this.name}}({{#each this.params}}{{#if @index}}, {{/if}}this.{{this.name}}{{/each}});
+
+  @override
+  List<Object?> get props => [{{#each this.params}}{{#if @index}}, {{/if}}{{this.name}}{{/each}}];
+  {{else}}
+  const {{this.name}}();
+  {{/if}}
+}
+
+{{/each}}

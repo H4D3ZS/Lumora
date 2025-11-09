@@ -1,0 +1,57 @@
+import 'package:flutter/foundation.dart';
+
+class {{featureName}}Notifier extends ChangeNotifier {
+  {{#if stateFields}}
+  {{#each stateFields}}
+  {{this.type}} _{{this.name}} = {{this.defaultValue}};
+  {{this.type}} get {{this.name}} => _{{this.name}};
+  {{/each}}
+  {{/if}}
+
+  bool _isLoading = false;
+  bool get isLoading => _isLoading;
+
+  String? _error;
+  String? get error => _error;
+
+  Future<void> load() async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      // TODO: Implement load logic
+      {{#if stateFields}}
+      {{#each stateFields}}
+      _{{this.name}} = {{this.defaultValue}};
+      {{/each}}
+      {{/if}}
+      _isLoading = false;
+      notifyListeners();
+    } catch (e) {
+      _error = e.toString();
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  {{#each methods}}
+  Future<void> {{this.name}}({{#if this.params}}{{#each this.params}}{{#if @index}}, {{/if}}{{this.type}} {{this.name}}{{/each}}{{/if}}) async {
+    // TODO: Implement {{this.name}} logic
+    {{#if this.params}}
+    // Available parameters: {{#each this.params}}{{this.name}}{{#unless @last}}, {{/unless}}{{/each}}
+    {{/if}}
+    notifyListeners();
+  }
+
+  {{/each}}
+  {{#if stateFields}}
+  {{#each stateFields}}
+
+  void set{{capitalize this.name}}({{this.type}} value) {
+    _{{this.name}} = value;
+    notifyListeners();
+  }
+  {{/each}}
+  {{/if}}
+}

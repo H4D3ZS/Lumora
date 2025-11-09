@@ -1,0 +1,70 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+{{#if stateFields}}
+class {{featureName}}State {
+  {{#each stateFields}}
+  final {{this.type}} {{this.name}};
+  {{/each}}
+
+  const {{featureName}}State({
+    {{#each stateFields}}
+    {{#if @index}}, {{/if}}required this.{{this.name}}
+    {{/each}}
+  });
+
+  {{featureName}}State copyWith({
+    {{#each stateFields}}
+    {{#if @index}}, {{/if}}{{this.type}}? {{this.name}}
+    {{/each}}
+  }) {
+    return {{featureName}}State(
+      {{#each stateFields}}
+      {{#if @index}}, {{/if}}{{this.name}}: {{this.name}} ?? this.{{this.name}}
+      {{/each}}
+    );
+  }
+}
+{{/if}}
+
+class {{featureName}}Notifier extends StateNotifier<{{#if stateFields}}{{featureName}}State{{else}}AsyncValue<void>{{/if}}> {
+  {{featureName}}Notifier() : super(
+    {{#if stateFields}}
+    const {{featureName}}State(
+      {{#each stateFields}}
+      {{#if @index}}, {{/if}}{{this.name}}: {{this.defaultValue}}
+      {{/each}}
+    )
+    {{else}}
+    const AsyncValue.loading()
+    {{/if}}
+  );
+
+  Future<void> load() async {
+    {{#if stateFields}}
+    // TODO: Implement load logic
+    {{else}}
+    state = const AsyncValue.loading();
+    try {
+      // TODO: Implement load logic
+      state = const AsyncValue.data(null);
+    } catch (e, stack) {
+      state = AsyncValue.error(e, stack);
+    }
+    {{/if}}
+  }
+
+  {{#each methods}}
+  Future<void> {{this.name}}({{#if this.params}}{{#each this.params}}{{#if @index}}, {{/if}}{{this.type}} {{this.name}}{{/each}}{{/if}}) async {
+    // TODO: Implement {{this.name}} logic
+    {{#if ../stateFields}}
+    // Update state using copyWith
+    // state = state.copyWith(field: newValue);
+    {{/if}}
+  }
+
+  {{/each}}
+}
+
+final {{featureName}}Provider = StateNotifierProvider<{{featureName}}Notifier, {{#if stateFields}}{{featureName}}State{{else}}AsyncValue<void>{{/if}}>((ref) {
+  return {{featureName}}Notifier();
+});

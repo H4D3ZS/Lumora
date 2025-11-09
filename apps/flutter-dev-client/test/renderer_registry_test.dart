@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import '../lib/interpreter/renderer_registry.dart';
-import '../lib/interpreter/schema_interpreter.dart';
+import 'package:kiro_core/kiro_core.dart';
 
 void main() {
   group('RendererRegistry', () {

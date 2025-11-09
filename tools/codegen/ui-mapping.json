@@ -1,0 +1,118 @@
+{
+  "View": {
+    "dart": "Container",
+    "props": {
+      "padding": {
+        "transform": "EdgeInsets.all",
+        "type": "number"
+      },
+      "margin": {
+        "transform": "EdgeInsets.all",
+        "type": "number"
+      },
+      "backgroundColor": {
+        "transform": "Color",
+        "type": "color"
+      },
+      "width": {
+        "transform": "width",
+        "type": "number"
+      },
+      "height": {
+        "transform": "height",
+        "type": "number"
+      }
+    }
+  },
+  "Text": {
+    "dart": "Text",
+    "props": {
+      "text": {
+        "transform": "data",
+        "type": "string"
+      },
+      "style": {
+        "transform": "TextStyle",
+        "type": "object",
+        "nested": {
+          "fontSize": {
+            "transform": "fontSize",
+            "type": "number"
+          },
+          "fontWeight": {
+            "transform": "fontWeight",
+            "type": "fontWeight"
+          },
+          "color": {
+            "transform": "color",
+            "type": "color"
+          }
+        }
+      },
+      "textAlign": {
+        "transform": "textAlign",
+        "type": "textAlign"
+      }
+    }
+  },
+  "Button": {
+    "dart": "ElevatedButton",
+    "props": {
+      "title": {
+        "transform": "child",
+        "type": "widget"
+      },
+      "onTap": {
+        "transform": "onPressed",
+        "type": "function"
+      }
+    }
+  },
+  "List": {
+    "dart": "ListView",
+    "props": {
+      "children": {
+        "transform": "children",
+        "type": "widgetList"
+      },
+      "scrollDirection": {
+        "transform": "scrollDirection",
+        "type": "axis"
+      }
+    }
+  },
+  "Image": {
+    "dart": "Image.network",
+    "props": {
+      "src": {
+        "transform": "url",
+        "type": "string"
+      },
+      "width": {
+        "transform": "width",
+        "type": "number"
+      },
+      "height": {
+        "transform": "height",
+        "type": "number"
+      }
+    }
+  },
+  "Input": {
+    "dart": "TextField",
+    "props": {
+      "placeholder": {
+        "transform": "decoration.hintText",
+        "type": "string"
+      },
+      "value": {
+        "transform": "controller.text",
+        "type": "string"
+      },
+      "onChange": {
+        "transform": "onChanged",
+        "type": "function"
+      }
+    }
+  }
+}

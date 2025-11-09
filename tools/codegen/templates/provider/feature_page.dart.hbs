@@ -1,0 +1,44 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:kiro_ui_tokens/kiro_ui_tokens.dart';
+import '../notifiers/{{featureNameLower}}_notifier.dart';
+
+class {{featureName}}Page extends StatelessWidget {
+  const {{featureName}}Page({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return ChangeNotifierProvider(
+      create: (_) => {{featureName}}Notifier()..load(),
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('{{featureTitle}}'),
+        ),
+        body: Consumer<{{featureName}}Notifier>(
+          builder: (context, notifier, child) {
+            if (notifier.isLoading) {
+              return const Center(
+                child: CircularProgressIndicator(),
+              );
+            }
+
+            if (notifier.error != null) {
+              return Center(
+                child: Text(
+                  'Error: ${notifier.error}',
+                  style: const TextStyle(color: Colors.red),
+                ),
+              );
+            }
+
+            return _buildContent(context, notifier);
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildContent(BuildContext context, {{featureName}}Notifier notifier) {
+    return {{{widgetCode}}};
+  }
+}

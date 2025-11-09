@@ -27,6 +27,12 @@ export class SessionManager {
 
   /**
    * Generate an ephemeral token for session authentication (32 bytes)
+   * 
+   * Security measures:
+   * - Uses cryptographically secure random bytes (crypto.randomBytes)
+   * - 32 bytes (256 bits) provides strong security
+   * - Tokens are ephemeral and expire with session lifetime
+   * - Tokens should never be logged or exposed in URLs
    */
   private generateToken(): string {
     return crypto.randomBytes(32).toString('hex');
@@ -36,6 +42,8 @@ export class SessionManager {
    * Create a new session
    */
   createSession(): Session {
+    const startTime = Date.now();
+    
     const sessionId = this.generateSessionId();
     const token = this.generateToken();
     const createdAt = Date.now();
@@ -50,6 +58,11 @@ export class SessionManager {
     };
 
     this.sessions.set(sessionId, session);
+    
+    // Log session creation time
+    const duration = Date.now() - startTime;
+    console.log(`[Performance] Session created in ${duration}ms`);
+    
     return session;
   }
 
@@ -128,6 +141,7 @@ export class SessionManager {
    * Remove expired sessions and close their connections
    */
   cleanupExpiredSessions(): number {
+    const startTime = Date.now();
     const now = Date.now();
     let cleanedCount = 0;
 
@@ -149,6 +163,10 @@ export class SessionManager {
     if (cleanedCount > 0) {
       console.log(`[Cleanup] Removed ${cleanedCount} expired session(s)`);
     }
+
+    // Log cleanup operation duration
+    const duration = Date.now() - startTime;
+    console.log(`[Performance] Cleanup completed in ${duration}ms (${cleanedCount} sessions removed)`);
 
     return cleanedCount;
   }
@@ -184,6 +202,27 @@ export class SessionManager {
    */
   getActiveSessionCount(): number {
     return this.sessions.size;
+  }
+
+  /**
+   * Get memory usage statistics for session storage
+   * Returns approximate memory usage in bytes
+   */
+  getMemoryUsage(): { sessionCount: number; clientCount: number; estimatedBytes: number } {
+    let totalClients = 0;
+    
+    for (const session of this.sessions.values()) {
+      totalClients += session.connectedClients.length;
+    }
+
+    // Rough estimate: each session ~500 bytes, each client ~200 bytes
+    const estimatedBytes = (this.sessions.size * 500) + (totalClients * 200);
+
+    return {
+      sessionCount: this.sessions.size,
+      clientCount: totalClients,
+      estimatedBytes
+    };
   }
 
   /**

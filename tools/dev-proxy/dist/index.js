@@ -59,10 +59,9 @@ app.post('/session/new', (req, res) => {
             sessionId: session.sessionId,
             token: session.token
         });
-        // Print QR code to console
+        // Print QR code to console (token is not logged for security)
         console.log('\n=== New Session Created ===');
         console.log(`Session ID: ${session.sessionId}`);
-        console.log(`Token: ${session.token}`);
         console.log(`Expires: ${new Date(session.expiresAt).toISOString()}`);
         console.log('\nScan this QR code with Flutter-Dev-Client:\n');
         qrcode_terminal_1.default.generate(qrPayload, { small: true });

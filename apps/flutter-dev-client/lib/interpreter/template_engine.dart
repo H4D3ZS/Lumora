@@ -73,6 +73,10 @@ class RenderContext {
 /// 
 /// Detects strings containing {{ and }} delimiters and replaces them
 /// with values from the render context.
+/// 
+/// Security: This implementation is safe because it only performs variable
+/// lookup from the context. No eval() or dynamic code execution is used.
+/// Variables are resolved by simple map lookup and converted to strings.
 class TemplateEngine {
   static final RegExp _placeholderPattern = RegExp(r'\{\{([^}]+)\}\}');
 

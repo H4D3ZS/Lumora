@@ -3,10 +3,11 @@ import 'dart:convert';
 import 'dart:developer' as developer;
 
 import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:kiro_core/kiro_core.dart';
 
 /// Manages WebSocket connection to Dev-Proxy server
 /// Handles connection lifecycle, reconnection, and message streaming
-class DevProxyConnection {
+class DevProxyConnection implements MessageSender {
   final String wsUrl;
   final String sessionId;
   final String token;

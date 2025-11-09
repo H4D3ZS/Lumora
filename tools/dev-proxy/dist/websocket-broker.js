@@ -13,6 +13,14 @@ const JOIN_TIMEOUT_MS = 30 * 1000; // 30 seconds
 const PING_INTERVAL_MS = 30 * 1000; // 30 seconds
 const PONG_TIMEOUT_MS = 10 * 1000; // 10 seconds
 /**
+ * Security configuration
+ */
+const MAX_MESSAGE_SIZE = 10 * 1024 * 1024; // 10MB
+const RATE_LIMIT_WINDOW_MS = 1000; // 1 second
+const RATE_LIMIT_MAX_MESSAGES = 100; // 100 messages per second per client
+const MAX_DEVICES_PER_SESSION = 10;
+const MAX_EDITORS_PER_SESSION = 5;
+/**
  * WebSocketBroker handles WebSocket connections and message routing
  */
 class WebSocketBroker {
@@ -22,19 +30,31 @@ class WebSocketBroker {
         // Initialize WebSocket server
         this.wss = new ws_1.WebSocketServer({
             server,
-            path: '/ws'
+            path: '/ws',
+            maxPayload: MAX_MESSAGE_SIZE
         });
-        this.wss.on('connection', this.handleConnection.bind(this));
+        this.wss.on('connection', (ws, req) => {
+            this.handleConnection(ws, req);
+        });
         console.log('[WebSocketBroker] WebSocket server initialized on /ws');
     }
     /**
      * Handle new WebSocket connection
      */
-    handleConnection(ws) {
+    handleConnection(ws, req) {
         const clientId = crypto_1.default.randomBytes(8).toString('hex');
         ws.clientId = clientId;
         ws.isAlive = true;
         ws.lastPong = Date.now();
+        ws.messageCount = 0;
+        ws.rateLimitResetAt = Date.now() + RATE_LIMIT_WINDOW_MS;
+        // Origin validation for CSRF protection
+        const origin = req.headers.origin;
+        if (origin && !this.isAllowedOrigin(origin)) {
+            console.warn(`[WebSocket] Rejected connection from unauthorized origin: ${origin}`);
+            ws.close(1008, 'Unauthorized origin');
+            return;
+        }
         console.log(`[WebSocket] New connection: ${clientId}`);
         // Set join timeout - client must send join message within 30 seconds
         ws.joinTimeout = setTimeout(() => {
@@ -62,10 +82,56 @@ class WebSocketBroker {
         });
     }
     /**
+     * Check if origin is allowed (for CSRF protection)
+     * In development, we allow localhost and local network IPs
+     */
+    isAllowedOrigin(origin) {
+        // Allow localhost and local network origins
+        const allowedPatterns = [
+            /^http:\/\/localhost(:\d+)?$/,
+            /^http:\/\/127\.0\.0\.1(:\d+)?$/,
+            /^http:\/\/192\.168\.\d+\.\d+(:\d+)?$/,
+            /^http:\/\/10\.\d+\.\d+\.\d+(:\d+)?$/,
+            /^http:\/\/172\.(1[6-9]|2[0-9]|3[0-1])\.\d+\.\d+(:\d+)?$/,
+        ];
+        return allowedPatterns.some(pattern => pattern.test(origin));
+    }
+    /**
+     * Check rate limit for a client
+     * Returns true if within limit, false if exceeded
+     */
+    checkRateLimit(ws) {
+        const now = Date.now();
+        // Reset counter if window expired
+        if (now > ws.rateLimitResetAt) {
+            ws.messageCount = 1;
+            ws.rateLimitResetAt = now + RATE_LIMIT_WINDOW_MS;
+            return true;
+        }
+        // Check if limit exceeded
+        if (ws.messageCount >= RATE_LIMIT_MAX_MESSAGES) {
+            return false;
+        }
+        ws.messageCount++;
+        return true;
+    }
+    /**
      * Handle incoming WebSocket message
      */
     handleMessage(ws, data) {
         try {
+            // Check message size (additional check beyond maxPayload)
+            if (data.length > MAX_MESSAGE_SIZE) {
+                console.warn(`[WebSocket] Message too large from ${ws.clientId}: ${data.length} bytes`);
+                ws.close(1009, 'Message too large');
+                return;
+            }
+            // Check rate limit
+            if (!this.checkRateLimit(ws)) {
+                console.warn(`[WebSocket] Rate limit exceeded for client ${ws.clientId}`);
+                ws.close(1008, 'Rate limit exceeded');
+                return;
+            }
             const message = JSON.parse(data.toString());
             // Handle join message
             if (message.type === 'join') {
@@ -89,6 +155,13 @@ class WebSocketBroker {
                 ws.close(4001, 'Not authenticated - send join message first');
                 return;
             }
+            // Validate session still exists and is not expired
+            const validation = this.sessionManager.validateSession(ws.sessionId);
+            if (!validation.valid) {
+                console.warn(`[WebSocket] Session validation failed for ${ws.clientId}: ${validation.error}`);
+                ws.close(4001, `Session ${validation.error === 'SESSION_EXPIRED' ? 'expired' : 'not found'}`);
+                return;
+            }
             // Handle event messages - broadcast to editor clients only
             if (message.type === 'event') {
                 this.handleEvent(ws, message);
@@ -99,6 +172,12 @@ class WebSocketBroker {
         }
         catch (error) {
             console.error(`[WebSocket] Failed to parse message from ${ws.clientId}:`, error);
+            // Track parse errors as suspicious activity
+            if (!ws.clientId) {
+                ws.close(1003, 'Invalid message format');
+                return;
+            }
+            // Close connection on repeated parse errors (suspicious activity)
             ws.close(1003, 'Invalid message format');
         }
     }
@@ -131,6 +210,20 @@ class WebSocketBroker {
         if (clientType !== 'device' && clientType !== 'editor') {
             console.warn(`[WebSocket] Invalid client type for ${ws.clientId}: ${clientType}`);
             ws.close(4001, 'Authentication failed: Invalid client type');
+            return;
+        }
+        // Check connection limits per session
+        const currentClients = session.connectedClients;
+        const deviceCount = currentClients.filter(c => c.clientType === 'device').length;
+        const editorCount = currentClients.filter(c => c.clientType === 'editor').length;
+        if (clientType === 'device' && deviceCount >= MAX_DEVICES_PER_SESSION) {
+            console.warn(`[WebSocket] Device limit reached for session ${sessionId}: ${deviceCount}/${MAX_DEVICES_PER_SESSION}`);
+            ws.close(1008, `Maximum ${MAX_DEVICES_PER_SESSION} devices per session`);
+            return;
+        }
+        if (clientType === 'editor' && editorCount >= MAX_EDITORS_PER_SESSION) {
+            console.warn(`[WebSocket] Editor limit reached for session ${sessionId}: ${editorCount}/${MAX_EDITORS_PER_SESSION}`);
+            ws.close(1008, `Maximum ${MAX_EDITORS_PER_SESSION} editors per session`);
             return;
         }
         // Add client to session

@@ -24,6 +24,14 @@ dependencies:
   
   # UI components
   cupertino_icons: ^1.0.6
+  
+  # Design tokens
+  kiro_ui_tokens:
+    path: ../../packages/lumora_ui_tokens
+  
+  # Core schema interpretation
+  kiro_core:
+    path: ../../packages/kiro_core
 
 dev_dependencies:
   flutter_test:

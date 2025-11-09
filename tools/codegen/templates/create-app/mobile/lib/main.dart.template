@@ -1,0 +1,84 @@
+import 'package:flutter/material.dart';
+{{#if_bloc}}
+import 'package:flutter_bloc/flutter_bloc.dart';
+{{/if_bloc}}
+{{#if_riverpod}}
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+{{/if_riverpod}}
+{{#if_provider}}
+import 'package:provider/provider.dart';
+{{/if_provider}}
+{{#if_getx}}
+import 'package:get/get.dart';
+{{/if_getx}}
+
+void main() {
+  {{#if_riverpod}}
+  runApp(const ProviderScope(child: MyApp()));
+  {{else}}
+  runApp(const MyApp());
+  {{/if_riverpod}}
+}
+
+class MyApp extends {{#if_riverpod}}ConsumerWidget{{else}}StatelessWidget{{/if_riverpod}} {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context{{#if_riverpod}}, WidgetRef ref{{/if_riverpod}}) {
+    {{#if_getx}}
+    return GetMaterialApp(
+      title: '{{appName}}',
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+        useMaterial3: true,
+      ),
+      home: const HomePage(),
+    );
+    {{else}}
+    return MaterialApp(
+      title: '{{appName}}',
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+        useMaterial3: true,
+      ),
+      home: const HomePage(),
+    );
+    {{/if_getx}}
+  }
+}
+
+class HomePage extends StatelessWidget {
+  const HomePage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('{{appName}}'),
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text(
+              'Welcome to Lumora',
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Your app is ready!',
+              style: TextStyle(fontSize: 16),
+            ),
+            const SizedBox(height: 32),
+            ElevatedButton(
+              onPressed: () {
+                // Add your logic here
+              },
+              child: const Text('Get Started'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

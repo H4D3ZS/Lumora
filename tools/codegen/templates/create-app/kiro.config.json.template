@@ -1,0 +1,45 @@
+{
+  "adapter": "{{adapter}}",
+  "mappings": {
+    "customComponents": {}
+  },
+  "designTokens": {
+    "colors": {
+      "primary": "#2196F3",
+      "secondary": "#FFC107",
+      "background": "#FFFFFF",
+      "text": "#000000",
+      "textSecondary": "#666666"
+    },
+    "typography": {
+      "heading1": {
+        "fontSize": 32,
+        "fontWeight": "bold"
+      },
+      "heading2": {
+        "fontSize": 24,
+        "fontWeight": "bold"
+      },
+      "body": {
+        "fontSize": 16,
+        "fontWeight": "normal"
+      },
+      "caption": {
+        "fontSize": 12,
+        "fontWeight": "normal"
+      }
+    },
+    "spacing": {
+      "xs": 4,
+      "sm": 8,
+      "md": 16,
+      "lg": 24,
+      "xl": 32
+    }
+  },
+  "codegen": {
+    "outputDir": "mobile/lib/features",
+    "cleanArchitecture": true,
+    "generateTests": false
+  }
+}

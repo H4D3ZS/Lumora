@@ -12,6 +12,12 @@ export declare class SessionManager {
     private generateSessionId;
     /**
      * Generate an ephemeral token for session authentication (32 bytes)
+     *
+     * Security measures:
+     * - Uses cryptographically secure random bytes (crypto.randomBytes)
+     * - 32 bytes (256 bits) provides strong security
+     * - Tokens are ephemeral and expire with session lifetime
+     * - Tokens should never be logged or exposed in URLs
      */
     private generateToken;
     /**

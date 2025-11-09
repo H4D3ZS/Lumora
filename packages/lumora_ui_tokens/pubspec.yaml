@@ -1,5 +1,5 @@
-name: lumora_ui_tokens
-description: Design tokens package for Lumora with colors, typography, and spacing constants
+name: kiro_ui_tokens
+description: Design tokens package for Kiro/Lumora with colors, typography, and spacing constants
 version: 1.0.0
 publish_to: 'none'
 
