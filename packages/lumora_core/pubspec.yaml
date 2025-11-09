@@ -1,0 +1,21 @@
+name: lumora_core
+description: Core schema interpretation and rendering engine for Lumora
+version: 1.0.0
+publish_to: 'none'
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  
+  web_socket_channel: ^2.4.0
+  json_annotation: ^4.8.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  
+  flutter_lints: ^3.0.0
+  mockito: ^5.4.4

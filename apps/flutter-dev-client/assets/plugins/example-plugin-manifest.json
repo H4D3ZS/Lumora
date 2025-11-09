@@ -1,0 +1,22 @@
+{
+  "name": "kiro-plugin-example",
+  "version": "1.0.0",
+  "compatibility": "^1.0.0",
+  "renderers": [
+    {
+      "type": "Map",
+      "class": "MapRenderer",
+      "dependencies": ["google_maps_flutter"]
+    },
+    {
+      "type": "Chart",
+      "class": "ChartRenderer",
+      "dependencies": ["fl_chart"]
+    },
+    {
+      "type": "CustomCard",
+      "class": "CustomCardRenderer",
+      "dependencies": []
+    }
+  ]
+}

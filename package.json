@@ -1,0 +1,29 @@
+{
+  "name": "lumora",
+  "version": "1.0.0",
+  "description": "Mobile-first Flutter development framework with React/TSX authoring and instant preview",
+  "private": true,
+  "workspaces": [
+    "tools/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev-proxy": "cd tools/dev-proxy && npm start",
+    "codegen": "cd tools/codegen && npm start",
+    "install-all": "npm install && cd apps/flutter-dev-client && flutter pub get"
+  },
+  "keywords": [
+    "flutter",
+    "react",
+    "tsx",
+    "mobile-first",
+    "development",
+    "live-preview"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
+  }
+}
