@@ -19,7 +19,8 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.applyTrailingComma = exports.formatCodeBlock = exports.getIndentString = exports.formatDartCode = exports.formatTypeScriptCode = exports.convertNamingConvention = exports.generateIdentifierName = exports.generateClassName = exports.generateFileName = exports.applyComponentNaming = exports.applyIdentifierNaming = exports.applyFileNaming = exports.reloadConfig = exports.initConfigWithMappings = exports.loadAndApplyConfig = exports.initModeConfig = exports.loadModeConfig = exports.DevelopmentMode = exports.ModeConfig = exports.ConfigUpdater = exports.AssetPathConverter = exports.AssetManager = exports.ConflictResolver = exports.ResolutionOption = exports.ConflictResolverUI = exports.NotificationChannel = exports.ConflictNotifier = exports.BidirectionalSync = exports.SyncStatus = exports.SyncStatusTracker = exports.ConflictDetector = exports.TestSyncHandler = exports.SyncEngine = exports.ChangePriority = exports.ChangeQueue = exports.FileWatcher = exports.createNode = exports.createIR = exports.resetRegistry = exports.getRegistry = exports.WidgetMappingRegistry = exports.getMigrator = exports.IRMigrator = exports.IRStorage = exports.getValidator = exports.IRValidator = exports.getInterfaceConverter = exports.InterfaceConverter = exports.getTypeMapper = exports.TypeMapper = void 0;
-exports.MockConverter = exports.TestConverter = exports.extractInlineComments = exports.dartdocToJSDoc = exports.jsdocToDartdoc = exports.parseDartdoc = exports.parseJSDoc = exports.BackupStrategy = exports.getFileBackupHandler = exports.FileBackupHandler = exports.ConversionIssueSeverity = exports.getPartialConversionHandler = exports.PartialConversionHandler = exports.FallbackStrategy = exports.getFallbackHandler = exports.FallbackHandler = exports.ConversionFailureReason = exports.getConversionErrorHandler = exports.ConversionErrorHandler = exports.ErrorCategory = exports.ErrorSeverity = exports.getErrorHandler = exports.ErrorHandler = exports.CLIProgressDisplay = exports.resetProgressTracker = exports.getProgressTracker = exports.ProgressTracker = exports.resetParallelProcessor = exports.getParallelProcessor = exports.ParallelProcessor = exports.resetConversionCache = exports.getConversionCache = exports.ConversionCache = exports.createModeAwareSync = exports.ModeAwareSync = exports.createModeAwareWatcher = exports.ModeAwareWatcher = exports.formatImports = void 0;
+exports.deserializeMessage = exports.serializeMessage = exports.ProtocolErrorCode = exports.isAckMessage = exports.isPongMessage = exports.isPingMessage = exports.isErrorMessage = exports.isReloadMessage = exports.isUpdateMessage = exports.isConnectedMessage = exports.isConnectMessage = exports.PROTOCOL_VERSION = exports.MockConverter = exports.TestConverter = exports.extractInlineComments = exports.dartdocToJSDoc = exports.jsdocToDartdoc = exports.parseDartdoc = exports.parseJSDoc = exports.BackupStrategy = exports.getFileBackupHandler = exports.FileBackupHandler = exports.ConversionIssueSeverity = exports.getPartialConversionHandler = exports.PartialConversionHandler = exports.FallbackStrategy = exports.getFallbackHandler = exports.FallbackHandler = exports.ConversionFailureReason = exports.getConversionErrorHandler = exports.ConversionErrorHandler = exports.ErrorCategory = exports.ErrorSeverity = exports.getErrorHandler = exports.ErrorHandler = exports.CLIProgressDisplay = exports.resetProgressTracker = exports.getProgressTracker = exports.ProgressTracker = exports.resetParallelProcessor = exports.getParallelProcessor = exports.ParallelProcessor = exports.resetConversionCache = exports.getConversionCache = exports.ConversionCache = exports.createModeAwareSync = exports.ModeAwareSync = exports.createModeAwareWatcher = exports.ModeAwareWatcher = exports.formatImports = void 0;
+exports.resetReactParser = exports.getReactParser = exports.ReactParser = exports.resetBundleValidator = exports.getBundleValidator = exports.BundleValidator = exports.resetManifestGenerator = exports.getManifestGenerator = exports.ManifestGenerator = exports.resetOptimizer = exports.getOptimizer = exports.BundleOptimizer = exports.resetBundler = exports.getBundler = exports.SchemaBundler = exports.validateChecksum = exports.validateSessionId = exports.validateProtocolVersion = exports.createAckMessage = exports.createPongMessage = exports.createPingMessage = exports.createErrorMessage = exports.createReloadMessage = exports.createUpdateMessage = exports.createConnectedMessage = exports.createConnectMessage = exports.validateMessage = void 0;
 // Types
 __exportStar(require("./types/ir-types"), exports);
 var type_mapper_1 = require("./types/type-mapper");
@@ -164,3 +165,48 @@ var test_converter_1 = require("./testing/test-converter");
 Object.defineProperty(exports, "TestConverter", { enumerable: true, get: function () { return test_converter_1.TestConverter; } });
 var mock_converter_1 = require("./testing/mock-converter");
 Object.defineProperty(exports, "MockConverter", { enumerable: true, get: function () { return mock_converter_1.MockConverter; } });
+// Hot Reload Protocol
+var protocol_1 = require("./protocol");
+Object.defineProperty(exports, "PROTOCOL_VERSION", { enumerable: true, get: function () { return protocol_1.PROTOCOL_VERSION; } });
+Object.defineProperty(exports, "isConnectMessage", { enumerable: true, get: function () { return protocol_1.isConnectMessage; } });
+Object.defineProperty(exports, "isConnectedMessage", { enumerable: true, get: function () { return protocol_1.isConnectedMessage; } });
+Object.defineProperty(exports, "isUpdateMessage", { enumerable: true, get: function () { return protocol_1.isUpdateMessage; } });
+Object.defineProperty(exports, "isReloadMessage", { enumerable: true, get: function () { return protocol_1.isReloadMessage; } });
+Object.defineProperty(exports, "isErrorMessage", { enumerable: true, get: function () { return protocol_1.isErrorMessage; } });
+Object.defineProperty(exports, "isPingMessage", { enumerable: true, get: function () { return protocol_1.isPingMessage; } });
+Object.defineProperty(exports, "isPongMessage", { enumerable: true, get: function () { return protocol_1.isPongMessage; } });
+Object.defineProperty(exports, "isAckMessage", { enumerable: true, get: function () { return protocol_1.isAckMessage; } });
+Object.defineProperty(exports, "ProtocolErrorCode", { enumerable: true, get: function () { return protocol_1.ProtocolErrorCode; } });
+Object.defineProperty(exports, "serializeMessage", { enumerable: true, get: function () { return protocol_1.serializeMessage; } });
+Object.defineProperty(exports, "deserializeMessage", { enumerable: true, get: function () { return protocol_1.deserializeMessage; } });
+Object.defineProperty(exports, "validateMessage", { enumerable: true, get: function () { return protocol_1.validateMessage; } });
+Object.defineProperty(exports, "createConnectMessage", { enumerable: true, get: function () { return protocol_1.createConnectMessage; } });
+Object.defineProperty(exports, "createConnectedMessage", { enumerable: true, get: function () { return protocol_1.createConnectedMessage; } });
+Object.defineProperty(exports, "createUpdateMessage", { enumerable: true, get: function () { return protocol_1.createUpdateMessage; } });
+Object.defineProperty(exports, "createReloadMessage", { enumerable: true, get: function () { return protocol_1.createReloadMessage; } });
+Object.defineProperty(exports, "createErrorMessage", { enumerable: true, get: function () { return protocol_1.createErrorMessage; } });
+Object.defineProperty(exports, "createPingMessage", { enumerable: true, get: function () { return protocol_1.createPingMessage; } });
+Object.defineProperty(exports, "createPongMessage", { enumerable: true, get: function () { return protocol_1.createPongMessage; } });
+Object.defineProperty(exports, "createAckMessage", { enumerable: true, get: function () { return protocol_1.createAckMessage; } });
+Object.defineProperty(exports, "validateProtocolVersion", { enumerable: true, get: function () { return protocol_1.validateProtocolVersion; } });
+Object.defineProperty(exports, "validateSessionId", { enumerable: true, get: function () { return protocol_1.validateSessionId; } });
+Object.defineProperty(exports, "validateChecksum", { enumerable: true, get: function () { return protocol_1.validateChecksum; } });
+// Bundler
+var bundler_1 = require("./bundler");
+Object.defineProperty(exports, "SchemaBundler", { enumerable: true, get: function () { return bundler_1.SchemaBundler; } });
+Object.defineProperty(exports, "getBundler", { enumerable: true, get: function () { return bundler_1.getBundler; } });
+Object.defineProperty(exports, "resetBundler", { enumerable: true, get: function () { return bundler_1.resetBundler; } });
+Object.defineProperty(exports, "BundleOptimizer", { enumerable: true, get: function () { return bundler_1.BundleOptimizer; } });
+Object.defineProperty(exports, "getOptimizer", { enumerable: true, get: function () { return bundler_1.getOptimizer; } });
+Object.defineProperty(exports, "resetOptimizer", { enumerable: true, get: function () { return bundler_1.resetOptimizer; } });
+Object.defineProperty(exports, "ManifestGenerator", { enumerable: true, get: function () { return bundler_1.ManifestGenerator; } });
+Object.defineProperty(exports, "getManifestGenerator", { enumerable: true, get: function () { return bundler_1.getManifestGenerator; } });
+Object.defineProperty(exports, "resetManifestGenerator", { enumerable: true, get: function () { return bundler_1.resetManifestGenerator; } });
+Object.defineProperty(exports, "BundleValidator", { enumerable: true, get: function () { return bundler_1.BundleValidator; } });
+Object.defineProperty(exports, "getBundleValidator", { enumerable: true, get: function () { return bundler_1.getBundleValidator; } });
+Object.defineProperty(exports, "resetBundleValidator", { enumerable: true, get: function () { return bundler_1.resetBundleValidator; } });
+// Parsers
+var parsers_1 = require("./parsers");
+Object.defineProperty(exports, "ReactParser", { enumerable: true, get: function () { return parsers_1.ReactParser; } });
+Object.defineProperty(exports, "getReactParser", { enumerable: true, get: function () { return parsers_1.getReactParser; } });
+Object.defineProperty(exports, "resetReactParser", { enumerable: true, get: function () { return parsers_1.resetReactParser; } });

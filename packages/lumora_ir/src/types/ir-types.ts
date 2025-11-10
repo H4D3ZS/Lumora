@@ -17,6 +17,20 @@ export interface IRMetadata {
   generatedAt: number;
   author?: string;
   irVersion?: string;
+  customWidgets?: CustomWidgetMetadata[];
+}
+
+export interface CustomWidgetMetadata {
+  name: string;
+  type: 'StatelessWidget' | 'StatefulWidget' | 'Component';
+  properties: CustomWidgetProperty[];
+}
+
+export interface CustomWidgetProperty {
+  name: string;
+  type: string;
+  required: boolean;
+  defaultValue?: string;
 }
 
 export interface LumoraNode {
@@ -26,6 +40,7 @@ export interface LumoraNode {
   children: LumoraNode[];
   state?: StateDefinition;
   events?: EventDefinition[];
+  lifecycle?: LifecycleDefinition[];
   metadata: NodeMetadata;
 }
 
@@ -56,6 +71,12 @@ export interface Parameter {
   name: string;
   type: string;
   optional?: boolean;
+}
+
+export interface LifecycleDefinition {
+  type: 'mount' | 'unmount' | 'update' | 'effect';
+  handler: string;
+  dependencies?: string[];
 }
 
 export interface ThemeDefinition {

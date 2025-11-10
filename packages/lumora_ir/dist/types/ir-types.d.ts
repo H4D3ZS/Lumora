@@ -23,6 +23,7 @@ export interface LumoraNode {
     children: LumoraNode[];
     state?: StateDefinition;
     events?: EventDefinition[];
+    lifecycle?: LifecycleDefinition[];
     metadata: NodeMetadata;
 }
 export interface NodeMetadata {
@@ -48,6 +49,11 @@ export interface Parameter {
     name: string;
     type: string;
     optional?: boolean;
+}
+export interface LifecycleDefinition {
+    type: 'mount' | 'unmount' | 'update' | 'effect';
+    handler: string;
+    dependencies?: string[];
 }
 export interface ThemeDefinition {
     colors?: Record<string, any>;
