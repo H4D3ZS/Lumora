@@ -1,0 +1,220 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://lumora.dev/schemas/ir/v1.0.0",
+  "title": "Lumora IR Schema",
+  "description": "Framework-agnostic intermediate representation for UI components",
+  "type": "object",
+  "required": ["version", "metadata", "nodes"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Semantic version of the IR schema"
+    },
+    "metadata": {
+      "type": "object",
+      "required": ["sourceFramework", "sourceFile", "generatedAt"],
+      "properties": {
+        "sourceFramework": {
+          "type": "string",
+          "enum": ["react", "flutter"],
+          "description": "Framework that generated this IR"
+        },
+        "sourceFile": {
+          "type": "string",
+          "description": "Path to the source file"
+        },
+        "generatedAt": {
+          "type": "number",
+          "description": "Unix timestamp when IR was generated"
+        },
+        "author": {
+          "type": "string",
+          "description": "Optional author information"
+        },
+        "irVersion": {
+          "type": "string",
+          "description": "Version of the IR format"
+        }
+      }
+    },
+    "nodes": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/LumoraNode"
+      },
+      "description": "Root nodes of the component tree"
+    },
+    "theme": {
+      "$ref": "#/definitions/ThemeDefinition",
+      "description": "Optional theme configuration"
+    },
+    "navigation": {
+      "$ref": "#/definitions/NavigationDefinition",
+      "description": "Optional navigation configuration"
+    }
+  },
+  "definitions": {
+    "LumoraNode": {
+      "type": "object",
+      "required": ["id", "type", "props", "children", "metadata"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for this node"
+        },
+        "type": {
+          "type": "string",
+          "description": "Widget/component type (e.g., Container, Text, Button)"
+        },
+        "props": {
+          "type": "object",
+          "description": "Properties/attributes for this node"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/LumoraNode"
+          },
+          "description": "Child nodes"
+        },
+        "state": {
+          "$ref": "#/definitions/StateDefinition",
+          "description": "Optional state definition"
+        },
+        "events": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/EventDefinition"
+          },
+          "description": "Event handlers"
+        },
+        "metadata": {
+          "type": "object",
+          "required": ["lineNumber"],
+          "properties": {
+            "lineNumber": {
+              "type": "number",
+              "description": "Line number in source file"
+            },
+            "documentation": {
+              "type": "string",
+              "description": "Documentation comments"
+            }
+          }
+        }
+      }
+    },
+    "StateDefinition": {
+      "type": "object",
+      "required": ["type", "variables"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["local", "global", "async"],
+          "description": "Type of state management"
+        },
+        "variables": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/StateVariable"
+          }
+        }
+      }
+    },
+    "StateVariable": {
+      "type": "object",
+      "required": ["name", "type", "initialValue", "mutable"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Variable name"
+        },
+        "type": {
+          "type": "string",
+          "description": "Type annotation"
+        },
+        "initialValue": {
+          "description": "Initial value (any type)"
+        },
+        "mutable": {
+          "type": "boolean",
+          "description": "Whether the variable can be modified"
+        }
+      }
+    },
+    "EventDefinition": {
+      "type": "object",
+      "required": ["name", "handler", "parameters"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Event name (e.g., onPress, onTap)"
+        },
+        "handler": {
+          "type": "string",
+          "description": "Handler function code"
+        },
+        "parameters": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Parameter"
+          }
+        }
+      }
+    },
+    "Parameter": {
+      "type": "object",
+      "required": ["name", "type"],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "optional": {
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "ThemeDefinition": {
+      "type": "object",
+      "properties": {
+        "colors": {
+          "type": "object"
+        },
+        "typography": {
+          "type": "object"
+        },
+        "spacing": {
+          "type": "object"
+        }
+      }
+    },
+    "NavigationDefinition": {
+      "type": "object",
+      "properties": {
+        "routes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["path", "component"],
+            "properties": {
+              "path": {
+                "type": "string"
+              },
+              "component": {
+                "type": "string"
+              },
+              "params": {
+                "type": "object"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

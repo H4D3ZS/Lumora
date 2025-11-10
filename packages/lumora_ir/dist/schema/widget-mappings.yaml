@@ -1,0 +1,1091 @@
+# Default Widget Mappings
+# Bidirectional mappings between React and Flutter widgets
+
+schemaVersion: "1.0"
+
+# Core Layout Widgets
+Container:
+  react:
+    component: "div"
+  flutter:
+    widget: "Container"
+    import: "package:flutter/material.dart"
+  props:
+    padding:
+      react: "padding"
+      flutter: "padding"
+      type: "number"
+      transform: "EdgeInsets.all"
+    margin:
+      react: "margin"
+      flutter: "margin"
+      type: "number"
+      transform: "EdgeInsets.all"
+    width:
+      react: "width"
+      flutter: "width"
+      type: "number"
+    height:
+      react: "height"
+      flutter: "height"
+      type: "number"
+  styles:
+    backgroundColor:
+      react: "backgroundColor"
+      flutter: "decoration.color"
+      type: "color"
+      transform: "Color"
+    borderRadius:
+      react: "borderRadius"
+      flutter: "decoration.borderRadius"
+      type: "number"
+      transform: "BorderRadius.circular"
+    border:
+      react: "border"
+      flutter: "decoration.border"
+      type: "object"
+      transform: "Border"
+
+View:
+  react:
+    component: "View"
+    import: "react-native"
+  flutter:
+    widget: "Container"
+    import: "package:flutter/material.dart"
+  props:
+    style:
+      react: "style"
+      flutter: "decoration"
+      type: "object"
+      transform: "BoxDecoration"
+  fallback:
+    react: "div"
+    flutter: "Container"
+
+Row:
+  react:
+    component: "div"
+  flutter:
+    widget: "Row"
+    import: "package:flutter/material.dart"
+  props:
+    children:
+      react: "children"
+      flutter: "children"
+      type: "widgetList"
+    mainAxisAlignment:
+      react: "justifyContent"
+      flutter: "mainAxisAlignment"
+      type: "alignment"
+      transform: "MainAxisAlignment"
+    crossAxisAlignment:
+      react: "alignItems"
+      flutter: "crossAxisAlignment"
+      type: "alignment"
+      transform: "CrossAxisAlignment"
+  styles:
+    flexDirection:
+      react: "flexDirection"
+      flutter: "direction"
+      type: "enum"
+      default: "row"
+
+Column:
+  react:
+    component: "div"
+  flutter:
+    widget: "Column"
+    import: "package:flutter/material.dart"
+  props:
+    children:
+      react: "children"
+      flutter: "children"
+      type: "widgetList"
+    mainAxisAlignment:
+      react: "justifyContent"
+      flutter: "mainAxisAlignment"
+      type: "alignment"
+      transform: "MainAxisAlignment"
+    crossAxisAlignment:
+      react: "alignItems"
+      flutter: "crossAxisAlignment"
+      type: "alignment"
+      transform: "CrossAxisAlignment"
+
+Stack:
+  react:
+    component: "div"
+  flutter:
+    widget: "Stack"
+    import: "package:flutter/material.dart"
+  props:
+    children:
+      react: "children"
+      flutter: "children"
+      type: "widgetList"
+  styles:
+    position:
+      react: "position"
+      flutter: "alignment"
+      type: "alignment"
+      transform: "Alignment"
+
+Padding:
+  react:
+    component: "div"
+  flutter:
+    widget: "Padding"
+    import: "package:flutter/material.dart"
+  props:
+    padding:
+      react: "padding"
+      flutter: "padding"
+      type: "number"
+      transform: "EdgeInsets.all"
+    child:
+      react: "children"
+      flutter: "child"
+      type: "widget"
+
+Center:
+  react:
+    component: "div"
+  flutter:
+    widget: "Center"
+    import: "package:flutter/material.dart"
+  props:
+    child:
+      react: "children"
+      flutter: "child"
+      type: "widget"
+
+Align:
+  react:
+    component: "div"
+  flutter:
+    widget: "Align"
+    import: "package:flutter/material.dart"
+  props:
+    alignment:
+      react: "textAlign"
+      flutter: "alignment"
+      type: "alignment"
+      transform: "Alignment"
+    child:
+      react: "children"
+      flutter: "child"
+      type: "widget"
+
+SizedBox:
+  react:
+    component: "div"
+  flutter:
+    widget: "SizedBox"
+    import: "package:flutter/material.dart"
+  props:
+    width:
+      react: "width"
+      flutter: "width"
+      type: "number"
+    height:
+      react: "height"
+      flutter: "height"
+      type: "number"
+    child:
+      react: "children"
+      flutter: "child"
+      type: "widget"
+
+Expanded:
+  react:
+    component: "div"
+  flutter:
+    widget: "Expanded"
+    import: "package:flutter/material.dart"
+  props:
+    flex:
+      react: "flex"
+      flutter: "flex"
+      type: "number"
+      default: 1
+    child:
+      react: "children"
+      flutter: "child"
+      type: "widget"
+
+Flexible:
+  react:
+    component: "div"
+  flutter:
+    widget: "Flexible"
+    import: "package:flutter/material.dart"
+  props:
+    flex:
+      react: "flex"
+      flutter: "flex"
+      type: "number"
+      default: 1
+    child:
+      react: "children"
+      flutter: "child"
+      type: "widget"
+
+# Text Widgets
+Text:
+  react:
+    component: "span"
+  flutter:
+    widget: "Text"
+    import: "package:flutter/material.dart"
+  props:
+    children:
+      react: "children"
+      flutter: "data"
+      type: "string"
+    textAlign:
+      react: "textAlign"
+      flutter: "textAlign"
+      type: "textAlign"
+      transform: "TextAlign"
+  styles:
+    fontSize:
+      react: "fontSize"
+      flutter: "style.fontSize"
+      type: "number"
+    fontWeight:
+      react: "fontWeight"
+      flutter: "style.fontWeight"
+      type: "fontWeight"
+      transform: "FontWeight"
+    color:
+      react: "color"
+      flutter: "style.color"
+      type: "color"
+      transform: "Color"
+    fontFamily:
+      react: "fontFamily"
+      flutter: "style.fontFamily"
+      type: "string"
+    fontStyle:
+      react: "fontStyle"
+      flutter: "style.fontStyle"
+      type: "enum"
+    textDecoration:
+      react: "textDecoration"
+      flutter: "style.decoration"
+      type: "enum"
+      transform: "TextDecoration"
+
+# Button Widgets
+Button:
+  react:
+    component: "button"
+  flutter:
+    widget: "ElevatedButton"
+    import: "package:flutter/material.dart"
+  props:
+    children:
+      react: "children"
+      flutter: "child"
+      type: "widget"
+  events:
+    onClick:
+      react: "onClick"
+      flutter: "onPressed"
+      parameters: []
+    onPress:
+      react: "onPress"
+      flutter: "onPressed"
+      parameters: []
+
+ElevatedButton:
+  react:
+    component: "button"
+  flutter:
+    widget: "ElevatedButton"
+    import: "package:flutter/material.dart"
+  props:
+    child:
+      react: "children"
+      flutter: "child"
+      type: "widget"
+  events:
+    onPressed:
+      react: "onClick"
+      flutter: "onPressed"
+      parameters: []
+
+TextButton:
+  react:
+    component: "button"
+  flutter:
+    widget: "TextButton"
+    import: "package:flutter/material.dart"
+  props:
+    child:
+      react: "children"
+      flutter: "child"
+      type: "widget"
+  events:
+    onPressed:
+      react: "onClick"
+      flutter: "onPressed"
+      parameters: []
+
+OutlinedButton:
+  react:
+    component: "button"
+  flutter:
+    widget: "OutlinedButton"
+    import: "package:flutter/material.dart"
+  props:
+    child:
+      react: "children"
+      flutter: "child"
+      type: "widget"
+  events:
+    onPressed:
+      react: "onClick"
+      flutter: "onPressed"
+      parameters: []
+
+IconButton:
+  react:
+    component: "button"
+  flutter:
+    widget: "IconButton"
+    import: "package:flutter/material.dart"
+  props:
+    icon:
+      react: "children"
+      flutter: "icon"
+      type: "widget"
+  events:
+    onPressed:
+      react: "onClick"
+      flutter: "onPressed"
+      parameters: []
+
+TouchableOpacity:
+  react:
+    component: "TouchableOpacity"
+    import: "react-native"
+  flutter:
+    widget: "GestureDetector"
+    import: "package:flutter/material.dart"
+  props:
+    child:
+      react: "children"
+      flutter: "child"
+      type: "widget"
+  events:
+    onPress:
+      react: "onPress"
+      flutter: "onTap"
+      parameters: []
+
+GestureDetector:
+  react:
+    component: "div"
+  flutter:
+    widget: "GestureDetector"
+    import: "package:flutter/material.dart"
+  props:
+    child:
+      react: "children"
+      flutter: "child"
+      type: "widget"
+  events:
+    onTap:
+      react: "onClick"
+      flutter: "onTap"
+      parameters: []
+    onDoubleTap:
+      react: "onDoubleClick"
+      flutter: "onDoubleTap"
+      parameters: []
+    onLongPress:
+      react: "onLongPress"
+      flutter: "onLongPress"
+      parameters: []
+
+# Input Widgets
+TextField:
+  react:
+    component: "input"
+  flutter:
+    widget: "TextField"
+    import: "package:flutter/material.dart"
+  props:
+    placeholder:
+      react: "placeholder"
+      flutter: "decoration.hintText"
+      type: "string"
+    value:
+      react: "value"
+      flutter: "controller.text"
+      type: "string"
+    maxLines:
+      react: "rows"
+      flutter: "maxLines"
+      type: "number"
+  events:
+    onChange:
+      react: "onChange"
+      flutter: "onChanged"
+      parameters: ["value"]
+    onSubmit:
+      react: "onSubmit"
+      flutter: "onSubmitted"
+      parameters: ["value"]
+
+TextInput:
+  react:
+    component: "TextInput"
+    import: "react-native"
+  flutter:
+    widget: "TextField"
+    import: "package:flutter/material.dart"
+  props:
+    placeholder:
+      react: "placeholder"
+      flutter: "decoration.hintText"
+      type: "string"
+    value:
+      react: "value"
+      flutter: "controller.text"
+      type: "string"
+  events:
+    onChangeText:
+      react: "onChangeText"
+      flutter: "onChanged"
+      parameters: ["text"]
+
+Checkbox:
+  react:
+    component: "input"
+  flutter:
+    widget: "Checkbox"
+    import: "package:flutter/material.dart"
+  props:
+    checked:
+      react: "checked"
+      flutter: "value"
+      type: "boolean"
+  events:
+    onChange:
+      react: "onChange"
+      flutter: "onChanged"
+      parameters: ["value"]
+
+Radio:
+  react:
+    component: "input"
+  flutter:
+    widget: "Radio"
+    import: "package:flutter/material.dart"
+  props:
+    checked:
+      react: "checked"
+      flutter: "value"
+      type: "boolean"
+    value:
+      react: "value"
+      flutter: "groupValue"
+      type: "string"
+  events:
+    onChange:
+      react: "onChange"
+      flutter: "onChanged"
+      parameters: ["value"]
+
+Switch:
+  react:
+    component: "input"
+  flutter:
+    widget: "Switch"
+    import: "package:flutter/material.dart"
+  props:
+    checked:
+      react: "checked"
+      flutter: "value"
+      type: "boolean"
+  events:
+    onChange:
+      react: "onChange"
+      flutter: "onChanged"
+      parameters: ["value"]
+
+Slider:
+  react:
+    component: "input"
+  flutter:
+    widget: "Slider"
+    import: "package:flutter/material.dart"
+  props:
+    value:
+      react: "value"
+      flutter: "value"
+      type: "number"
+    min:
+      react: "min"
+      flutter: "min"
+      type: "number"
+      default: 0
+    max:
+      react: "max"
+      flutter: "max"
+      type: "number"
+      default: 100
+  events:
+    onChange:
+      react: "onChange"
+      flutter: "onChanged"
+      parameters: ["value"]
+
+# List Widgets
+ListView:
+  react:
+    component: "ul"
+  flutter:
+    widget: "ListView"
+    import: "package:flutter/material.dart"
+  props:
+    children:
+      react: "children"
+      flutter: "children"
+      type: "widgetList"
+    scrollDirection:
+      react: "horizontal"
+      flutter: "scrollDirection"
+      type: "axis"
+      transform: "Axis"
+
+FlatList:
+  react:
+    component: "FlatList"
+    import: "react-native"
+  flutter:
+    widget: "ListView.builder"
+    import: "package:flutter/material.dart"
+  props:
+    data:
+      react: "data"
+      flutter: "itemCount"
+      type: "array"
+    renderItem:
+      react: "renderItem"
+      flutter: "itemBuilder"
+      type: "function"
+
+GridView:
+  react:
+    component: "div"
+  flutter:
+    widget: "GridView"
+    import: "package:flutter/material.dart"
+  props:
+    children:
+      react: "children"
+      flutter: "children"
+      type: "widgetList"
+    crossAxisCount:
+      react: "columns"
+      flutter: "crossAxisCount"
+      type: "number"
+
+# Image Widgets
+Image:
+  react:
+    component: "img"
+  flutter:
+    widget: "Image.network"
+    import: "package:flutter/material.dart"
+  props:
+    src:
+      react: "src"
+      flutter: "url"
+      type: "string"
+    width:
+      react: "width"
+      flutter: "width"
+      type: "number"
+    height:
+      react: "height"
+      flutter: "height"
+      type: "number"
+    alt:
+      react: "alt"
+      flutter: "semanticLabel"
+      type: "string"
+
+ImageNetwork:
+  react:
+    component: "img"
+  flutter:
+    widget: "Image.network"
+    import: "package:flutter/material.dart"
+  props:
+    src:
+      react: "src"
+      flutter: "url"
+      type: "string"
+
+# Icon Widgets
+Icon:
+  react:
+    component: "span"
+  flutter:
+    widget: "Icon"
+    import: "package:flutter/material.dart"
+  props:
+    name:
+      react: "className"
+      flutter: "icon"
+      type: "string"
+      transform: "Icons"
+    size:
+      react: "fontSize"
+      flutter: "size"
+      type: "number"
+    color:
+      react: "color"
+      flutter: "color"
+      type: "color"
+      transform: "Color"
+
+# Card Widgets
+Card:
+  react:
+    component: "div"
+  flutter:
+    widget: "Card"
+    import: "package:flutter/material.dart"
+  props:
+    child:
+      react: "children"
+      flutter: "child"
+      type: "widget"
+    elevation:
+      react: "boxShadow"
+      flutter: "elevation"
+      type: "number"
+      default: 1
+
+# App Structure Widgets
+Scaffold:
+  react:
+    component: "div"
+  flutter:
+    widget: "Scaffold"
+    import: "package:flutter/material.dart"
+  props:
+    appBar:
+      react: "header"
+      flutter: "appBar"
+      type: "widget"
+    body:
+      react: "children"
+      flutter: "body"
+      type: "widget"
+    floatingActionButton:
+      react: "fab"
+      flutter: "floatingActionButton"
+      type: "widget"
+
+AppBar:
+  react:
+    component: "header"
+  flutter:
+    widget: "AppBar"
+    import: "package:flutter/material.dart"
+  props:
+    title:
+      react: "children"
+      flutter: "title"
+      type: "widget"
+    actions:
+      react: "actions"
+      flutter: "actions"
+      type: "widgetList"
+
+# Progress Indicators
+CircularProgressIndicator:
+  react:
+    component: "div"
+  flutter:
+    widget: "CircularProgressIndicator"
+    import: "package:flutter/material.dart"
+  props:
+    value:
+      react: "value"
+      flutter: "value"
+      type: "number"
+
+LinearProgressIndicator:
+  react:
+    component: "div"
+  flutter:
+    widget: "LinearProgressIndicator"
+    import: "package:flutter/material.dart"
+  props:
+    value:
+      react: "value"
+      flutter: "value"
+      type: "number"
+
+# Dialog Widgets
+AlertDialog:
+  react:
+    component: "div"
+  flutter:
+    widget: "AlertDialog"
+    import: "package:flutter/material.dart"
+  props:
+    title:
+      react: "title"
+      flutter: "title"
+      type: "widget"
+    content:
+      react: "children"
+      flutter: "content"
+      type: "widget"
+    actions:
+      react: "actions"
+      flutter: "actions"
+      type: "widgetList"
+
+# Divider Widgets
+Divider:
+  react:
+    component: "hr"
+  flutter:
+    widget: "Divider"
+    import: "package:flutter/material.dart"
+  props:
+    height:
+      react: "height"
+      flutter: "height"
+      type: "number"
+    thickness:
+      react: "borderWidth"
+      flutter: "thickness"
+      type: "number"
+    color:
+      react: "borderColor"
+      flutter: "color"
+      type: "color"
+      transform: "Color"
+
+# Spacer Widget
+Spacer:
+  react:
+    component: "div"
+  flutter:
+    widget: "Spacer"
+    import: "package:flutter/material.dart"
+  props:
+    flex:
+      react: "flex"
+      flutter: "flex"
+      type: "number"
+      default: 1
+
+# Wrap Widget
+Wrap:
+  react:
+    component: "div"
+  flutter:
+    widget: "Wrap"
+    import: "package:flutter/material.dart"
+  props:
+    children:
+      react: "children"
+      flutter: "children"
+      type: "widgetList"
+    spacing:
+      react: "gap"
+      flutter: "spacing"
+      type: "number"
+    direction:
+      react: "flexDirection"
+      flutter: "direction"
+      type: "axis"
+      transform: "Axis"
+
+# Chip Widgets
+Chip:
+  react:
+    component: "span"
+  flutter:
+    widget: "Chip"
+    import: "package:flutter/material.dart"
+  props:
+    label:
+      react: "children"
+      flutter: "label"
+      type: "widget"
+
+# Tooltip Widget
+Tooltip:
+  react:
+    component: "div"
+  flutter:
+    widget: "Tooltip"
+    import: "package:flutter/material.dart"
+  props:
+    message:
+      react: "title"
+      flutter: "message"
+      type: "string"
+    child:
+      react: "children"
+      flutter: "child"
+      type: "widget"
+
+# BottomNavigationBar
+BottomNavigationBar:
+  react:
+    component: "nav"
+  flutter:
+    widget: "BottomNavigationBar"
+    import: "package:flutter/material.dart"
+  props:
+    items:
+      react: "items"
+      flutter: "items"
+      type: "array"
+    currentIndex:
+      react: "selectedIndex"
+      flutter: "currentIndex"
+      type: "number"
+  events:
+    onTap:
+      react: "onSelect"
+      flutter: "onTap"
+      parameters: ["index"]
+
+# TabBar
+TabBar:
+  react:
+    component: "div"
+  flutter:
+    widget: "TabBar"
+    import: "package:flutter/material.dart"
+  props:
+    tabs:
+      react: "tabs"
+      flutter: "tabs"
+      type: "widgetList"
+
+# Drawer
+Drawer:
+  react:
+    component: "aside"
+  flutter:
+    widget: "Drawer"
+    import: "package:flutter/material.dart"
+  props:
+    child:
+      react: "children"
+      flutter: "child"
+      type: "widget"
+
+# RefreshIndicator
+RefreshIndicator:
+  react:
+    component: "div"
+  flutter:
+    widget: "RefreshIndicator"
+    import: "package:flutter/material.dart"
+  props:
+    child:
+      react: "children"
+      flutter: "child"
+      type: "widget"
+  events:
+    onRefresh:
+      react: "onRefresh"
+      flutter: "onRefresh"
+      parameters: []
+
+# Opacity Widget
+Opacity:
+  react:
+    component: "div"
+  flutter:
+    widget: "Opacity"
+    import: "package:flutter/material.dart"
+  props:
+    opacity:
+      react: "opacity"
+      flutter: "opacity"
+      type: "number"
+    child:
+      react: "children"
+      flutter: "child"
+      type: "widget"
+
+# ClipRRect (Rounded corners)
+ClipRRect:
+  react:
+    component: "div"
+  flutter:
+    widget: "ClipRRect"
+    import: "package:flutter/material.dart"
+  props:
+    borderRadius:
+      react: "borderRadius"
+      flutter: "borderRadius"
+      type: "number"
+      transform: "BorderRadius.circular"
+    child:
+      react: "children"
+      flutter: "child"
+      type: "widget"
+
+# SafeArea Widget
+SafeArea:
+  react:
+    component: "div"
+  flutter:
+    widget: "SafeArea"
+    import: "package:flutter/material.dart"
+  props:
+    child:
+      react: "children"
+      flutter: "child"
+      type: "widget"
+
+# SingleChildScrollView
+SingleChildScrollView:
+  react:
+    component: "div"
+  flutter:
+    widget: "SingleChildScrollView"
+    import: "package:flutter/material.dart"
+  props:
+    child:
+      react: "children"
+      flutter: "child"
+      type: "widget"
+    scrollDirection:
+      react: "horizontal"
+      flutter: "scrollDirection"
+      type: "axis"
+      transform: "Axis"
+
+# InkWell (Material ripple effect)
+InkWell:
+  react:
+    component: "div"
+  flutter:
+    widget: "InkWell"
+    import: "package:flutter/material.dart"
+  props:
+    child:
+      react: "children"
+      flutter: "child"
+      type: "widget"
+  events:
+    onTap:
+      react: "onClick"
+      flutter: "onTap"
+      parameters: []
+
+# FloatingActionButton
+FloatingActionButton:
+  react:
+    component: "button"
+  flutter:
+    widget: "FloatingActionButton"
+    import: "package:flutter/material.dart"
+  props:
+    child:
+      react: "children"
+      flutter: "child"
+      type: "widget"
+  events:
+    onPressed:
+      react: "onClick"
+      flutter: "onPressed"
+      parameters: []
+
+# ListTile
+ListTile:
+  react:
+    component: "li"
+  flutter:
+    widget: "ListTile"
+    import: "package:flutter/material.dart"
+  props:
+    title:
+      react: "title"
+      flutter: "title"
+      type: "widget"
+    subtitle:
+      react: "subtitle"
+      flutter: "subtitle"
+      type: "widget"
+    leading:
+      react: "leading"
+      flutter: "leading"
+      type: "widget"
+    trailing:
+      react: "trailing"
+      flutter: "trailing"
+      type: "widget"
+  events:
+    onTap:
+      react: "onClick"
+      flutter: "onTap"
+      parameters: []
+
+# SnackBar
+SnackBar:
+  react:
+    component: "div"
+  flutter:
+    widget: "SnackBar"
+    import: "package:flutter/material.dart"
+  props:
+    content:
+      react: "children"
+      flutter: "content"
+      type: "widget"
+    action:
+      react: "action"
+      flutter: "action"
+      type: "widget"
+
+# Form
+Form:
+  react:
+    component: "form"
+  flutter:
+    widget: "Form"
+    import: "package:flutter/material.dart"
+  props:
+    child:
+      react: "children"
+      flutter: "child"
+      type: "widget"
+
+# AnimatedContainer
+AnimatedContainer:
+  react:
+    component: "div"
+  flutter:
+    widget: "AnimatedContainer"
+    import: "package:flutter/material.dart"
+  props:
+    duration:
+      react: "duration"
+      flutter: "duration"
+      type: "number"
+      transform: "Duration.milliseconds"
+    child:
+      react: "children"
+      flutter: "child"
+      type: "widget"

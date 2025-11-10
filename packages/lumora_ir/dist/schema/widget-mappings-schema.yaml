@@ -1,0 +1,71 @@
+# Widget Mappings Schema Definition
+# This file defines the structure for widget-mappings.yaml files
+
+# Schema version for compatibility tracking
+schemaVersion: "1.0"
+
+# Widget mappings define bidirectional conversions between React and Flutter
+# Each widget entry maps a conceptual widget to its framework-specific implementations
+
+# Example widget mapping structure:
+# widgetName:
+#   react:
+#     component: string          # React component name (e.g., "div", "View", "TouchableOpacity")
+#     import: string?            # Optional import statement (e.g., "react-native")
+#   flutter:
+#     widget: string             # Flutter widget name (e.g., "Container", "Text")
+#     import: string?            # Optional import statement (e.g., "package:flutter/material.dart")
+#   props:                       # Property mappings between frameworks
+#     propName:
+#       react: string            # React prop name
+#       flutter: string          # Flutter prop name
+#       type: string             # Data type (string, number, boolean, color, function, widget, etc.)
+#       transform: string?       # Optional transformation function name
+#       default: any?            # Optional default value
+#   styles:                      # Style property mappings
+#     styleName:
+#       react: string            # React style property name
+#       flutter: string          # Flutter style property/class
+#       type: string             # Data type
+#       transform: string?       # Optional transformation function
+#   events:                      # Event handler mappings
+#     eventName:
+#       react: string            # React event name (e.g., "onPress", "onClick")
+#       flutter: string          # Flutter callback name (e.g., "onTap", "onPressed")
+#       parameters: array?       # Optional parameter mappings
+#   fallback:                    # Fallback behavior when mapping fails
+#     react: string?             # Fallback React component
+#     flutter: string?           # Fallback Flutter widget
+#   custom: boolean?             # Whether this is a custom mapping (overrides defaults)
+
+# Type definitions for reference:
+# - string: Text values
+# - number: Numeric values (int, double, float)
+# - boolean: True/false values
+# - color: Color values (hex, rgb, named)
+# - function: Callback functions
+# - widget: Child widget/component
+# - widgetList: Array of child widgets
+# - object: Complex nested object
+# - enum: Enumerated values
+# - axis: Scroll direction (horizontal, vertical)
+# - alignment: Layout alignment values
+# - textAlign: Text alignment values
+# - fontWeight: Font weight values
+
+# Transformation functions available:
+# - EdgeInsets.all: Convert number to EdgeInsets
+# - EdgeInsets.symmetric: Convert object to symmetric EdgeInsets
+# - Color: Convert hex/rgb to Color object
+# - TextStyle: Convert style object to TextStyle
+# - BoxDecoration: Convert style object to BoxDecoration
+# - Axis: Convert string to Axis enum
+# - MainAxisAlignment: Convert string to alignment enum
+# - CrossAxisAlignment: Convert string to alignment enum
+# - TextAlign: Convert string to TextAlign enum
+# - FontWeight: Convert string/number to FontWeight
+
+# Custom mappings:
+# Users can define custom mappings in their project's widget-mappings.yaml
+# Custom mappings override default mappings when the 'custom' flag is true
+# Custom mappings follow the same structure as default mappings
