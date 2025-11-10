@@ -1,7 +1,9 @@
-name: kiro_core
-description: Core schema interpretation and rendering engine for Lumora framework
-version: 1.0.0
-publish_to: 'none'
+name: lumora_core
+description: Core schema interpretation and rendering engine for Lumora framework. Enables real-time UI rendering from JSON schemas.
+version: 0.1.0-alpha.1
+homepage: https://github.com/lumora/lumora
+repository: https://github.com/lumora/lumora
+issue_tracker: https://github.com/lumora/lumora/issues
 
 environment:
   sdk: '>=3.0.0 <4.0.0'

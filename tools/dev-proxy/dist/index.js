@@ -197,6 +197,25 @@ app.get('/health', (req, res) => {
         timestamp: Date.now()
     });
 });
+/**
+ * Performance metrics endpoint
+ */
+app.get('/metrics', (req, res) => {
+    const memoryUsage = sessionManager.getMemoryUsage();
+    const connectionCount = wsBroker.getConnectionCount();
+    res.json({
+        sessions: {
+            active: memoryUsage.sessionCount,
+            totalClients: memoryUsage.clientCount,
+            estimatedMemoryBytes: memoryUsage.estimatedBytes,
+            estimatedMemoryKB: (memoryUsage.estimatedBytes / 1024).toFixed(2)
+        },
+        websocket: {
+            activeConnections: connectionCount
+        },
+        timestamp: Date.now()
+    });
+});
 // Start server
 const server = app.listen(PORT, () => {
     console.log(`Dev-Proxy server running on port ${PORT}`);

@@ -21,22 +21,49 @@ const RATE_LIMIT_MAX_MESSAGES = 100; // 100 messages per second per client
 const MAX_DEVICES_PER_SESSION = 10;
 const MAX_EDITORS_PER_SESSION = 5;
 /**
+ * Message priority levels
+ */
+var MessagePriority;
+(function (MessagePriority) {
+    MessagePriority[MessagePriority["HIGH"] = 1] = "HIGH";
+    MessagePriority[MessagePriority["MEDIUM"] = 2] = "MEDIUM";
+    MessagePriority[MessagePriority["LOW"] = 3] = "LOW"; // Full schemas
+})(MessagePriority || (MessagePriority = {}));
+/**
  * WebSocketBroker handles WebSocket connections and message routing
  */
 class WebSocketBroker {
     constructor(server, sessionManager) {
         this.sessionManager = sessionManager;
         this.pingInterval = null;
-        // Initialize WebSocket server
+        // Initialize WebSocket server with compression enabled
         this.wss = new ws_1.WebSocketServer({
             server,
             path: '/ws',
-            maxPayload: MAX_MESSAGE_SIZE
+            maxPayload: MAX_MESSAGE_SIZE,
+            perMessageDeflate: {
+                zlibDeflateOptions: {
+                    // See zlib defaults.
+                    chunkSize: 1024,
+                    memLevel: 7,
+                    level: 3
+                },
+                zlibInflateOptions: {
+                    chunkSize: 10 * 1024
+                },
+                // Below options specified as default values.
+                clientNoContextTakeover: true, // Defaults to negotiated value.
+                serverNoContextTakeover: true, // Defaults to negotiated value.
+                serverMaxWindowBits: 10, // Defaults to negotiated value.
+                // Below options specified as default values.
+                concurrencyLimit: 10, // Limits zlib concurrency for perf.
+                threshold: 1024 // Size (in bytes) below which messages should not be compressed.
+            }
         });
         this.wss.on('connection', (ws, req) => {
             this.handleConnection(ws, req);
         });
-        console.log('[WebSocketBroker] WebSocket server initialized on /ws');
+        console.log('[WebSocketBroker] WebSocket server initialized on /ws with compression enabled');
     }
     /**
      * Handle new WebSocket connection
@@ -293,9 +320,28 @@ class WebSocketBroker {
         }
     }
     /**
+     * Determines message priority based on type
+     */
+    getMessagePriority(message) {
+        switch (message.type) {
+            case 'event':
+            case 'ping':
+            case 'pong':
+                return MessagePriority.HIGH;
+            case 'ui_schema_delta':
+                return MessagePriority.MEDIUM;
+            case 'full_ui_schema':
+            case 'dart_code_diff':
+            default:
+                return MessagePriority.LOW;
+        }
+    }
+    /**
      * Broadcast message to all clients in a session
      */
     broadcastToSession(sessionId, message, excludeClientId, targetClientType) {
+        const startTime = Date.now();
+        const priority = this.getMessagePriority(message);
         const clients = this.sessionManager.getSessionClients(sessionId);
         let sentCount = 0;
         for (const client of clients) {
@@ -318,7 +364,11 @@ class WebSocketBroker {
                 }
             }
         }
-        console.log(`[WebSocket] Broadcast to session ${sessionId}: ${sentCount}/${clients.length} clients${targetClientType ? ` (type: ${targetClientType})` : ''}`);
+        // Log broadcast latency with priority
+        const latency = Date.now() - startTime;
+        const priorityName = MessagePriority[priority];
+        console.log(`[WebSocket] Broadcast to session ${sessionId}: ${sentCount}/${clients.length} clients${targetClientType ? ` (type: ${targetClientType})` : ''} [Priority: ${priorityName}]`);
+        console.log(`[Performance] Broadcast latency: ${latency}ms`);
         return sentCount;
     }
     /**
@@ -345,7 +395,7 @@ class WebSocketBroker {
         }
     }
     /**
-     * Start ping/pong health checks
+     * Start ping/pong health checks with efficient keep-alive
      */
     startHealthChecks() {
         if (this.pingInterval) {
@@ -353,26 +403,34 @@ class WebSocketBroker {
         }
         this.pingInterval = setInterval(() => {
             const now = Date.now();
+            let activeConnections = 0;
+            let terminatedConnections = 0;
             this.wss.clients.forEach((ws) => {
                 const extWs = ws;
                 // Check if client responded to last ping
                 if (extWs.isAlive === false) {
                     console.log(`[WebSocket] Client ${extWs.clientId} failed health check, terminating`);
                     extWs.terminate();
+                    terminatedConnections++;
                     return;
                 }
                 // Check if pong timeout exceeded
                 if (extWs.lastPong && (now - extWs.lastPong) > PONG_TIMEOUT_MS) {
                     console.log(`[WebSocket] Client ${extWs.clientId} pong timeout, closing connection`);
                     extWs.close(1000, 'Pong timeout');
+                    terminatedConnections++;
                     return;
                 }
-                // Mark as not alive and send ping
+                // Mark as not alive and send ping (binary ping for efficiency)
                 extWs.isAlive = false;
                 extWs.ping();
+                activeConnections++;
             });
+            if (terminatedConnections > 0) {
+                console.log(`[WebSocket] Health check: ${activeConnections} active, ${terminatedConnections} terminated`);
+            }
         }, PING_INTERVAL_MS);
-        console.log('[WebSocketBroker] Started health checks (ping every 30s)');
+        console.log('[WebSocketBroker] Started health checks (ping every 30s with efficient keep-alive)');
     }
     /**
      * Stop ping/pong health checks
@@ -383,6 +441,12 @@ class WebSocketBroker {
             this.pingInterval = null;
             console.log('[WebSocketBroker] Stopped health checks');
         }
+    }
+    /**
+     * Get WebSocket connection count
+     */
+    getConnectionCount() {
+        return this.wss.clients.size;
     }
     /**
      * Close all connections and cleanup

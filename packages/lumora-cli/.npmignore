@@ -1,0 +1,18 @@
+# Source files
+src/
+tsconfig.json
+
+# Tests
+__tests__/
+*.test.ts
+jest.config.js
+
+# Development
+node_modules/
+.DS_Store
+*.log
+
+# Keep these for distribution
+!dist/
+!README.md
+!LICENSE

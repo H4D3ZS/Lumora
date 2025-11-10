@@ -1,6 +1,10 @@
 import { LumoraIR } from '../types/ir-types';
 import { IRStorage } from '../storage/ir-storage';
 import { QueuedChange } from './change-queue';
+import { ConversionCache } from '../cache/conversion-cache';
+import { ParallelProcessor } from '../workers/parallel-processor';
+import { ProgressTracker } from '../progress/progress-tracker';
+import { TestSyncHandler, TestSyncConfig } from './test-sync-handler';
 /**
  * Converter function type
  */
@@ -20,6 +24,9 @@ export interface SyncConfig {
     flutterToIR?: ConverterFunction;
     irToReact?: GeneratorFunction;
     irToFlutter?: GeneratorFunction;
+    enableParallelProcessing?: boolean;
+    parallelThreshold?: number;
+    testSync?: Partial<TestSyncConfig>;
 }
 /**
  * Sync result
@@ -38,15 +45,29 @@ export interface SyncResult {
 export declare class SyncEngine {
     private config;
     private storage;
+    private cache;
+    private processor;
+    private progress;
+    private testSyncHandler;
+    private enableParallel;
+    private parallelThreshold;
     constructor(config: SyncConfig);
     /**
      * Process changes from queue
      */
     processChanges(changes: QueuedChange[]): Promise<SyncResult[]>;
     /**
+     * Process changes in parallel
+     */
+    private processChangesParallel;
+    /**
      * Process single change
      */
     private processChange;
+    /**
+     * Process test file
+     */
+    private processTestFile;
     /**
      * Convert file to IR
      */
@@ -79,4 +100,48 @@ export declare class SyncEngine {
      * Get IR storage
      */
     getStorage(): IRStorage;
+    /**
+     * Get conversion cache
+     */
+    getCache(): ConversionCache;
+    /**
+     * Clear cache
+     */
+    clearCache(): void;
+    /**
+     * Get parallel processor
+     */
+    getProcessor(): ParallelProcessor;
+    /**
+     * Enable parallel processing
+     */
+    enableParallelProcessing(): void;
+    /**
+     * Disable parallel processing
+     */
+    disableParallelProcessing(): void;
+    /**
+     * Check if parallel processing is enabled
+     */
+    isParallelProcessingEnabled(): boolean;
+    /**
+     * Get progress tracker
+     */
+    getProgressTracker(): ProgressTracker;
+    /**
+     * Get test sync handler
+     */
+    getTestSyncHandler(): TestSyncHandler;
+    /**
+     * Enable test sync
+     */
+    enableTestSync(): void;
+    /**
+     * Disable test sync
+     */
+    disableTestSync(): void;
+    /**
+     * Check if test sync is enabled
+     */
+    isTestSyncEnabled(): boolean;
 }

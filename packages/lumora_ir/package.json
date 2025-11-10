@@ -1,21 +1,39 @@
 {
-  "name": "@lumora/ir",
-  "version": "0.1.0",
+  "name": "lumora-ir",
+  "version": "0.1.0-alpha.1",
   "description": "Lumora Intermediate Representation system for framework-agnostic UI components",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsc && npm run copy-schema",
     "copy-schema": "mkdir -p dist/schema && cp src/schema/*.yaml dist/schema/ && cp src/schema/*.json dist/schema/",
     "test": "jest",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "prepublishOnly": "npm run build && npm test"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lumora/lumora.git",
+    "directory": "packages/lumora_ir"
+  },
+  "bugs": {
+    "url": "https://github.com/lumora/lumora/issues"
+  },
+  "homepage": "https://github.com/lumora/lumora#readme",
   "keywords": [
     "lumora",
     "ir",
     "intermediate-representation",
     "react",
-    "flutter"
+    "flutter",
+    "transpiler",
+    "bidirectional",
+    "code-generation"
   ],
   "author": "Lumora Team",
   "license": "MIT",
@@ -23,6 +41,7 @@
     "ajv": "^8.12.0",
     "ajv-formats": "^2.1.1",
     "chokidar": "^3.6.0",
+    "commander": "^11.1.0",
     "js-yaml": "^4.1.0"
   },
   "devDependencies": {

@@ -1,0 +1,87 @@
+# Lumora Configuration Example
+# This file demonstrates all available configuration options
+
+# Development mode: react, flutter, or universal
+mode: universal
+
+# Directory paths
+reactDir: web/src
+flutterDir: mobile/lib
+storageDir: .lumora/ir
+
+# Path to custom widget mappings (optional)
+customMappings: custom-widget-mappings.yaml
+
+# Naming conventions for generated code
+namingConventions:
+  # File naming: snake_case, kebab-case, PascalCase, camelCase
+  fileNaming: snake_case
+  
+  # Identifier naming: camelCase, PascalCase, snake_case
+  identifierNaming: camelCase
+  
+  # Component/Widget class naming: PascalCase, camelCase
+  componentNaming: PascalCase
+
+# Code formatting preferences
+formatting:
+  # Indentation size (1-8 spaces)
+  indentSize: 2
+  
+  # Use tabs instead of spaces
+  useTabs: false
+  
+  # Maximum line width (40-200)
+  lineWidth: 80
+  
+  # Use semicolons in TypeScript/JavaScript
+  semicolons: true
+  
+  # Trailing comma style: none, es5, all
+  trailingComma: es5
+  
+  # Use single quotes in TypeScript/JavaScript
+  singleQuote: true
+
+# Synchronization settings
+sync:
+  # Enable automatic file synchronization
+  enabled: true
+  
+  # Debounce delay in milliseconds (0-5000)
+  debounceMs: 300
+  
+  # Glob patterns for files to exclude from sync
+  excludePatterns:
+    - "**/*.test.*"
+    - "**/*.spec.*"
+    - "**/node_modules/**"
+    - "**/.git/**"
+    - "**/build/**"
+    - "**/dist/**"
+  
+  # Enable automatic test file synchronization
+  testSync: true
+
+# Conversion behavior settings
+conversion:
+  # Preserve comments during conversion
+  preserveComments: true
+  
+  # Generate documentation comments in target framework
+  generateDocumentation: true
+  
+  # Enable strict type checking during conversion
+  strictTypeChecking: true
+  
+  # Behavior when encountering unmapped widgets: warn, error, ignore
+  fallbackBehavior: warn
+
+# Validation settings
+validation:
+  # Validate IR against schema
+  validateIR: true
+  
+  # Validate generated code syntax
+  validateGenerated: true
+

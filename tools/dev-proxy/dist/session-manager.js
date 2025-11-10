@@ -39,6 +39,7 @@ class SessionManager {
      * Create a new session
      */
     createSession() {
+        const startTime = Date.now();
         const sessionId = this.generateSessionId();
         const token = this.generateToken();
         const createdAt = Date.now();
@@ -51,6 +52,9 @@ class SessionManager {
             connectedClients: []
         };
         this.sessions.set(sessionId, session);
+        // Log session creation time
+        const duration = Date.now() - startTime;
+        console.log(`[Performance] Session created in ${duration}ms`);
         return session;
     }
     /**
@@ -116,6 +120,7 @@ class SessionManager {
      * Remove expired sessions and close their connections
      */
     cleanupExpiredSessions() {
+        const startTime = Date.now();
         const now = Date.now();
         let cleanedCount = 0;
         for (const [sessionId, session] of this.sessions.entries()) {
@@ -134,6 +139,9 @@ class SessionManager {
         if (cleanedCount > 0) {
             console.log(`[Cleanup] Removed ${cleanedCount} expired session(s)`);
         }
+        // Log cleanup operation duration
+        const duration = Date.now() - startTime;
+        console.log(`[Performance] Cleanup completed in ${duration}ms (${cleanedCount} sessions removed)`);
         return cleanedCount;
     }
     /**
@@ -163,6 +171,23 @@ class SessionManager {
      */
     getActiveSessionCount() {
         return this.sessions.size;
+    }
+    /**
+     * Get memory usage statistics for session storage
+     * Returns approximate memory usage in bytes
+     */
+    getMemoryUsage() {
+        let totalClients = 0;
+        for (const session of this.sessions.values()) {
+            totalClients += session.connectedClients.length;
+        }
+        // Rough estimate: each session ~500 bytes, each client ~200 bytes
+        const estimatedBytes = (this.sessions.size * 500) + (totalClients * 200);
+        return {
+            sessionCount: this.sessions.size,
+            clientCount: totalClients,
+            estimatedBytes
+        };
     }
     /**
      * Get all sessions (for testing/debugging)

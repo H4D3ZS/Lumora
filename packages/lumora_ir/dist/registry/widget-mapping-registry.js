@@ -164,8 +164,8 @@ class WidgetMappingRegistry {
             }
         }
         // Return fallback or the original component name
-        console.warn(`No Flutter mapping found for React component: ${reactComponent}`);
-        return 'Container'; // Generic fallback
+        this.logUnmappedWidget(reactComponent, 'react', 'flutter');
+        return this.getGenericFallback('flutter');
     }
     /**
      * Get React component name from Flutter widget
@@ -181,8 +181,23 @@ class WidgetMappingRegistry {
             }
         }
         // Return fallback or the original widget name
-        console.warn(`No React mapping found for Flutter widget: ${flutterWidget}`);
-        return 'div'; // Generic fallback
+        this.logUnmappedWidget(flutterWidget, 'flutter', 'react');
+        return this.getGenericFallback('react');
+    }
+    /**
+     * Log unmapped widget warning
+     */
+    logUnmappedWidget(widgetName, sourceFramework, targetFramework) {
+        const fallback = this.getGenericFallback(targetFramework);
+        console.warn(`⚠️  Unmapped Widget: No ${targetFramework} mapping found for ${sourceFramework} widget "${widgetName}"\n` +
+            `   Using fallback: ${fallback}\n` +
+            `   💡 Add a custom mapping in widget-mappings.yaml to resolve this warning`);
+    }
+    /**
+     * Get generic fallback widget for framework
+     */
+    getGenericFallback(framework) {
+        return framework === 'react' ? 'div' : 'Container';
     }
     /**
      * Get prop mapping for a widget

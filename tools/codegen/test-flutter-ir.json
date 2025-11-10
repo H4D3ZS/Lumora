@@ -1,0 +1,132 @@
+{
+  "version": "1.0.0",
+  "metadata": {
+    "sourceFramework": "flutter",
+    "sourceFile": "tools/codegen/test-flutter-widget.dart",
+    "generatedAt": 1762707845917,
+    "irVersion": "1.0.0",
+    "componentName": "CounterWidget",
+    "documentation": "A simple counter widget for testing Flutter-to-React conversion",
+    "widgetType": "StatefulWidget",
+    "isStateful": true,
+    "isInherited": false,
+    "flutter": {
+      "stateVariables": [
+        {
+          "name": "counter",
+          "type": "number",
+          "dartType": "int",
+          "initialValue": 0,
+          "mutable": true
+        },
+        {
+          "name": "message",
+          "type": "string",
+          "dartType": "String",
+          "initialValue": "Hello Flutter",
+          "mutable": true
+        }
+      ],
+      "lifecycleMethods": [],
+      "eventHandlers": []
+    }
+  },
+  "nodes": [
+    {
+      "id": "node_1762707845917_nqice0ven",
+      "type": "Container",
+      "props": {
+        "padding": 16
+      },
+      "children": [
+        {
+          "id": "node_1762707845917_37emzfijm",
+          "type": "Column",
+          "props": {},
+          "children": [
+            {
+              "id": "node_1762707845917_fkmwmowda",
+              "type": "Text",
+              "props": {
+                "style": "TextStyle(\n              fontSize: 24.0,\n              fontWeight: FontWeight.bold,\n              color: Colors.blue,\n            )"
+              },
+              "children": [],
+              "metadata": {
+                "lineNumber": 0
+              }
+            },
+            {
+              "id": "node_1762707845917_asmvyggc6",
+              "type": "Text",
+              "props": {
+                "style": "TextStyle(\n              fontSize: 18.0,\n            )"
+              },
+              "children": [],
+              "metadata": {
+                "lineNumber": 0
+              }
+            },
+            {
+              "id": "node_1762707845917_a7i0fdxzj",
+              "type": "ElevatedButton",
+              "props": {},
+              "children": [
+                {
+                  "id": "node_1762707845917_6wpd5j6cz",
+                  "type": "Text",
+                  "props": {},
+                  "children": [],
+                  "metadata": {
+                    "lineNumber": 0
+                  }
+                }
+              ],
+              "metadata": {
+                "lineNumber": 0
+              },
+              "events": [
+                {
+                  "name": "onPressed",
+                  "handler": "incrementCounter",
+                  "parameters": []
+                }
+              ]
+            },
+            {
+              "id": "node_1762707845917_3r7e2eo1a",
+              "type": "ElevatedButton",
+              "props": {},
+              "children": [
+                {
+                  "id": "node_1762707845917_h0abliv46",
+                  "type": "Text",
+                  "props": {},
+                  "children": [],
+                  "metadata": {
+                    "lineNumber": 0
+                  }
+                }
+              ],
+              "metadata": {
+                "lineNumber": 0
+              },
+              "events": [
+                {
+                  "name": "onPressed",
+                  "handler": "resetCounter",
+                  "parameters": []
+                }
+              ]
+            }
+          ],
+          "metadata": {
+            "lineNumber": 0
+          }
+        }
+      ],
+      "metadata": {
+        "lineNumber": 0
+      }
+    }
+  ]
+}

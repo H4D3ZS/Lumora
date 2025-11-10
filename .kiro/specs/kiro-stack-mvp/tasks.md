@@ -644,7 +644,7 @@
     - _Requirements: 7.2, 7.3, 7.4_
 
 - [ ] 26. Final integration and polish
-  - [ ] 26.1 Test complete quickstart flow
+  - [x] 26.1 Test complete quickstart flow
     - Start Dev-Proxy with npm install and node index.js
     - Create session with curl http://localhost:3000/session/new
     - Run Flutter-Dev-Client with flutter pub get and flutter run
@@ -653,7 +653,7 @@
     - Verify UI renders on device within 2 seconds
     - _Requirements: 20.1_
   
-  - [ ] 26.2 Verify all examples work end-to-end
+  - [x] 26.2 Verify all examples work end-to-end
     - Test todo-app example with all steps
     - Test chat-app example with all steps
     - Verify generated Dart code compiles for both examples

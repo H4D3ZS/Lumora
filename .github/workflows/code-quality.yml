@@ -1,0 +1,265 @@
+name: Code Quality
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Run weekly on Monday at 00:00 UTC
+    - cron: '0 0 * * 1'
+
+jobs:
+  lint:
+    name: Lint Code
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18.x'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Lint TypeScript files
+        run: |
+          # Add ESLint when configured
+          # npx eslint "packages/**/*.ts" "tools/**/*.ts"
+          echo "ESLint check placeholder"
+      
+      - name: Check TypeScript compilation
+        run: |
+          cd packages/lumora_ir
+          npm ci
+          npx tsc --noEmit
+          
+          cd ../lumora-cli
+          npm ci
+          npx tsc --noEmit
+
+  format-check:
+    name: Format Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18.x'
+          cache: 'npm'
+      
+      - name: Install Prettier
+        run: npm install -g prettier
+      
+      - name: Check formatting
+        run: |
+          # Add prettier check when configured
+          # prettier --check "packages/**/*.{ts,js,json}" "tools/**/*.{ts,js,json}"
+          echo "Prettier check placeholder"
+
+  dart-analyze:
+    name: Dart Analysis
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.16.0'
+          channel: 'stable'
+      
+      - name: Analyze lumora_core
+        run: |
+          cd packages/kiro_core
+          flutter pub get
+          flutter analyze --fatal-infos --fatal-warnings
+      
+      - name: Analyze lumora_ui_tokens
+        run: |
+          cd packages/lumora_ui_tokens
+          flutter pub get
+          flutter analyze --fatal-infos --fatal-warnings
+      
+      - name: Analyze flutter-dev-client
+        run: |
+          cd apps/flutter-dev-client
+          flutter pub get
+          flutter analyze --fatal-infos --fatal-warnings
+
+  dart-format:
+    name: Dart Format Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.16.0'
+          channel: 'stable'
+      
+      - name: Check Dart formatting
+        run: |
+          dart format --set-exit-if-changed packages/kiro_core/lib
+          dart format --set-exit-if-changed packages/lumora_ui_tokens/lib
+          dart format --set-exit-if-changed apps/flutter-dev-client/lib
+
+  dependency-check:
+    name: Dependency Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18.x'
+          cache: 'npm'
+      
+      - name: Check for outdated dependencies
+        run: |
+          npm outdated || true
+          
+          cd packages/lumora_ir
+          npm outdated || true
+          
+          cd ../lumora-cli
+          npm outdated || true
+      
+      - name: Check for unused dependencies
+        run: |
+          # Add depcheck when configured
+          # npx depcheck packages/lumora_ir
+          # npx depcheck packages/lumora-cli
+          echo "Dependency check placeholder"
+
+  type-coverage:
+    name: TypeScript Type Coverage
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18.x'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: |
+          cd packages/lumora_ir
+          npm ci
+      
+      - name: Check type coverage
+        run: |
+          cd packages/lumora_ir
+          # Add type-coverage when configured
+          # npx type-coverage --at-least 80
+          echo "Type coverage check placeholder"
+
+  complexity-analysis:
+    name: Code Complexity Analysis
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18.x'
+          cache: 'npm'
+      
+      - name: Analyze complexity
+        run: |
+          # Add complexity analysis when configured
+          # npx complexity-report packages/lumora_ir/src
+          echo "Complexity analysis placeholder"
+
+  documentation-check:
+    name: Documentation Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Check for missing documentation
+        run: |
+          # Check that all public APIs have documentation
+          echo "Documentation check placeholder"
+      
+      - name: Validate markdown links
+        run: |
+          # Add markdown link checker when configured
+          # npx markdown-link-check README.md
+          echo "Markdown link check placeholder"
+
+  bundle-size:
+    name: Bundle Size Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18.x'
+          cache: 'npm'
+      
+      - name: Build packages
+        run: |
+          cd packages/lumora_ir
+          npm ci
+          npm run build
+      
+      - name: Check bundle size
+        run: |
+          cd packages/lumora_ir
+          # Add bundle size check when configured
+          # npx size-limit
+          echo "Bundle size check placeholder"
+
+  performance-benchmarks:
+    name: Performance Benchmarks
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18.x'
+          cache: 'npm'
+      
+      - name: Run benchmarks
+        run: |
+          cd packages/lumora_ir
+          npm ci
+          npm run build
+          # Add performance benchmarks when configured
+          # npm run benchmark
+          echo "Performance benchmark placeholder"

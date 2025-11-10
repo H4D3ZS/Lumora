@@ -41,6 +41,10 @@ export declare class WebSocketBroker {
      */
     private handleClose;
     /**
+     * Determines message priority based on type
+     */
+    private getMessagePriority;
+    /**
      * Broadcast message to all clients in a session
      */
     broadcastToSession(sessionId: string, message: WebSocketEnvelope, excludeClientId?: string, targetClientType?: 'device' | 'editor'): number;
@@ -53,13 +57,17 @@ export declare class WebSocketBroker {
      */
     private sendPong;
     /**
-     * Start ping/pong health checks
+     * Start ping/pong health checks with efficient keep-alive
      */
     startHealthChecks(): void;
     /**
      * Stop ping/pong health checks
      */
     stopHealthChecks(): void;
+    /**
+     * Get WebSocket connection count
+     */
+    getConnectionCount(): number;
     /**
      * Close all connections and cleanup
      */

@@ -269,4 +269,175 @@ describe('ModeConfig', () => {
       expect(defaults.storageDir).toBe('.lumora/ir');
     });
   });
+
+  describe('custom widget mappings', () => {
+    it('should store custom mappings path', () => {
+      const config = initModeConfig(testDir, DevelopmentMode.UNIVERSAL, {
+        customMappings: 'custom-mappings.yaml',
+      });
+
+      expect(config.getCustomMappings()).toBe('custom-mappings.yaml');
+    });
+
+    it('should load custom mappings path from config file', () => {
+      const testConfig: LumoraConfig = {
+        mode: DevelopmentMode.UNIVERSAL,
+        reactDir: 'web/src',
+        flutterDir: 'mobile/lib',
+        customMappings: 'my-custom-mappings.yaml',
+      };
+
+      fs.writeFileSync(configPath, yaml.dump(testConfig), 'utf8');
+
+      const config = loadModeConfig(testDir);
+      expect(config.getCustomMappings()).toBe('my-custom-mappings.yaml');
+    });
+  });
+
+  describe('naming convention application', () => {
+    it('should apply file naming convention - snake_case', () => {
+      const config = initModeConfig(testDir, DevelopmentMode.UNIVERSAL, {
+        namingConventions: { fileNaming: 'snake_case' },
+      });
+
+      expect(config.applyFileNamingConvention('MyComponent')).toBe('my_component');
+      expect(config.applyFileNamingConvention('user-profile')).toBe('user_profile');
+    });
+
+    it('should apply file naming convention - kebab-case', () => {
+      const config = initModeConfig(testDir, DevelopmentMode.UNIVERSAL, {
+        namingConventions: { fileNaming: 'kebab-case' },
+      });
+
+      expect(config.applyFileNamingConvention('MyComponent')).toBe('my-component');
+      expect(config.applyFileNamingConvention('user_profile')).toBe('user-profile');
+    });
+
+    it('should apply file naming convention - PascalCase', () => {
+      const config = initModeConfig(testDir, DevelopmentMode.UNIVERSAL, {
+        namingConventions: { fileNaming: 'PascalCase' },
+      });
+
+      expect(config.applyFileNamingConvention('my-component')).toBe('MyComponent');
+      expect(config.applyFileNamingConvention('user_profile')).toBe('UserProfile');
+    });
+
+    it('should apply identifier naming convention - camelCase', () => {
+      const config = initModeConfig(testDir, DevelopmentMode.UNIVERSAL, {
+        namingConventions: { identifierNaming: 'camelCase' },
+      });
+
+      expect(config.applyIdentifierNamingConvention('MyVariable')).toBe('myVariable');
+      expect(config.applyIdentifierNamingConvention('user_name')).toBe('userName');
+    });
+
+    it('should apply component naming convention - PascalCase', () => {
+      const config = initModeConfig(testDir, DevelopmentMode.UNIVERSAL, {
+        namingConventions: { componentNaming: 'PascalCase' },
+      });
+
+      expect(config.applyComponentNamingConvention('my-component')).toBe('MyComponent');
+      expect(config.applyComponentNamingConvention('user_profile')).toBe('UserProfile');
+    });
+  });
+
+  describe('sync settings', () => {
+    it('should load sync settings', () => {
+      const config = initModeConfig(testDir, DevelopmentMode.UNIVERSAL, {
+        sync: {
+          enabled: false,
+          debounceMs: 500,
+          testSync: false,
+        },
+      });
+
+      const syncSettings = config.getSyncSettings();
+      expect(syncSettings.enabled).toBe(false);
+      expect(syncSettings.debounceMs).toBe(500);
+      expect(syncSettings.testSync).toBe(false);
+    });
+
+    it('should use default sync settings when not specified', () => {
+      const config = initModeConfig(testDir, DevelopmentMode.UNIVERSAL);
+
+      const syncSettings = config.getSyncSettings();
+      expect(syncSettings.enabled).toBe(true);
+      expect(syncSettings.debounceMs).toBe(300);
+      expect(syncSettings.testSync).toBe(true);
+    });
+  });
+
+  describe('conversion settings', () => {
+    it('should load conversion settings', () => {
+      const config = initModeConfig(testDir, DevelopmentMode.UNIVERSAL, {
+        conversion: {
+          preserveComments: false,
+          generateDocumentation: false,
+          strictTypeChecking: false,
+          fallbackBehavior: 'error',
+        },
+      });
+
+      const conversionSettings = config.getConversionSettings();
+      expect(conversionSettings.preserveComments).toBe(false);
+      expect(conversionSettings.generateDocumentation).toBe(false);
+      expect(conversionSettings.strictTypeChecking).toBe(false);
+      expect(conversionSettings.fallbackBehavior).toBe('error');
+    });
+  });
+
+  describe('validation settings', () => {
+    it('should load validation settings', () => {
+      const config = initModeConfig(testDir, DevelopmentMode.UNIVERSAL, {
+        validation: {
+          validateIR: false,
+          validateGenerated: false,
+        },
+      });
+
+      const validationSettings = config.getValidationSettings();
+      expect(validationSettings.validateIR).toBe(false);
+      expect(validationSettings.validateGenerated).toBe(false);
+    });
+  });
+
+  describe('formatting preferences getters', () => {
+    it('should get formatting preferences', () => {
+      const config = initModeConfig(testDir, DevelopmentMode.UNIVERSAL, {
+        formatting: {
+          indentSize: 4,
+          useTabs: true,
+          lineWidth: 120,
+          semicolons: false,
+          trailingComma: 'all',
+          singleQuote: false,
+        },
+      });
+
+      const formatting = config.getFormattingPreferences();
+      expect(formatting.indentSize).toBe(4);
+      expect(formatting.useTabs).toBe(true);
+      expect(formatting.lineWidth).toBe(120);
+      expect(formatting.semicolons).toBe(false);
+      expect(formatting.trailingComma).toBe('all');
+      expect(formatting.singleQuote).toBe(false);
+    });
+  });
+
+  describe('naming conventions getters', () => {
+    it('should get naming conventions', () => {
+      const config = initModeConfig(testDir, DevelopmentMode.UNIVERSAL, {
+        namingConventions: {
+          fileNaming: 'kebab-case',
+          identifierNaming: 'PascalCase',
+          componentNaming: 'camelCase',
+        },
+      });
+
+      const naming = config.getNamingConventions();
+      expect(naming.fileNaming).toBe('kebab-case');
+      expect(naming.identifierNaming).toBe('PascalCase');
+      expect(naming.componentNaming).toBe('camelCase');
+    });
+  });
 });

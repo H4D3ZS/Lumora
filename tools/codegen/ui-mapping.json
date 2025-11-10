@@ -1,5 +1,64 @@
 {
+  "div": {
+    "react": "div",
+    "dart": "Container",
+    "props": {
+      "padding": {
+        "transform": "EdgeInsets.all",
+        "type": "number"
+      },
+      "margin": {
+        "transform": "EdgeInsets.all",
+        "type": "number"
+      },
+      "backgroundColor": {
+        "transform": "Color",
+        "type": "color"
+      },
+      "width": {
+        "transform": "width",
+        "type": "number"
+      },
+      "height": {
+        "transform": "height",
+        "type": "number"
+      }
+    }
+  },
+  "span": {
+    "react": "span",
+    "dart": "Text",
+    "props": {
+      "text": {
+        "transform": "data",
+        "type": "string"
+      },
+      "style": {
+        "transform": "TextStyle",
+        "type": "object",
+        "nested": {
+          "fontSize": {
+            "transform": "fontSize",
+            "type": "number"
+          },
+          "fontWeight": {
+            "transform": "fontWeight",
+            "type": "fontWeight"
+          },
+          "color": {
+            "transform": "color",
+            "type": "color"
+          }
+        }
+      },
+      "textAlign": {
+        "transform": "textAlign",
+        "type": "textAlign"
+      }
+    }
+  },
   "View": {
+    "react": "div",
     "dart": "Container",
     "props": {
       "padding": {
@@ -25,6 +84,7 @@
     }
   },
   "Text": {
+    "react": "span",
     "dart": "Text",
     "props": {
       "text": {
@@ -56,6 +116,7 @@
     }
   },
   "Button": {
+    "react": "button",
     "dart": "ElevatedButton",
     "props": {
       "title": {
@@ -69,6 +130,7 @@
     }
   },
   "List": {
+    "react": "ul",
     "dart": "ListView",
     "props": {
       "children": {
@@ -82,6 +144,7 @@
     }
   },
   "Image": {
+    "react": "img",
     "dart": "Image.network",
     "props": {
       "src": {
@@ -99,6 +162,7 @@
     }
   },
   "Input": {
+    "react": "input",
     "dart": "TextField",
     "props": {
       "placeholder": {
@@ -114,5 +178,117 @@
         "type": "function"
       }
     }
+  },
+  "Container": {
+    "react": "div",
+    "dart": "Container"
+  },
+  "Column": {
+    "react": "div",
+    "dart": "Column"
+  },
+  "Row": {
+    "react": "div",
+    "dart": "Row"
+  },
+  "ElevatedButton": {
+    "react": "button",
+    "dart": "ElevatedButton"
+  },
+  "TextButton": {
+    "react": "button",
+    "dart": "TextButton"
+  },
+  "OutlinedButton": {
+    "react": "button",
+    "dart": "OutlinedButton"
+  },
+  "ListView": {
+    "react": "ul",
+    "dart": "ListView"
+  },
+  "GridView": {
+    "react": "div",
+    "dart": "GridView"
+  },
+  "Stack": {
+    "react": "div",
+    "dart": "Stack"
+  },
+  "Padding": {
+    "react": "div",
+    "dart": "Padding"
+  },
+  "Center": {
+    "react": "div",
+    "dart": "Center"
+  },
+  "Align": {
+    "react": "div",
+    "dart": "Align"
+  },
+  "SizedBox": {
+    "react": "div",
+    "dart": "SizedBox"
+  },
+  "Expanded": {
+    "react": "div",
+    "dart": "Expanded"
+  },
+  "Flexible": {
+    "react": "div",
+    "dart": "Flexible"
+  },
+  "Card": {
+    "react": "div",
+    "dart": "Card"
+  },
+  "Scaffold": {
+    "react": "div",
+    "dart": "Scaffold"
+  },
+  "AppBar": {
+    "react": "header",
+    "dart": "AppBar"
+  },
+  "TextField": {
+    "react": "input",
+    "dart": "TextField"
+  },
+  "Image.network": {
+    "react": "img",
+    "dart": "Image.network"
+  },
+  "Icon": {
+    "react": "span",
+    "dart": "Icon"
+  },
+  "IconButton": {
+    "react": "button",
+    "dart": "IconButton"
+  },
+  "Checkbox": {
+    "react": "input",
+    "dart": "Checkbox"
+  },
+  "Radio": {
+    "react": "input",
+    "dart": "Radio"
+  },
+  "Switch": {
+    "react": "input",
+    "dart": "Switch"
+  },
+  "Slider": {
+    "react": "input",
+    "dart": "Slider"
+  },
+  "CircularProgressIndicator": {
+    "react": "div",
+    "dart": "CircularProgressIndicator"
+  },
+  "LinearProgressIndicator": {
+    "react": "div",
+    "dart": "LinearProgressIndicator"
   }
 }

@@ -18,6 +18,26 @@ The Lumora IR system provides:
 npm install @lumora/ir
 ```
 
+## CLI Usage
+
+Lumora IR includes a powerful CLI for converting between React and Flutter:
+
+```bash
+# Convert React to Flutter
+lumora convert src/Button.tsx
+
+# Convert Flutter to React
+lumora convert lib/button.dart
+
+# Watch mode for live conversion
+lumora convert src/App.tsx --watch
+
+# Dry run to preview changes
+lumora convert src/Button.tsx --dry-run
+```
+
+See [CLI Documentation](./CLI_README.md) for complete usage guide.
+
 ## Quick Start
 
 ### Creating IR

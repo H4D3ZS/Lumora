@@ -1,0 +1,193 @@
+# Example Custom Widget Mappings
+# This file demonstrates how to add custom widget mappings to override defaults
+# or add new widget types not included in the default mappings
+
+schemaVersion: "1.0"
+
+# Custom Button with specific styling
+CustomButton:
+  react:
+    component: "button"
+  flutter:
+    widget: "CustomButton"
+    import: "package:my_app/widgets/custom_button.dart"
+  props:
+    label:
+      react: "children"
+      flutter: "label"
+      type: "string"
+    variant:
+      react: "variant"
+      flutter: "variant"
+      type: "string"
+  events:
+    onClick:
+      react: "onClick"
+      flutter: "onPressed"
+      parameters: []
+  custom: true
+
+# Custom Card Component
+CustomCard:
+  react:
+    component: "CustomCard"
+    import: "./components/CustomCard"
+  flutter:
+    widget: "CustomCard"
+    import: "package:my_app/widgets/custom_card.dart"
+  props:
+    title:
+      react: "title"
+      flutter: "title"
+      type: "string"
+    content:
+      react: "children"
+      flutter: "child"
+      type: "widget"
+    elevation:
+      react: "elevation"
+      flutter: "elevation"
+      type: "number"
+      default: 2
+  custom: true
+
+# Override default Text widget behavior
+Text:
+  react:
+    component: "p"  # Use <p> instead of <span>
+  flutter:
+    widget: "Text"
+    import: "package:flutter/material.dart"
+  props:
+    children:
+      react: "children"
+      flutter: "data"
+      type: "string"
+  styles:
+    fontSize:
+      react: "fontSize"
+      flutter: "style.fontSize"
+      type: "number"
+    color:
+      react: "color"
+      flutter: "style.color"
+      type: "color"
+      transform: "Color"
+  custom: true
+
+# Custom Navigation Component
+CustomNavigator:
+  react:
+    component: "BrowserRouter"
+    import: "react-router-dom"
+  flutter:
+    widget: "MaterialApp"
+    import: "package:flutter/material.dart"
+  props:
+    routes:
+      react: "children"
+      flutter: "routes"
+      type: "object"
+  custom: true
+
+# Custom Form Field
+CustomFormField:
+  react:
+    component: "FormField"
+    import: "./components/FormField"
+  flutter:
+    widget: "TextFormField"
+    import: "package:flutter/material.dart"
+  props:
+    label:
+      react: "label"
+      flutter: "decoration.labelText"
+      type: "string"
+    value:
+      react: "value"
+      flutter: "controller.text"
+      type: "string"
+    error:
+      react: "error"
+      flutter: "decoration.errorText"
+      type: "string"
+  events:
+    onChange:
+      react: "onChange"
+      flutter: "onChanged"
+      parameters: ["value"]
+    onValidate:
+      react: "onValidate"
+      flutter: "validator"
+      parameters: ["value"]
+  custom: true
+
+# Custom Loading Indicator
+LoadingSpinner:
+  react:
+    component: "LoadingSpinner"
+    import: "./components/LoadingSpinner"
+  flutter:
+    widget: "CircularProgressIndicator"
+    import: "package:flutter/material.dart"
+  props:
+    size:
+      react: "size"
+      flutter: "strokeWidth"
+      type: "number"
+      default: 4
+    color:
+      react: "color"
+      flutter: "valueColor"
+      type: "color"
+      transform: "AlwaysStoppedAnimation<Color>"
+  custom: true
+
+# Custom Avatar Component
+Avatar:
+  react:
+    component: "Avatar"
+    import: "./components/Avatar"
+  flutter:
+    widget: "CircleAvatar"
+    import: "package:flutter/material.dart"
+  props:
+    src:
+      react: "src"
+      flutter: "backgroundImage"
+      type: "string"
+      transform: "NetworkImage"
+    size:
+      react: "size"
+      flutter: "radius"
+      type: "number"
+    fallback:
+      react: "fallback"
+      flutter: "child"
+      type: "widget"
+  custom: true
+
+# Custom Badge Component
+Badge:
+  react:
+    component: "Badge"
+    import: "./components/Badge"
+  flutter:
+    widget: "Badge"
+    import: "package:flutter/material.dart"
+  props:
+    count:
+      react: "count"
+      flutter: "label"
+      type: "number"
+    color:
+      react: "color"
+      flutter: "backgroundColor"
+      type: "color"
+      transform: "Color"
+    child:
+      react: "children"
+      flutter: "child"
+      type: "widget"
+  custom: true
+

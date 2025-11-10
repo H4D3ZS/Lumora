@@ -1,0 +1,87 @@
+{
+  "version": "1.0.0",
+  "metadata": {
+    "sourceFramework": "react",
+    "sourceFile": "test-state-example.tsx",
+    "generatedAt": 1762704673833,
+    "irVersion": "1.0.0",
+    "componentName": "Counter",
+    "documentation": "*\n * Counter component with state management"
+  },
+  "nodes": [
+    {
+      "id": "node_1762704673833_w0eq3f555",
+      "type": "View",
+      "props": {
+        "padding": 20
+      },
+      "children": [
+        {
+          "id": "node_1762704673832_0qix9osq5",
+          "type": "Text",
+          "props": {
+            "text": "{{message}}",
+            "style": {
+              "fontSize": 24,
+              "marginBottom": 20
+            }
+          },
+          "children": [],
+          "metadata": {
+            "lineNumber": 17
+          },
+          "state": {
+            "type": "local",
+            "variables": [
+              {
+                "name": "message",
+                "setter": "setMessage",
+                "type": "string",
+                "initialValue": "Click the button!",
+                "mutable": true
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_1762704673833_pfuvcfy8r",
+          "type": "Text",
+          "props": {
+            "text": "Current count: {{count}}",
+            "style": {
+              "fontSize": 18
+            }
+          },
+          "children": [],
+          "metadata": {
+            "lineNumber": 18
+          }
+        },
+        {
+          "id": "node_1762704673833_q29vpiywx",
+          "type": "Button",
+          "props": {
+            "title": "Increment",
+            "style": {
+              "marginTop": 20
+            }
+          },
+          "children": [],
+          "metadata": {
+            "lineNumber": 19
+          },
+          "events": [
+            {
+              "name": "onPress",
+              "handler": "handleIncrement",
+              "parameters": []
+            }
+          ]
+        }
+      ],
+      "metadata": {
+        "lineNumber": 16
+      }
+    }
+  ]
+}

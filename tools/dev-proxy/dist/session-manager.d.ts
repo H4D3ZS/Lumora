@@ -69,6 +69,15 @@ export declare class SessionManager {
      */
     getActiveSessionCount(): number;
     /**
+     * Get memory usage statistics for session storage
+     * Returns approximate memory usage in bytes
+     */
+    getMemoryUsage(): {
+        sessionCount: number;
+        clientCount: number;
+        estimatedBytes: number;
+    };
+    /**
      * Get all sessions (for testing/debugging)
      */
     getAllSessions(): Map<string, Session>;

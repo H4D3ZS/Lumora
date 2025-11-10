@@ -1,0 +1,193 @@
+{
+  "version": "1.0.0",
+  "metadata": {
+    "sourceFramework": "react",
+    "sourceFile": "example.tsx",
+    "generatedAt": 1762704514661,
+    "irVersion": "1.0.0",
+    "componentName": "ExampleApp",
+    "documentation": "*\n * Example TSX component for demonstrating the tsx2schema CLI\n * \n * Usage:\n *   node cli.js tsx2schema example.tsx example-output.json\n *   node cli.js tsx2schema example.tsx example-output.json --watch"
+  },
+  "nodes": [
+    {
+      "id": "node_1762704514661_cdexxpzle",
+      "type": "View",
+      "props": {
+        "padding": 20,
+        "backgroundColor": "#F5F5F5"
+      },
+      "children": [
+        {
+          "id": "node_1762704514661_mymepy1tq",
+          "type": "Text",
+          "props": {
+            "text": "Welcome to Lumora",
+            "style": {
+              "fontSize": 28,
+              "fontWeight": "bold",
+              "color": "#333"
+            }
+          },
+          "children": [],
+          "metadata": {
+            "lineNumber": 12
+          }
+        },
+        {
+          "id": "node_1762704514661_lmidez0oa",
+          "type": "Text",
+          "props": {
+            "text": "A mobile-first Flutter development framework",
+            "style": {
+              "fontSize": 16,
+              "color": "#666",
+              "marginTop": 8
+            }
+          },
+          "children": [],
+          "metadata": {
+            "lineNumber": 17
+          }
+        },
+        {
+          "id": "node_1762704514661_vve65a5w3",
+          "type": "Button",
+          "props": {
+            "title": "Get Started",
+            "style": {
+              "marginTop": 20,
+              "backgroundColor": "#007AFF"
+            }
+          },
+          "children": [],
+          "metadata": {
+            "lineNumber": 22
+          }
+        },
+        {
+          "id": "node_1762704514661_dtocy544q",
+          "type": "List",
+          "props": {
+            "style": {
+              "marginTop": 30
+            }
+          },
+          "children": [
+            {
+              "id": "node_1762704514661_2sc6wxwzb",
+              "type": "View",
+              "props": {
+                "padding": 12,
+                "backgroundColor": "#FFFFFF",
+                "style": {
+                  "marginBottom": 8
+                }
+              },
+              "children": [
+                {
+                  "id": "node_1762704514661_su94dxjr9",
+                  "type": "Text",
+                  "props": {
+                    "text": "✓ Instant preview on device",
+                    "style": {
+                      "fontSize": 14
+                    }
+                  },
+                  "children": [],
+                  "metadata": {
+                    "lineNumber": 30
+                  }
+                }
+              ],
+              "metadata": {
+                "lineNumber": 29
+              }
+            },
+            {
+              "id": "node_1762704514661_j3kbxsbkp",
+              "type": "View",
+              "props": {
+                "padding": 12,
+                "backgroundColor": "#FFFFFF",
+                "style": {
+                  "marginBottom": 8
+                }
+              },
+              "children": [
+                {
+                  "id": "node_1762704514661_2ov65hjvt",
+                  "type": "Text",
+                  "props": {
+                    "text": "✓ Live hot reload",
+                    "style": {
+                      "fontSize": 14
+                    }
+                  },
+                  "children": [],
+                  "metadata": {
+                    "lineNumber": 34
+                  }
+                }
+              ],
+              "metadata": {
+                "lineNumber": 33
+              }
+            },
+            {
+              "id": "node_1762704514661_qrirb449p",
+              "type": "View",
+              "props": {
+                "padding": 12,
+                "backgroundColor": "#FFFFFF",
+                "style": {
+                  "marginBottom": 8
+                }
+              },
+              "children": [
+                {
+                  "id": "node_1762704514661_q9wgvyjhk",
+                  "type": "Text",
+                  "props": {
+                    "text": "✓ Production-ready Dart code",
+                    "style": {
+                      "fontSize": 14
+                    }
+                  },
+                  "children": [],
+                  "metadata": {
+                    "lineNumber": 38
+                  }
+                }
+              ],
+              "metadata": {
+                "lineNumber": 37
+              }
+            }
+          ],
+          "metadata": {
+            "lineNumber": 28
+          }
+        },
+        {
+          "id": "node_1762704514661_gx2yn31a7",
+          "type": "Input",
+          "props": {
+            "placeholder": "Enter your email",
+            "style": {
+              "marginTop": 20,
+              "padding": 12,
+              "backgroundColor": "#FFFFFF"
+            }
+          },
+          "children": [],
+          "metadata": {
+            "lineNumber": 42
+          }
+        }
+      ],
+      "metadata": {
+        "lineNumber": 11
+      }
+    }
+  ]
+}

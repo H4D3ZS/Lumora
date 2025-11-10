@@ -1,0 +1,268 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test-npm-packages:
+    name: Test NPM Packages
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [16.x, 18.x, 20.x]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+      
+      - name: Install root dependencies
+        run: npm ci
+      
+      - name: Test @lumora/ir
+        run: |
+          cd packages/lumora_ir
+          npm ci
+          npm run build
+          npm test
+      
+      - name: Test @lumora/cli
+        run: |
+          cd packages/lumora-cli
+          npm ci
+          npm run build
+          npm test
+      
+      - name: Test codegen tools
+        run: |
+          cd tools/codegen
+          npm ci
+          npm test
+      
+      - name: Test dev-proxy
+        run: |
+          cd tools/dev-proxy
+          npm ci
+          npm run build
+          npm test
+
+  test-dart-packages:
+    name: Test Dart Packages
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.16.0'
+          channel: 'stable'
+      
+      - name: Flutter doctor
+        run: flutter doctor -v
+      
+      - name: Test lumora_core
+        run: |
+          cd packages/kiro_core
+          flutter pub get
+          flutter analyze
+          flutter test
+      
+      - name: Test lumora_ui_tokens
+        run: |
+          cd packages/lumora_ui_tokens
+          flutter pub get
+          flutter analyze
+          flutter test
+      
+      - name: Test flutter-dev-client
+        run: |
+          cd apps/flutter-dev-client
+          flutter pub get
+          flutter analyze
+          flutter test
+
+  code-quality:
+    name: Code Quality Checks
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18.x'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Lint TypeScript packages
+        run: |
+          cd packages/lumora_ir
+          npm ci
+          npm run build
+          # Add linting when configured
+          # npm run lint
+      
+      - name: Check formatting
+        run: |
+          # Add prettier check when configured
+          # npx prettier --check "packages/**/*.{ts,js,json}"
+          echo "Formatting check placeholder"
+      
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.16.0'
+          channel: 'stable'
+      
+      - name: Analyze Dart code
+        run: |
+          cd packages/kiro_core
+          flutter pub get
+          flutter analyze --fatal-infos
+          
+          cd ../lumora_ui_tokens
+          flutter pub get
+          flutter analyze --fatal-infos
+
+  build-verification:
+    name: Build Verification
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18.x'
+          cache: 'npm'
+      
+      - name: Build NPM packages
+        run: |
+          npm ci
+          
+          cd packages/lumora_ir
+          npm ci
+          npm run build
+          
+          cd ../lumora-cli
+          npm ci
+          npm run build
+          
+          cd ../../tools/codegen
+          npm ci
+          
+          cd ../dev-proxy
+          npm ci
+          npm run build
+      
+      - name: Verify package contents
+        run: |
+          cd packages/lumora_ir
+          npm pack --dry-run
+          
+          cd ../lumora-cli
+          npm pack --dry-run
+      
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.16.0'
+          channel: 'stable'
+      
+      - name: Build Flutter packages
+        run: |
+          cd packages/kiro_core
+          flutter pub get
+          flutter pub publish --dry-run
+          
+          cd ../lumora_ui_tokens
+          flutter pub get
+          flutter pub publish --dry-run
+      
+      - name: Build Flutter app
+        run: |
+          cd apps/flutter-dev-client
+          flutter pub get
+          flutter build apk --debug
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18.x'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run npm audit
+        run: |
+          npm audit --audit-level=moderate || true
+          
+          cd packages/lumora_ir
+          npm audit --audit-level=moderate || true
+          
+          cd ../lumora-cli
+          npm audit --audit-level=moderate || true
+      
+      - name: Check for known vulnerabilities
+        run: |
+          # Add Snyk or other security scanning when configured
+          echo "Security scan placeholder"
+
+  coverage:
+    name: Code Coverage
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18.x'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run tests with coverage
+        run: |
+          cd packages/lumora_ir
+          npm ci
+          npm run build
+          npm test -- --coverage
+      
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./packages/lumora_ir/coverage/lcov.info
+          flags: lumora-ir
+          name: lumora-ir-coverage
+        continue-on-error: true

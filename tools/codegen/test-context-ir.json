@@ -1,0 +1,85 @@
+{
+  "version": "1.0.0",
+  "metadata": {
+    "sourceFramework": "react",
+    "sourceFile": "test-context-example.tsx",
+    "generatedAt": 1762706156540,
+    "irVersion": "1.0.0",
+    "componentName": "ThemedButton",
+    "documentation": "*\n * Component using context",
+    "hooks": {
+      "state": [
+        {
+          "name": "theme",
+          "setter": "setTheme",
+          "type": "string",
+          "initialValue": "light",
+          "mutable": true
+        }
+      ],
+      "effects": [],
+      "contexts": [],
+      "callbacks": [],
+      "memos": []
+    },
+    "contextDefinitions": [
+      {
+        "name": "ThemeContext",
+        "defaultValue": {
+          "theme": "light"
+        }
+      }
+    ]
+  },
+  "nodes": [
+    {
+      "id": "node_1762706156540_3fhe0oafr",
+      "type": "View",
+      "props": {
+        "padding": 20,
+        "backgroundColor": null
+      },
+      "children": [
+        {
+          "id": "node_1762706156540_zyqec0x8h",
+          "type": "Text",
+          "props": {
+            "text": "Current theme: {{theme}}",
+            "style": {
+              "fontSize": 18,
+              "color": null
+            }
+          },
+          "children": [],
+          "metadata": {
+            "lineNumber": 30
+          }
+        },
+        {
+          "id": "node_1762706156540_hry7kceyk",
+          "type": "Button",
+          "props": {
+            "title": "Toggle Theme",
+            "style": {
+              "marginTop": 20
+            }
+          },
+          "children": [],
+          "metadata": {
+            "lineNumber": 37
+          },
+          "events": [
+            {
+              "name": "onPress",
+              "handler": "toggleTheme",
+              "parameters": []
+            }
+          ]
+        }
+      ],
+      "metadata": {
+        "lineNumber": 29
+      }
+    }
+  ]
+}

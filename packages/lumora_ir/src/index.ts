@@ -67,6 +67,12 @@ export {
   type GeneratorFunction
 } from './sync/sync-engine';
 
+export {
+  TestSyncHandler,
+  type TestSyncConfig,
+  type TestConversionResult
+} from './sync/test-sync-handler';
+
 export { 
   ConflictDetector, 
   type ConflictDetectorConfig, 
@@ -133,8 +139,39 @@ export {
   DevelopmentMode,
   loadModeConfig,
   initModeConfig,
-  type LumoraConfig
+  type LumoraConfig,
+  type NamingConventions,
+  type FormattingPreferences,
+  type SyncSettings,
+  type ConversionSettings,
+  type ValidationSettings
 } from './config/mode-config';
+
+export {
+  loadAndApplyConfig,
+  initConfigWithMappings,
+  reloadConfig
+} from './config/config-loader';
+
+// Utilities
+export {
+  applyFileNaming,
+  applyIdentifierNaming,
+  applyComponentNaming,
+  generateFileName,
+  generateClassName,
+  generateIdentifierName,
+  convertNamingConvention
+} from './utils/naming-utils';
+
+export {
+  formatTypeScriptCode,
+  formatDartCode,
+  getIndentString,
+  formatCodeBlock,
+  applyTrailingComma,
+  formatImports
+} from './utils/formatting-utils';
 
 // Mode-Aware Sync
 export {
@@ -148,3 +185,108 @@ export {
   createModeAwareSync,
   type ModeAwareSyncConfig
 } from './sync/mode-aware-sync';
+
+// Cache
+export {
+  ConversionCache,
+  getConversionCache,
+  resetConversionCache,
+  type ASTCacheEntry,
+  type IRCacheEntry,
+  type CacheStats,
+  type CacheConfig
+} from './cache/conversion-cache';
+
+// Parallel Processing
+export {
+  ParallelProcessor,
+  getParallelProcessor,
+  resetParallelProcessor,
+  type ProcessTask,
+  type TaskResult,
+  type WorkerPoolConfig
+} from './workers/parallel-processor';
+
+// Progress Tracking
+export {
+  ProgressTracker,
+  getProgressTracker,
+  resetProgressTracker,
+  CLIProgressDisplay,
+  type ProgressUpdate,
+  type ProgressHandler
+} from './progress/progress-tracker';
+
+// Error Handling and Recovery
+export {
+  ErrorHandler,
+  getErrorHandler,
+  ErrorSeverity,
+  ErrorCategory,
+  type SourceLocation,
+  type ErrorSuggestion,
+  type LumoraError,
+  type ParseErrorDetails
+} from './errors/error-handler';
+
+export {
+  ConversionErrorHandler,
+  getConversionErrorHandler,
+  ConversionFailureReason,
+  type ConversionErrorDetails,
+  type AlternativeApproach
+} from './errors/conversion-error-handler';
+
+export {
+  FallbackHandler,
+  getFallbackHandler,
+  FallbackStrategy,
+  type FallbackResult,
+  type UnmappedWidgetRecord
+} from './errors/fallback-handler';
+
+export {
+  PartialConversionHandler,
+  getPartialConversionHandler,
+  ConversionIssueSeverity,
+  type ConversionIssue,
+  type PartialConversionResult,
+  type TodoMarkerConfig
+} from './errors/partial-conversion-handler';
+
+export {
+  FileBackupHandler,
+  getFileBackupHandler,
+  BackupStrategy,
+  type BackupConfig,
+  type BackupRecord
+} from './errors/file-backup-handler';
+
+// Documentation Conversion
+export {
+  parseJSDoc,
+  parseDartdoc,
+  jsdocToDartdoc,
+  dartdocToJSDoc,
+  extractInlineComments,
+  type DocComment
+} from './docs/doc-converter';
+
+// Testing Support
+export {
+  TestConverter,
+  type TestFile,
+  type TestSuite,
+  type TestCase,
+  type TestAssertion,
+  type MockDefinition as TestMockDefinition,
+  type MockMethod as TestMockMethod
+} from './testing/test-converter';
+
+export {
+  MockConverter,
+  type MockDefinition,
+  type MockMethod,
+  type MockParameter,
+  type MockProperty
+} from './testing/mock-converter';

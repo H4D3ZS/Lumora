@@ -1,0 +1,161 @@
+{
+  "version": "1.0.0",
+  "metadata": {
+    "sourceFramework": "react",
+    "sourceFile": "test-hooks-example.tsx",
+    "generatedAt": 1762705695439,
+    "irVersion": "1.0.0",
+    "componentName": "HooksExample",
+    "documentation": "*\n * Component demonstrating React hooks conversion",
+    "hooks": {
+      "state": [
+        {
+          "name": "count",
+          "setter": "setCount",
+          "type": "number",
+          "initialValue": 0,
+          "mutable": true
+        },
+        {
+          "name": "message",
+          "setter": "setMessage",
+          "type": "string",
+          "initialValue": "Hello",
+          "mutable": true
+        },
+        {
+          "name": "items",
+          "setter": "setItems",
+          "type": "array",
+          "initialValue": [],
+          "mutable": true
+        }
+      ],
+      "effects": [
+        {
+          "dependencies": [],
+          "hasCleanup": false,
+          "type": "mount"
+        },
+        {
+          "dependencies": [
+            "count"
+          ],
+          "hasCleanup": false,
+          "type": "update"
+        },
+        {
+          "dependencies": [],
+          "hasCleanup": true,
+          "type": "mount"
+        }
+      ],
+      "contexts": [],
+      "callbacks": [
+        {
+          "name": "handleIncrement",
+          "dependencies": [
+            "count"
+          ]
+        }
+      ],
+      "memos": [
+        {
+          "name": "doubleCount",
+          "dependencies": [
+            "count"
+          ]
+        }
+      ]
+    }
+  },
+  "nodes": [
+    {
+      "id": "node_1762705695439_ojgsjb43w",
+      "type": "View",
+      "props": {
+        "padding": 20
+      },
+      "children": [
+        {
+          "id": "node_1762705695438_206zauqhz",
+          "type": "Text",
+          "props": {
+            "text": "Count: {{count}}",
+            "style": {
+              "fontSize": 24
+            }
+          },
+          "children": [],
+          "metadata": {
+            "lineNumber": 45
+          }
+        },
+        {
+          "id": "node_1762705695438_89spvzd7c",
+          "type": "Text",
+          "props": {
+            "text": "Double: {{doubleCount}}",
+            "style": {
+              "fontSize": 18
+            }
+          },
+          "children": [],
+          "metadata": {
+            "lineNumber": 46
+          }
+        },
+        {
+          "id": "node_1762705695438_r6q3tlt58",
+          "type": "Text",
+          "props": {
+            "text": "{{message}}",
+            "style": {
+              "fontSize": 16
+            }
+          },
+          "children": [],
+          "metadata": {
+            "lineNumber": 47
+          },
+          "state": {
+            "type": "local",
+            "variables": [
+              {
+                "name": "message",
+                "setter": "setMessage",
+                "type": "string",
+                "initialValue": "Hello",
+                "mutable": true
+              }
+            ]
+          }
+        },
+        {
+          "id": "node_1762705695439_tjajh766n",
+          "type": "Button",
+          "props": {
+            "title": "Increment",
+            "style": {
+              "marginTop": 20
+            }
+          },
+          "children": [],
+          "metadata": {
+            "lineNumber": 48
+          },
+          "events": [
+            {
+              "name": "onPress",
+              "handler": "handleIncrement",
+              "parameters": []
+            }
+          ]
+        }
+      ],
+      "metadata": {
+        "lineNumber": 44
+      }
+    }
+  ]
+}

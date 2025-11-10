@@ -97,6 +97,14 @@ export declare class WidgetMappingRegistry {
      */
     getReactComponent(flutterWidget: string): string;
     /**
+     * Log unmapped widget warning
+     */
+    private logUnmappedWidget;
+    /**
+     * Get generic fallback widget for framework
+     */
+    private getGenericFallback;
+    /**
      * Get prop mapping for a widget
      * @param widgetName Widget name
      * @param propName Prop name

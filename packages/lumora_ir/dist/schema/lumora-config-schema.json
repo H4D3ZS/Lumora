@@ -1,0 +1,179 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://lumora.dev/schemas/config.json",
+  "title": "Lumora Configuration",
+  "description": "Configuration schema for Lumora bidirectional framework",
+  "type": "object",
+  "required": ["mode"],
+  "properties": {
+    "mode": {
+      "type": "string",
+      "enum": ["react", "flutter", "universal"],
+      "description": "Development mode: react (React-first), flutter (Flutter-first), or universal (bidirectional)"
+    },
+    "reactDir": {
+      "type": "string",
+      "description": "Directory containing React/TypeScript source files",
+      "default": "web/src"
+    },
+    "flutterDir": {
+      "type": "string",
+      "description": "Directory containing Flutter/Dart source files",
+      "default": "mobile/lib"
+    },
+    "storageDir": {
+      "type": "string",
+      "description": "Directory for storing Lumora IR files",
+      "default": ".lumora/ir"
+    },
+    "customMappings": {
+      "type": "string",
+      "description": "Path to custom widget mappings YAML file"
+    },
+    "namingConventions": {
+      "type": "object",
+      "description": "Naming conventions for generated files and identifiers",
+      "properties": {
+        "fileNaming": {
+          "type": "string",
+          "enum": ["snake_case", "kebab-case", "PascalCase", "camelCase"],
+          "description": "File naming convention",
+          "default": "snake_case"
+        },
+        "identifierNaming": {
+          "type": "string",
+          "enum": ["camelCase", "PascalCase", "snake_case"],
+          "description": "Identifier (variable/function) naming convention",
+          "default": "camelCase"
+        },
+        "componentNaming": {
+          "type": "string",
+          "enum": ["PascalCase", "camelCase"],
+          "description": "Component/Widget class naming convention",
+          "default": "PascalCase"
+        }
+      },
+      "additionalProperties": false
+    },
+    "formatting": {
+      "type": "object",
+      "description": "Code formatting preferences",
+      "properties": {
+        "indentSize": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 8,
+          "description": "Number of spaces for indentation",
+          "default": 2
+        },
+        "useTabs": {
+          "type": "boolean",
+          "description": "Use tabs instead of spaces for indentation",
+          "default": false
+        },
+        "lineWidth": {
+          "type": "integer",
+          "minimum": 40,
+          "maximum": 200,
+          "description": "Maximum line width for code formatting",
+          "default": 80
+        },
+        "semicolons": {
+          "type": "boolean",
+          "description": "Use semicolons in TypeScript/JavaScript code",
+          "default": true
+        },
+        "trailingComma": {
+          "type": "string",
+          "enum": ["none", "es5", "all"],
+          "description": "Trailing comma style for TypeScript/JavaScript",
+          "default": "es5"
+        },
+        "singleQuote": {
+          "type": "boolean",
+          "description": "Use single quotes in TypeScript/JavaScript",
+          "default": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "sync": {
+      "type": "object",
+      "description": "Synchronization settings",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable automatic file synchronization",
+          "default": true
+        },
+        "debounceMs": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 5000,
+          "description": "Debounce delay in milliseconds for file changes",
+          "default": 300
+        },
+        "excludePatterns": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Glob patterns for files to exclude from sync",
+          "default": ["**/*.test.*", "**/*.spec.*", "**/node_modules/**", "**/.git/**"]
+        },
+        "testSync": {
+          "type": "boolean",
+          "description": "Enable automatic test file synchronization",
+          "default": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "conversion": {
+      "type": "object",
+      "description": "Conversion behavior settings",
+      "properties": {
+        "preserveComments": {
+          "type": "boolean",
+          "description": "Preserve comments during conversion",
+          "default": true
+        },
+        "generateDocumentation": {
+          "type": "boolean",
+          "description": "Generate documentation comments in target framework",
+          "default": true
+        },
+        "strictTypeChecking": {
+          "type": "boolean",
+          "description": "Enable strict type checking during conversion",
+          "default": true
+        },
+        "fallbackBehavior": {
+          "type": "string",
+          "enum": ["warn", "error", "ignore"],
+          "description": "Behavior when encountering unmapped widgets",
+          "default": "warn"
+        }
+      },
+      "additionalProperties": false
+    },
+    "validation": {
+      "type": "object",
+      "description": "Validation settings",
+      "properties": {
+        "validateIR": {
+          "type": "boolean",
+          "description": "Validate IR against schema",
+          "default": true
+        },
+        "validateGenerated": {
+          "type": "boolean",
+          "description": "Validate generated code syntax",
+          "default": true
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

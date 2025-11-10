@@ -1,0 +1,25 @@
+# Source files
+src/
+tsconfig.json
+
+# Tests
+__tests__/
+*.test.ts
+jest.config.js
+test-files/
+
+# Development
+node_modules/
+.DS_Store
+*.log
+
+# Documentation (keep only essential)
+demo/
+examples/flutter-first/
+examples/react-first/
+examples/universal/
+
+# Keep these for distribution
+!dist/
+!README.md
+!LICENSE
