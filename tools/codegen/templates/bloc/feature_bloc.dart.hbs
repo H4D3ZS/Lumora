@@ -1,15 +1,24 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '{{featureName}}_event.dart';
-import '{{featureName}}_state.dart';
+import '{{featureNameLower}}_event.dart';
+import '{{featureNameLower}}_state.dart';
 
+/// BLoC for managing {{featureName}} feature state and business logic.
+/// 
+/// This BLoC handles all events related to the {{featureName}} feature
+/// and emits appropriate states based on the business logic.
 class {{featureName}}Bloc extends Bloc<{{featureName}}Event, {{featureName}}State> {
   {{featureName}}Bloc() : super(const {{featureName}}Initial()) {
+    // Register event handlers
     on<Load{{featureName}}>(_onLoad{{featureName}});
     {{#each events}}
     on<{{this.name}}>(_on{{this.name}});
     {{/each}}
   }
 
+  /// Handles the initial load event for {{featureName}}.
+  /// 
+  /// Emits [{{featureName}}Loading] while loading data,
+  /// then [{{featureName}}Loaded] on success or [{{featureName}}Error] on failure.
   Future<void> _onLoad{{featureName}}(
     Load{{featureName}} event,
     Emitter<{{featureName}}State> emit,
@@ -17,13 +26,17 @@ class {{featureName}}Bloc extends Bloc<{{featureName}}Event, {{featureName}}Stat
     emit(const {{featureName}}Loading());
     
     try {
-      // TODO: Implement load logic
+      // TODO: Implement data loading logic here
+      // Example: final data = await repository.fetchData();
+      
       {{#if stateFields}}
-      emit(const {{featureName}}Loaded(
-        {{#each stateFields}}
-        {{#if @index}}, {{/if}}{{this.name}}: {{this.defaultValue}}
-        {{/each}}
-      ));
+      emit(
+        const {{featureName}}Loaded(
+          {{#each stateFields}}
+          {{this.name}}: {{this.defaultValue}},
+          {{/each}}
+        ),
+      );
       {{else}}
       emit(const {{featureName}}Loaded());
       {{/if}}
@@ -33,13 +46,21 @@ class {{featureName}}Bloc extends Bloc<{{featureName}}Event, {{featureName}}Stat
   }
 
   {{#each events}}
+  /// Handles the {{this.name}} event.
+  {{#if this.params}}
+  /// 
+  /// Parameters:
+  {{#each this.params}}
+  /// - {{this.name}}: {{this.type}}
+  {{/each}}
+  {{/if}}
   Future<void> _on{{this.name}}(
     {{this.name}} event,
     Emitter<{{../featureName}}State> emit,
   ) async {
-    // TODO: Implement {{this.name}} logic
+    // TODO: Implement {{this.name}} event handler logic
     {{#if this.params}}
-    // Available parameters: {{#each this.params}}{{this.name}}{{#unless @last}}, {{/unless}}{{/each}}
+    // Available parameters: {{#each this.params}}event.{{this.name}}{{#unless @last}}, {{/unless}}{{/each}}
     {{/if}}
   }
 

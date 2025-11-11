@@ -13,6 +13,9 @@ dependencies:
   # WebSocket communication
   web_socket_channel: ^2.4.0
   
+  # HTTP client for network requests
+  http: ^1.1.0
+  
   # JSON parsing and serialization
   json_annotation: ^4.8.1
   
@@ -22,15 +25,18 @@ dependencies:
   # Network image caching
   cached_network_image: ^3.3.0
   
+  # QR code scanning
+  mobile_scanner: ^3.5.5
+  
   # UI components
   cupertino_icons: ^1.0.6
   
   # Design tokens
-  kiro_ui_tokens:
+  lumora_ui_tokens:
     path: ../../packages/lumora_ui_tokens
   
   # Core schema interpretation
-  kiro_core:
+  lumora_core:
     path: ../../packages/kiro_core
 
 dev_dependencies:

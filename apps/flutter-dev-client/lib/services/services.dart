@@ -9,3 +9,4 @@ export 'session_manager.dart';
 export 'message_parser.dart';
 export 'kiro_client_service.dart';
 export 'platform_config.dart';
+export 'update_handler.dart';

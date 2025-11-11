@@ -62,6 +62,12 @@ class KiroClientService {
 
   /// Stream of ping/pong messages
   Stream<PingPongMessage> get pingPongMessages => _messageParser.pingPongMessages;
+  
+  /// Stream of update messages (hot reload protocol)
+  Stream<UpdateMessage> get updateMessages => _messageParser.updateMessages;
+  
+  /// Stream of connected messages (hot reload protocol)
+  Stream<ConnectedMessage> get connectedMessages => _messageParser.connectedMessages;
 
   /// Initializes the service and connects to Dev-Proxy
   Future<void> initialize() async {

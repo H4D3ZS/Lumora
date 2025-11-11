@@ -2,6 +2,7 @@
 /**
  * Dev-Proxy Server
  * Manages WebSocket connections and schema broadcasting
+ * Now integrates with HotReloadServer for protocol-compliant hot reload
  */
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
@@ -42,15 +43,15 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DevProxyServer = void 0;
 const express_1 = __importDefault(require("express"));
-const ws_1 = require("ws");
 const http = __importStar(require("http"));
 const qrcode = __importStar(require("qrcode-terminal"));
-const crypto_1 = require("crypto");
 const chalk_1 = __importDefault(require("chalk"));
+const os = __importStar(require("os"));
+const hot_reload_server_1 = require("./hot-reload-server");
 class DevProxyServer {
     constructor(config) {
         this.server = null;
-        this.wss = null;
+        this.hotReloadServer = null;
         this.sessions = new Map();
         this.config = config;
         this.app = (0, express_1.default)();
@@ -71,121 +72,135 @@ class DevProxyServer {
     setupRoutes() {
         // Health check
         this.app.get('/health', (req, res) => {
-            res.json({ status: 'ok', sessions: this.sessions.size });
+            const stats = this.hotReloadServer?.getStats();
+            res.json({
+                status: 'ok',
+                sessions: stats?.sessions || 0,
+                totalDevices: stats?.totalDevices || 0,
+            });
         });
         // Create session
         this.app.post('/session/new', (req, res) => {
-            const sessionId = this.generateSessionId();
+            if (!this.hotReloadServer) {
+                return res.status(503).json({ error: 'Server not ready' });
+            }
+            const hotReloadSession = this.hotReloadServer.createSession();
+            // Also create legacy session for backward compatibility
             const session = {
-                id: sessionId,
-                createdAt: Date.now(),
+                id: hotReloadSession.id,
+                createdAt: hotReloadSession.createdAt,
                 clients: new Set(),
             };
-            this.sessions.set(sessionId, session);
+            this.sessions.set(hotReloadSession.id, session);
             res.json({
-                sessionId,
-                wsUrl: `ws://localhost:${this.config.port}/ws?session=${sessionId}`,
+                sessionId: hotReloadSession.id,
+                wsUrl: `ws://localhost:${this.config.port}/ws?session=${hotReloadSession.id}`,
+                expiresAt: hotReloadSession.expiresAt,
             });
         });
-        // Send schema to session
+        // Send schema to session (using hot reload protocol)
         this.app.post('/send/:sessionId', (req, res) => {
             const { sessionId } = req.params;
             const schema = req.body;
-            const session = this.sessions.get(sessionId);
-            if (!session) {
-                return res.status(404).json({ error: 'Session not found' });
+            if (!this.hotReloadServer) {
+                return res.status(503).json({ error: 'Server not ready' });
             }
-            // Broadcast to all connected clients
-            let sent = 0;
-            session.clients.forEach(client => {
-                if (client.readyState === ws_1.WebSocket.OPEN) {
-                    client.send(JSON.stringify({
-                        type: 'schema',
-                        data: schema,
-                    }));
-                    sent++;
-                }
+            // Use hot reload server to push update
+            const result = this.hotReloadServer.pushUpdate(sessionId, schema, true);
+            if (!result.success) {
+                return res.status(404).json({ error: result.error || 'Failed to push update' });
+            }
+            res.json({
+                success: true,
+                clientsUpdated: result.devicesUpdated,
+                updateType: result.updateType,
             });
-            res.json({ success: true, clientsUpdated: sent });
         });
         // Get session info
         this.app.get('/session/:sessionId', (req, res) => {
             const { sessionId } = req.params;
-            const session = this.sessions.get(sessionId);
-            if (!session) {
+            if (!this.hotReloadServer) {
+                return res.status(503).json({ error: 'Server not ready' });
+            }
+            const hotReloadSession = this.hotReloadServer.getSession(sessionId);
+            if (!hotReloadSession) {
                 return res.status(404).json({ error: 'Session not found' });
             }
+            const devices = this.hotReloadServer.getConnectedDevices(sessionId);
             res.json({
-                sessionId: session.id,
-                createdAt: session.createdAt,
-                connectedClients: session.clients.size,
+                sessionId: hotReloadSession.id,
+                createdAt: hotReloadSession.createdAt,
+                expiresAt: hotReloadSession.expiresAt,
+                connectedDevices: devices.length,
+                devices: devices.map(d => ({
+                    connectionId: d.connectionId,
+                    deviceId: d.deviceId,
+                    platform: d.platform,
+                    deviceName: d.deviceName,
+                    connectedAt: d.connectedAt,
+                })),
             });
+        });
+        // Get session health
+        this.app.get('/session/:sessionId/health', (req, res) => {
+            const { sessionId } = req.params;
+            if (!this.hotReloadServer) {
+                return res.status(503).json({ error: 'Server not ready' });
+            }
+            const health = this.hotReloadServer.getSessionHealth(sessionId);
+            if (!health) {
+                return res.status(404).json({ error: 'Session not found' });
+            }
+            res.json(health);
+        });
+        // Extend session
+        this.app.post('/session/:sessionId/extend', (req, res) => {
+            const { sessionId } = req.params;
+            if (!this.hotReloadServer) {
+                return res.status(503).json({ error: 'Server not ready' });
+            }
+            const success = this.hotReloadServer.extendSession(sessionId);
+            if (!success) {
+                return res.status(404).json({ error: 'Session not found' });
+            }
+            const session = this.hotReloadServer.getSession(sessionId);
+            res.json({
+                success: true,
+                expiresAt: session?.expiresAt,
+            });
+        });
+        // Delete session
+        this.app.delete('/session/:sessionId', (req, res) => {
+            const { sessionId } = req.params;
+            if (!this.hotReloadServer) {
+                return res.status(503).json({ error: 'Server not ready' });
+            }
+            const success = this.hotReloadServer.deleteSession(sessionId);
+            if (!success) {
+                return res.status(404).json({ error: 'Session not found' });
+            }
+            this.sessions.delete(sessionId);
+            res.json({ success: true });
+        });
+        // Get server stats
+        this.app.get('/stats', (req, res) => {
+            if (!this.hotReloadServer) {
+                return res.status(503).json({ error: 'Server not ready' });
+            }
+            const stats = this.hotReloadServer.getStats();
+            res.json(stats);
         });
     }
     setupWebSocket() {
         if (!this.server)
             return;
-        this.wss = new ws_1.Server({ server: this.server });
-        this.wss.on('connection', (ws, req) => {
-            const url = new URL(req.url, `http://localhost:${this.config.port}`);
-            const sessionId = url.searchParams.get('session');
-            if (!sessionId) {
-                ws.close(1008, 'Session ID required');
-                return;
-            }
-            const session = this.sessions.get(sessionId);
-            if (!session) {
-                ws.close(1008, 'Session not found');
-                return;
-            }
-            // Add client to session
-            session.clients.add(ws);
-            console.log(chalk_1.default.green(`✓ Device connected to session ${sessionId} (${session.clients.size} total)`));
-            // Send welcome message
-            ws.send(JSON.stringify({
-                type: 'connected',
-                sessionId,
-                message: 'Connected to Lumora Dev-Proxy',
-            }));
-            // Handle messages from client
-            ws.on('message', (data) => {
-                try {
-                    const message = JSON.parse(data.toString());
-                    this.handleClientMessage(sessionId, message, ws);
-                }
-                catch (error) {
-                    console.error(chalk_1.default.red('Error parsing message:'), error);
-                }
-            });
-            // Handle disconnect
-            ws.on('close', () => {
-                session.clients.delete(ws);
-                console.log(chalk_1.default.yellow(`✗ Device disconnected from session ${sessionId} (${session.clients.size} remaining)`));
-            });
-            // Handle errors
-            ws.on('error', (error) => {
-                console.error(chalk_1.default.red('WebSocket error:'), error);
-            });
+        // Initialize hot reload server
+        this.hotReloadServer = new hot_reload_server_1.HotReloadServer({
+            server: this.server,
+            path: '/ws',
+            verbose: this.config.verbose || false,
         });
-    }
-    handleClientMessage(sessionId, message, ws) {
-        switch (message.type) {
-            case 'event':
-                // Handle UI events from device
-                console.log(chalk_1.default.blue(`📱 Event from device: ${message.event}`));
-                // Could forward to event handlers here
-                break;
-            case 'log':
-                // Handle logs from device
-                console.log(chalk_1.default.gray(`📱 Device log: ${message.message}`));
-                break;
-            case 'error':
-                // Handle errors from device
-                console.error(chalk_1.default.red(`📱 Device error: ${message.message}`));
-                break;
-            default:
-                console.log(chalk_1.default.gray(`📱 Unknown message type: ${message.type}`));
-        }
+        console.log(chalk_1.default.green('✓ Hot reload server initialized'));
     }
     async start() {
         return new Promise((resolve, reject) => {
@@ -204,16 +219,16 @@ class DevProxyServer {
     }
     async stop() {
         return new Promise((resolve) => {
-            // Close all WebSocket connections
+            // Stop hot reload server
+            if (this.hotReloadServer) {
+                this.hotReloadServer.stop();
+            }
+            // Close all legacy WebSocket connections
             this.sessions.forEach(session => {
                 session.clients.forEach(client => {
                     client.close();
                 });
             });
-            // Close WebSocket server
-            if (this.wss) {
-                this.wss.close();
-            }
             // Close HTTP server
             if (this.server) {
                 this.server.close(() => {
@@ -226,30 +241,86 @@ class DevProxyServer {
         });
     }
     async createSession() {
-        const sessionId = this.generateSessionId();
+        if (!this.hotReloadServer) {
+            throw new Error('Hot reload server not initialized');
+        }
+        const hotReloadSession = this.hotReloadServer.createSession();
         const session = {
-            id: sessionId,
-            createdAt: Date.now(),
+            id: hotReloadSession.id,
+            createdAt: hotReloadSession.createdAt,
             clients: new Set(),
         };
-        this.sessions.set(sessionId, session);
+        this.sessions.set(hotReloadSession.id, session);
         return session;
     }
+    /**
+     * Get hot reload server instance
+     */
+    getHotReloadServer() {
+        return this.hotReloadServer;
+    }
+    /**
+     * Get local network IP address
+     */
+    getNetworkIP() {
+        const interfaces = os.networkInterfaces();
+        // Try to find a non-internal IPv4 address
+        for (const name of Object.keys(interfaces)) {
+            const iface = interfaces[name];
+            if (!iface)
+                continue;
+            for (const addr of iface) {
+                // Skip internal (loopback) and non-IPv4 addresses
+                if (addr.family === 'IPv4' && !addr.internal) {
+                    return addr.address;
+                }
+            }
+        }
+        return 'localhost';
+    }
     displayQRCode(sessionId) {
-        const wsUrl = `ws://localhost:${this.config.port}/ws?session=${sessionId}`;
+        const networkIP = this.getNetworkIP();
+        const wsUrl = `ws://${networkIP}:${this.config.port}/ws?session=${sessionId}`;
+        const localhostUrl = `ws://localhost:${this.config.port}/ws?session=${sessionId}`;
         console.log(chalk_1.default.bold('📱 Scan this QR code with Lumora Dev Client:\n'));
         qrcode.generate(wsUrl, { small: true });
-        console.log(chalk_1.default.gray(`\nSession: ${sessionId}`));
-        console.log(chalk_1.default.gray(`WebSocket URL: ${wsUrl}`));
-    }
-    generateSessionId() {
-        return (0, crypto_1.randomBytes)(8).toString('hex');
+        console.log(chalk_1.default.gray(`\nSession ID: ${sessionId}`));
+        console.log(chalk_1.default.gray(`Network URL: ${wsUrl}`));
+        console.log(chalk_1.default.gray(`Localhost URL: ${localhostUrl}`));
+        if (this.hotReloadServer) {
+            const session = this.hotReloadServer.getSession(sessionId);
+            if (session) {
+                console.log(chalk_1.default.gray(`Expires: ${new Date(session.expiresAt).toLocaleString()}`));
+            }
+        }
+        // Display connection instructions
+        console.log(chalk_1.default.bold('\n📋 Connection Instructions:'));
+        console.log(chalk_1.default.cyan('   1. Open Lumora Dev Client on your mobile device'));
+        console.log(chalk_1.default.cyan('   2. Tap "Scan QR Code" button'));
+        console.log(chalk_1.default.cyan('   3. Point your camera at the QR code above'));
+        console.log(chalk_1.default.cyan('   4. Wait for connection confirmation'));
+        console.log(chalk_1.default.gray('\n   Note: Ensure your device is on the same network as this computer'));
+        console.log(chalk_1.default.gray(`   Network IP: ${networkIP}`));
     }
     getPort() {
         return this.config.port;
     }
     getSessions() {
         return this.sessions;
+    }
+    /**
+     * Push schema update to session using hot reload protocol
+     */
+    pushSchemaUpdate(sessionId, schema, preserveState = true) {
+        if (!this.hotReloadServer) {
+            return {
+                success: false,
+                devicesUpdated: 0,
+                updateType: 'full',
+                error: 'Hot reload server not initialized',
+            };
+        }
+        return this.hotReloadServer.pushUpdate(sessionId, schema, preserveState);
     }
 }
 exports.DevProxyServer = DevProxyServer;

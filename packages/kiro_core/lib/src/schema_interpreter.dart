@@ -3,7 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'dart:io' show Platform;
 import 'dart:developer' as developer;
 import 'dart:convert';
-import 'package:kiro_ui_tokens/kiro_ui_tokens.dart';
+import 'package:lumora_ui_tokens/kiro_ui_tokens.dart';
 import 'template_engine.dart';
 import 'renderer_registry.dart';
 import 'widgets/error_widgets.dart';

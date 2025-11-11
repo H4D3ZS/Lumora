@@ -23,35 +23,30 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node-version }}
-          cache: 'npm'
       
       - name: Install root dependencies
-        run: npm ci
+        run: npm install
       
       - name: Test @lumora/ir
         run: |
           cd packages/lumora_ir
-          npm ci
           npm run build
           npm test
       
       - name: Test @lumora/cli
         run: |
           cd packages/lumora-cli
-          npm ci
           npm run build
           npm test
       
       - name: Test codegen tools
         run: |
           cd tools/codegen
-          npm ci
           npm test
       
       - name: Test dev-proxy
         run: |
           cd tools/dev-proxy
-          npm ci
           npm run build
           npm test
 
@@ -105,15 +100,13 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '18.x'
-          cache: 'npm'
       
       - name: Install dependencies
-        run: npm ci
+        run: npm install
       
       - name: Lint TypeScript packages
         run: |
           cd packages/lumora_ir
-          npm ci
           npm run build
           # Add linting when configured
           # npm run lint
@@ -152,25 +145,18 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '18.x'
-          cache: 'npm'
       
       - name: Build NPM packages
         run: |
-          npm ci
+          npm install
           
           cd packages/lumora_ir
-          npm ci
           npm run build
           
           cd ../lumora-cli
-          npm ci
           npm run build
           
-          cd ../../tools/codegen
-          npm ci
-          
-          cd ../dev-proxy
-          npm ci
+          cd ../../tools/dev-proxy
           npm run build
       
       - name: Verify package contents
@@ -215,10 +201,9 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '18.x'
-          cache: 'npm'
       
       - name: Install dependencies
-        run: npm ci
+        run: npm install
       
       - name: Run npm audit
         run: |
@@ -247,15 +232,13 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '18.x'
-          cache: 'npm'
       
       - name: Install dependencies
-        run: npm ci
+        run: npm install
       
       - name: Run tests with coverage
         run: |
           cd packages/lumora_ir
-          npm ci
           npm run build
           npm test -- --coverage
       

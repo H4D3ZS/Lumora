@@ -1,9 +1,15 @@
 import 'package:get/get.dart';
 import '../controllers/{{featureNameLower}}_controller.dart';
 
+/// Binding for {{featureName}} feature dependencies.
+/// 
+/// This binding is responsible for injecting the {{featureName}}Controller
+/// into the GetX dependency injection system. It uses lazy initialization
+/// to create the controller only when needed.
 class {{featureName}}Binding extends Bindings {
   @override
   void dependencies() {
+    // Lazy inject the controller - it will be created when first accessed
     Get.lazyPut<{{featureName}}Controller>(
       () => {{featureName}}Controller(),
     );

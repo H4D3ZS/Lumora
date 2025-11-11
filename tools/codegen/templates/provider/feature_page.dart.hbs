@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:kiro_ui_tokens/kiro_ui_tokens.dart';
+import 'package:lumora_ui_tokens/lumora_ui_tokens.dart';
 import '../notifiers/{{featureNameLower}}_notifier.dart';
 
+/// Page widget for the {{featureName}} feature using Provider.
+/// 
+/// This page provides the UI for the {{featureName}} feature and manages
+/// its state using the Provider pattern with ChangeNotifier. It automatically
+/// loads data on initialization and handles loading, error, and loaded states.
 class {{featureName}}Page extends StatelessWidget {
-  const {{featureName}}Page({Key? key}) : super(key: key);
+  const {{featureName}}Page({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -16,21 +21,38 @@ class {{featureName}}Page extends StatelessWidget {
         ),
         body: Consumer<{{featureName}}Notifier>(
           builder: (context, notifier, child) {
+            // Show loading indicator while data is being fetched
             if (notifier.isLoading) {
               return const Center(
                 child: CircularProgressIndicator(),
               );
             }
 
+            // Show error message if something went wrong
             if (notifier.error != null) {
               return Center(
-                child: Text(
-                  'Error: ${notifier.error}',
-                  style: const TextStyle(color: Colors.red),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.error_outline,
+                      color: LumoraColors.error,
+                      size: 48,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Error: ${notifier.error}',
+                      style: LumoraTypography.bodyMedium.copyWith(
+                        color: LumoraColors.error,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
                 ),
               );
             }
 
+            // Show content when data is loaded
             return _buildContent(context, notifier);
           },
         ),
@@ -38,6 +60,7 @@ class {{featureName}}Page extends StatelessWidget {
     );
   }
 
+  /// Builds the main content of the page when data is loaded.
   Widget _buildContent(BuildContext context, {{featureName}}Notifier notifier) {
     return {{{widgetCode}}};
   }

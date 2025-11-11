@@ -11,6 +11,10 @@ class MessageParser {
       StreamController<EventMessage>.broadcast();
   final StreamController<PingPongMessage> _pingPongController =
       StreamController<PingPongMessage>.broadcast();
+  final StreamController<UpdateMessage> _updateController =
+      StreamController<UpdateMessage>.broadcast();
+  final StreamController<ConnectedMessage> _connectedController =
+      StreamController<ConnectedMessage>.broadcast();
 
   /// Stream of full UI schema messages
   Stream<UISchemaMessage> get schemaMessages => _schemaController.stream;
@@ -23,6 +27,12 @@ class MessageParser {
 
   /// Stream of ping/pong messages
   Stream<PingPongMessage> get pingPongMessages => _pingPongController.stream;
+  
+  /// Stream of update messages (hot reload protocol)
+  Stream<UpdateMessage> get updateMessages => _updateController.stream;
+  
+  /// Stream of connected messages (hot reload protocol)
+  Stream<ConnectedMessage> get connectedMessages => _connectedController.stream;
 
   /// Parses incoming WebSocket envelope and routes to appropriate stream
   void parseMessage(Map<String, dynamic> envelope) {
@@ -59,10 +69,16 @@ class MessageParser {
         case 'pong':
           _handlePong(meta);
           break;
+        case 'update':
+          _handleUpdate(envelope);
+          break;
+        case 'connected':
+          _handleConnected(envelope);
+          break;
         case 'join_accepted':
         case 'join_rejected':
         case 'error':
-          // These are handled by SessionManager
+          // These are handled by SessionManager or DevProxyConnection
           break;
         default:
           developer.log(
@@ -185,6 +201,47 @@ class MessageParser {
     _pingPongController.add(message);
     developer.log('Pong message routed', name: 'MessageParser');
   }
+  
+  /// Handles update messages (hot reload protocol)
+  void _handleUpdate(Map<String, dynamic> envelope) {
+    final payload = envelope['payload'];
+    if (payload is! Map<String, dynamic>) {
+      developer.log(
+        'Invalid update payload type',
+        name: 'MessageParser',
+      );
+      return;
+    }
+    
+    final message = UpdateMessage(
+      updateData: envelope,
+      timestamp: DateTime.now(),
+    );
+    
+    _updateController.add(message);
+    developer.log('Update message routed', name: 'MessageParser');
+  }
+  
+  /// Handles connected messages (hot reload protocol)
+  void _handleConnected(Map<String, dynamic> envelope) {
+    final payload = envelope['payload'];
+    if (payload is! Map<String, dynamic>) {
+      developer.log(
+        'Invalid connected payload type',
+        name: 'MessageParser',
+      );
+      return;
+    }
+    
+    final message = ConnectedMessage(
+      connectionId: payload['connectionId'] as String?,
+      initialSchema: payload['initialSchema'] as Map<String, dynamic>?,
+      timestamp: DateTime.now(),
+    );
+    
+    _connectedController.add(message);
+    developer.log('Connected message routed', name: 'MessageParser');
+  }
 
   /// Disposes resources
   void dispose() {
@@ -192,6 +249,8 @@ class MessageParser {
     _deltaController.close();
     _eventController.close();
     _pingPongController.close();
+    _updateController.close();
+    _connectedController.close();
   }
 }
 
@@ -253,4 +312,28 @@ class PingPongMessage {
 enum PingPongType {
   ping,
   pong,
+}
+
+/// Update message (hot reload protocol)
+class UpdateMessage {
+  final Map<String, dynamic> updateData;
+  final DateTime timestamp;
+  
+  UpdateMessage({
+    required this.updateData,
+    required this.timestamp,
+  });
+}
+
+/// Connected message (hot reload protocol)
+class ConnectedMessage {
+  final String? connectionId;
+  final Map<String, dynamic>? initialSchema;
+  final DateTime timestamp;
+  
+  ConnectedMessage({
+    this.connectionId,
+    this.initialSchema,
+    required this.timestamp,
+  });
 }

@@ -3,10 +3,13 @@ import 'package:flutter/cupertino.dart';
 import 'dart:io' show Platform;
 import 'dart:developer' as developer;
 import 'dart:convert';
-import 'package:kiro_ui_tokens/kiro_ui_tokens.dart';
+import 'package:lumora_ui_tokens/kiro_ui_tokens.dart';
 import 'template_engine.dart';
 import 'renderer_registry.dart';
 import 'json_patch_utils.dart';
+import 'navigation_manager.dart';
+import 'animation_manager.dart';
+import 'platform_manager.dart';
 import '../widgets/error_widgets.dart';
 
 /// Core schema interpreter that converts JSON UI schemas to Flutter widgets
@@ -49,12 +52,75 @@ class SchemaInterpreter {
   // Renderer registry for custom widget types
   final RendererRegistry? registry;
 
+  // Navigation manager for handling navigation
+  final NavigationManager? navigationManager;
+
+  // Animation manager for handling animations
+  AnimationManager? _animationManager;
+
+  // Platform manager for handling platform-specific code
+  final PlatformManager _platformManager = PlatformManager();
+
+  // ============================================================================
+  // PERFORMANCE OPTIMIZATIONS
+  // ============================================================================
+
+  // Cache for widget builders to avoid repeated lookups
+  final Map<String, Widget Function(Map<String, dynamic>, List<Widget>)> _widgetBuilderCache = {};
+
+  // Cache for resolved props to avoid repeated resolution
+  final Map<String, dynamic> _propsCache = {};
+
+  // Cache for parsed colors
+  final Map<String, Color> _colorCache = {};
+
+  // Cache for parsed text styles
+  final Map<String, TextStyle> _textStyleCache = {};
+
+  // Object pool for frequently allocated objects
+  final List<Map<String, dynamic>> _mapPool = [];
+  final List<List<Widget>> _listPool = [];
+
+  // Enable/disable caching (useful for debugging)
+  bool _enableCaching = true;
+
   /// Creates a SchemaInterpreter
   /// 
   /// Parameters:
   /// - eventBridge: Optional EventBridge instance for handling UI events
   /// - registry: Optional RendererRegistry for custom widget renderers
-  SchemaInterpreter({this.eventBridge, this.registry});
+  /// - navigationManager: Optional NavigationManager for handling navigation
+  SchemaInterpreter({
+    this.eventBridge,
+    this.registry,
+    this.navigationManager,
+  }) {
+    _animationManager = AnimationManager();
+  }
+
+  /// Disposes resources
+  void dispose() {
+    _animationManager?.dispose();
+    clearCaches();
+  }
+
+  /// Clears all caches to free memory
+  void clearCaches() {
+    _widgetBuilderCache.clear();
+    _propsCache.clear();
+    _colorCache.clear();
+    _textStyleCache.clear();
+    _mapPool.clear();
+    _listPool.clear();
+  }
+
+  /// Enables or disables caching (useful for debugging)
+  void setCachingEnabled(bool enabled) {
+    _enableCaching = enabled;
+    if (!enabled) {
+      clearCaches();
+    }
+  }
 
   /// Enable or disable performance metrics display in debug mode
   void setShowPerformanceMetrics(bool show) {
@@ -206,6 +272,44 @@ class SchemaInterpreter {
         );
       }
 
+      // Check for navigation schema and set it up
+      if (schema.containsKey('navigation') && navigationManager != null) {
+        final navigationSchema = schema['navigation'] as Map<String, dynamic>?;
+        if (navigationSchema != null) {
+          navigationManager!.setNavigationSchema(navigationSchema);
+          developer.log('Navigation schema configured', name: 'SchemaInterpreter');
+        }
+      }
+
+      // Check for animations schema
+      if (schema.containsKey('animations')) {
+        final animations = schema['animations'] as List<dynamic>?;
+        if (animations != null && animations.isNotEmpty) {
+          developer.log('Found ${animations.length} animations in schema', name: 'SchemaInterpreter');
+        }
+      }
+
+      // Process platform-specific code
+      if (schema.containsKey('platform')) {
+        final platformSchema = _platformManager.processPlatformSchema(schema);
+        if (platformSchema != null) {
+          developer.log(
+            'Platform-specific code detected for: ${platformSchema['currentPlatform']}',
+            name: 'SchemaInterpreter',
+          );
+          
+          // Execute platform code blocks if any
+          final platformCode = platformSchema['platformCode'] as List?;
+          if (platformCode != null) {
+            for (final codeBlock in platformCode) {
+              if (codeBlock is Map<String, dynamic>) {
+                _platformManager.executePlatformCode(codeBlock);
+              }
+            }
+          }
+        }
+      }
+
       // Build widget tree from root node
       developer.log('Building widget tree from schema', name: 'SchemaInterpreter');
       _widgetBuildStartTime = DateTime.now().millisecondsSinceEpoch;
@@ -345,6 +449,7 @@ class SchemaInterpreter {
   }
 
   /// Recursively builds a widget from a schema node
+  /// OPTIMIZED: Uses caching and reduces allocations
   Widget _buildNode(Map<String, dynamic> node, {RenderContext? context}) {
     try {
       // Use provided context or default to root context
@@ -363,27 +468,56 @@ class SchemaInterpreter {
         );
       }
 
+      // OPTIMIZATION: Avoid unnecessary map allocation if props is already a map
       final propsRaw = node['props'];
-      final props = propsRaw is Map
-          ? Map<String, dynamic>.from(propsRaw)
-          : <String, dynamic>{};
+      final props = propsRaw is Map<String, dynamic>
+          ? propsRaw
+          : (propsRaw is Map ? Map<String, dynamic>.from(propsRaw) : <String, dynamic>{});
       
       // Validate required props for specific types
       _validateRequiredProps(type, props);
       
-      // Resolve template placeholders in props
-      final resolvedProps = TemplateEngine.resolveMap(props, currentContext);
+      // OPTIMIZATION: Cache prop resolution results
+      final propsCacheKey = _enableCaching ? _generatePropsCacheKey(type, props) : null;
+      Map<String, dynamic> resolvedProps;
       
-      final childrenData = node['children'] as List<dynamic>? ?? [];
+      if (propsCacheKey != null && _propsCache.containsKey(propsCacheKey)) {
+        resolvedProps = _propsCache[propsCacheKey]!;
+      } else {
+        // Resolve platform-specific props
+        final platformResolvedProps = _resolvePlatformProps(props);
+        
+        // Resolve template placeholders in props
+        resolvedProps = TemplateEngine.resolveMap(platformResolvedProps, currentContext);
+        
+        // Cache the result
+        if (propsCacheKey != null && _enableCaching) {
+          _propsCache[propsCacheKey] = resolvedProps;
+        }
+      }
+      
+      final childrenData = node['children'] as List<dynamic>?;
 
-      // Build children widgets recursively with the same context
-      final children = childrenData
-          .whereType<Map<String, dynamic>>()
-          .map((childNode) => _buildNode(childNode, context: currentContext))
-          .toList();
+      // OPTIMIZATION: Avoid allocation if no children
+      final children = childrenData == null || childrenData.isEmpty
+          ? const <Widget>[]
+          : childrenData
+              .whereType<Map<String, dynamic>>()
+              .map((childNode) => _buildNode(childNode, context: currentContext))
+              .toList();
 
       // Render widget based on type
-      return _renderWidget(type, resolvedProps, children);
+      Widget widget = _renderWidget(type, resolvedProps, children);
+
+      // Check if node has animation
+      if (node.containsKey('animation')) {
+        final animationSchema = node['animation'] as Map<String, dynamic>?;
+        if (animationSchema != null && _animationManager != null) {
+          widget = _wrapWithAnimation(widget, animationSchema);
+        }
+      }
+
+      return widget;
     } catch (e, stackTrace) {
       developer.log(
         'Error building node: $e',
@@ -396,6 +530,72 @@ class SchemaInterpreter {
         errorMessage: 'Node build error: $e',
       );
     }
+  }
+
+  /// Generates a cache key for props resolution
+  /// OPTIMIZATION: Simple hash-based key generation
+  String _generatePropsCacheKey(String type, Map<String, dynamic> props) {
+    // Simple cache key based on type and props hash
+    // For better performance, we use a simple string concatenation
+    return '$type:${props.hashCode}';
+  }
+
+  /// Wraps a widget with animation based on animation schema
+  Widget _wrapWithAnimation(Widget child, Map<String, dynamic> animationSchema) {
+    if (_animationManager == null) {
+      developer.log('Animation manager not available', name: 'SchemaInterpreter');
+      return child;
+    }
+
+    return AnimatedWidgetBuilder(
+      animationSchema: animationSchema,
+      animationManager: _animationManager!,
+      builder: (context, values) {
+        // Apply animation values to the widget
+        return _applyAnimationValues(child, values);
+      },
+    );
+  }
+
+  /// Applies animation values to a widget
+  Widget _applyAnimationValues(Widget child, Map<String, double> values) {
+    Widget result = child;
+
+    // Apply opacity animation
+    if (values.containsKey('opacity')) {
+      result = Opacity(
+        opacity: values['opacity']!.clamp(0.0, 1.0),
+        child: result,
+      );
+    }
+
+    // Apply scale animation
+    if (values.containsKey('scale')) {
+      result = Transform.scale(
+        scale: values['scale']!,
+        child: result,
+      );
+    }
+
+    // Apply rotation animation (in radians)
+    if (values.containsKey('rotation')) {
+      result = Transform.rotate(
+        angle: values['rotation']!,
+        child: result,
+      );
+    }
+
+    // Apply translation animations
+    final translateX = values['translateX'] ?? 0.0;
+    final translateY = values['translateY'] ?? 0.0;
+    if (translateX != 0.0 || translateY != 0.0) {
+      result = Transform.translate(
+        offset: Offset(translateX, translateY),
+        child: result,
+      );
+    }
+
+    return result;
   }
 
   /// Validates required props for specific widget types
@@ -433,6 +633,7 @@ class SchemaInterpreter {
   }
 
   /// Renders a widget based on type, props, and children
+  /// OPTIMIZED: Uses cached widget builders
   Widget _renderWidget(
     String type,
     Map<String, dynamic> props,
@@ -440,6 +641,12 @@ class SchemaInterpreter {
   ) {
     // Sanitize props to prevent injection attacks
     final sanitizedProps = _sanitizeProps(props);
+    
+    // OPTIMIZATION: Check cache for widget builder function
+    if (_enableCaching && _widgetBuilderCache.containsKey(type)) {
+      final builder = _widgetBuilderCache[type]!;
+      return builder(sanitizedProps, children);
+    }
     
     // Check registry for custom renderers first
     if (registry != null && registry!.hasRenderer(type)) {
@@ -450,6 +657,12 @@ class SchemaInterpreter {
       
       final customWidget = registry!.render(type, sanitizedProps, children);
       if (customWidget != null) {
+        // Cache the custom renderer
+        if (_enableCaching) {
+          _widgetBuilderCache[type] = (props, children) => 
+              registry!.render(type, props, children) ?? 
+              SchemaErrorWidget(nodeType: type, errorMessage: 'Custom renderer failed');
+        }
         return customWidget;
       }
       
@@ -475,20 +688,29 @@ class SchemaInterpreter {
       );
     }
     
+    // OPTIMIZATION: Create and cache widget builder functions
+    Widget Function(Map<String, dynamic>, List<Widget>) builder;
+    
     // Use default renderers for core primitives
     switch (type) {
       case 'View':
-        return _renderView(sanitizedProps, children);
+        builder = (props, children) => _renderView(props, children);
+        break;
       case 'Text':
-        return _renderText(sanitizedProps);
+        builder = (props, children) => _renderText(props);
+        break;
       case 'Button':
-        return _renderButton(sanitizedProps);
+        builder = (props, children) => _renderButton(props);
+        break;
       case 'List':
-        return _renderList(sanitizedProps, children);
+        builder = (props, children) => _renderList(props, children);
+        break;
       case 'Image':
-        return _renderImage(sanitizedProps);
+        builder = (props, children) => _renderImage(props);
+        break;
       case 'Input':
-        return _renderInput(sanitizedProps);
+        builder = (props, children) => _renderInput(props);
+        break;
       default:
         developer.log(
           'Unknown widget type: $type',
@@ -501,6 +723,13 @@ class SchemaInterpreter {
           isWarning: true,
         );
     }
+    
+    // Cache the builder
+    if (_enableCaching) {
+      _widgetBuilderCache[type] = builder;
+    }
+    
+    return builder(sanitizedProps, children);
   }
 
   /// Sanitizes props to prevent injection attacks
@@ -649,8 +878,11 @@ class SchemaInterpreter {
     if (props.containsKey('onTap')) {
       final onTapValue = props['onTap'];
       if (onTapValue is String) {
-        // Use EventBridge to create handler if available
-        if (eventBridge != null && eventBridge.createHandler != null) {
+        // Check if it's a navigation action
+        if (_isNavigationAction(onTapValue)) {
+          onPressed = () => _handleNavigationAction(onTapValue);
+        } else if (eventBridge != null && eventBridge.createHandler != null) {
+          // Use EventBridge to create handler if available
           try {
             onPressed = eventBridge.createHandler(onTapValue);
           } catch (e) {
@@ -674,6 +906,15 @@ class SchemaInterpreter {
               name: 'SchemaInterpreter',
             );
           };
+        }
+      } else if (onTapValue is Map<String, dynamic>) {
+        // Handle navigation action object
+        if (onTapValue.containsKey('action') && onTapValue['action'] == 'navigate') {
+          final routeName = onTapValue['route'] as String?;
+          final params = onTapValue['params'] as Map<String, dynamic>?;
+          if (routeName != null) {
+            onPressed = () => _navigateTo(routeName, params: params);
+          }
         }
       }
     }
@@ -743,7 +984,21 @@ class SchemaInterpreter {
 
   /// Renders an Image widget with network caching
   Widget _renderImage(Map<String, dynamic> props) {
-    final src = props['src'] as String?;
+    // Check if src is a platform-specific asset configuration
+    final srcValue = props['src'];
+    String? src;
+    
+    if (srcValue is Map<String, dynamic> && _isPlatformSpecificValue(srcValue)) {
+      // Resolve platform-specific asset
+      src = _getPlatformAsset(srcValue);
+      if (src == null) {
+        _logPlatformWarning('No platform-specific image found, using fallback');
+        src = srcValue['fallback'] as String?;
+      }
+    } else if (srcValue is String) {
+      src = srcValue;
+    }
+    
     if (src == null || src.isEmpty) {
       return SchemaErrorWidget(
         nodeType: 'Image',
@@ -754,17 +1009,35 @@ class SchemaInterpreter {
     final width = props['width'] as num?;
     final height = props['height'] as num?;
 
-    return Image.network(
-      src,
-      width: width?.toDouble(),
-      height: height?.toDouble(),
-      errorBuilder: (context, error, stackTrace) {
-        return SchemaErrorWidget(
-          nodeType: 'Image',
-          errorMessage: 'Failed to load image from: $src',
-        );
-      },
-    );
+    // Determine if it's a network or asset image
+    final isNetworkImage = src.startsWith('http://') || src.startsWith('https://');
+    
+    if (isNetworkImage) {
+      return Image.network(
+        src,
+        width: width?.toDouble(),
+        height: height?.toDouble(),
+        errorBuilder: (context, error, stackTrace) {
+          return SchemaErrorWidget(
+            nodeType: 'Image',
+            errorMessage: 'Failed to load image from: $src',
+          );
+        },
+      );
+    } else {
+      // Asset image
+      return Image.asset(
+        src,
+        width: width?.toDouble(),
+        height: height?.toDouble(),
+        errorBuilder: (context, error, stackTrace) {
+          return SchemaErrorWidget(
+            nodeType: 'Image',
+            errorMessage: 'Failed to load asset image: $src',
+          );
+        },
+      );
+    }
   }
 
   /// Renders an Input as a TextField widget
@@ -791,7 +1064,18 @@ class SchemaInterpreter {
 
   /// Builds a TextStyle from style properties
   /// Supports design token typography names and individual style properties
+  /// OPTIMIZED: Uses text style cache to avoid repeated parsing
   TextStyle _buildTextStyle(Map<String, dynamic> styleProps) {
+    // Generate cache key
+    final cacheKey = _enableCaching ? styleProps.hashCode.toString() : null;
+    
+    // Check cache first
+    if (cacheKey != null && _textStyleCache.containsKey(cacheKey)) {
+      return _textStyleCache[cacheKey]!;
+    }
+    
+    TextStyle style;
+    
     // Check if a typography token name is provided
     if (styleProps.containsKey('typography')) {
       final typographyName = styleProps['typography'] as String?;
@@ -799,7 +1083,13 @@ class SchemaInterpreter {
         final baseStyle = LumoraTypography.parse(typographyName);
         if (baseStyle != null) {
           // Apply any additional overrides on top of the base style
-          return _applyStyleOverrides(baseStyle, styleProps);
+          style = _applyStyleOverrides(baseStyle, styleProps);
+          
+          // Cache and return
+          if (cacheKey != null) {
+            _textStyleCache[cacheKey] = style;
+          }
+          return style;
         }
       }
     }
@@ -831,11 +1121,18 @@ class SchemaInterpreter {
       }
     }
 
-    return TextStyle(
+    style = TextStyle(
       fontSize: fontSize,
       fontWeight: fontWeight,
       color: color,
     );
+    
+    // Cache the result
+    if (cacheKey != null) {
+      _textStyleCache[cacheKey] = style;
+    }
+    
+    return style;
   }
 
   /// Applies style property overrides to a base TextStyle
@@ -875,10 +1172,23 @@ class SchemaInterpreter {
 
   /// Parses a color string using design tokens
   /// Supports hex colors, named colors, and design token names
+  /// OPTIMIZED: Uses color cache to avoid repeated parsing
   Color _parseColor(String colorString) {
+    // Check cache first
+    if (_enableCaching && _colorCache.containsKey(colorString)) {
+      return _colorCache[colorString]!;
+    }
+    
     try {
       // Use design token parser which handles both hex and named colors
-      return LumoraColors.parse(colorString);
+      final color = LumoraColors.parse(colorString);
+      
+      // Cache the result
+      if (_enableCaching) {
+        _colorCache[colorString] = color;
+      }
+      
+      return color;
     } catch (e) {
       developer.log(
         'Failed to parse color: $colorString',
@@ -886,6 +1196,116 @@ class SchemaInterpreter {
       );
       return LumoraColors.black;
     }
+  }
+
+  /// Resolves platform-specific props
+  /// 
+  /// Handles props that have platform-specific values, such as:
+  /// {
+  ///   "icon": {
+  ///     "ios": "assets/icons/ios/icon.png",
+  ///     "android": "assets/icons/android/icon.png",
+  ///     "fallback": "assets/icons/default.png"
+  ///   }
+  /// }
+  Map<String, dynamic> _resolvePlatformProps(Map<String, dynamic> props) {
+    final resolved = <String, dynamic>{};
+    
+    for (final entry in props.entries) {
+      final key = entry.key;
+      final value = entry.value;
+      
+      // Check if value is a platform-specific map
+      if (value is Map<String, dynamic> && _isPlatformSpecificValue(value)) {
+        // Resolve platform-specific value
+        final platformValue = _platformManager.getPlatformValue(
+          value.map((k, v) => MapEntry(k, v)),
+          fallback: value['fallback'],
+        );
+        
+        if (platformValue != null) {
+          resolved[key] = platformValue;
+          developer.log(
+            'Resolved platform-specific prop: $key = $platformValue',
+            name: 'SchemaInterpreter',
+          );
+        } else if (value.containsKey('fallback')) {
+          resolved[key] = value['fallback'];
+          developer.log(
+            'Using fallback for platform-specific prop: $key',
+            name: 'SchemaInterpreter',
+            level: 900,
+          );
+        } else {
+          developer.log(
+            'No platform match and no fallback for prop: $key',
+            name: 'SchemaInterpreter',
+            level: 900,
+          );
+        }
+      } else if (value is Map<String, dynamic>) {
+        // Recursively resolve nested maps
+        resolved[key] = _resolvePlatformProps(value);
+      } else if (value is List) {
+        // Recursively resolve list items
+        resolved[key] = value.map((item) {
+          if (item is Map<String, dynamic>) {
+            return _resolvePlatformProps(item);
+          }
+          return item;
+        }).toList();
+      } else {
+        // Keep non-platform-specific values as-is
+        resolved[key] = value;
+      }
+    }
+    
+    return resolved;
+  }
+
+  /// Checks if a map represents a platform-specific value
+  /// 
+  /// A map is considered platform-specific if it contains keys that match
+  /// supported platform types (ios, android, web, etc.)
+  bool _isPlatformSpecificValue(Map<String, dynamic> map) {
+    // Check if map contains any platform keys
+    final platformKeys = map.keys.where((key) => 
+      PlatformManager.supportedPlatforms.contains(key.toLowerCase())
+    );
+    
+    // Must have at least one platform key and optionally a fallback
+    return platformKeys.isNotEmpty;
+  }
+
+  /// Executes platform-specific code block from node
+  /// 
+  /// Handles nodes that have platform-specific implementations
+  dynamic _executePlatformCode(Map<String, dynamic> platformCode) {
+    try {
+      return _platformManager.executePlatformCode(platformCode);
+    } catch (e, stackTrace) {
+      developer.log(
+        'Error executing platform code: $e',
+        name: 'SchemaInterpreter',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      return null;
+    }
+  }
+
+  /// Gets platform-specific asset path
+  String? _getPlatformAsset(Map<String, dynamic> assetConfig) {
+    return _platformManager.getPlatformAsset(assetConfig);
+  }
+
+  /// Logs platform warning
+  void _logPlatformWarning(String message) {
+    developer.log(
+      'Platform warning: $message',
+      name: 'SchemaInterpreter.Platform',
+      level: 900,
+    );
   }
 
 
@@ -1196,6 +1616,136 @@ class SchemaInterpreter {
     if (current != value) {
       throw Exception('Test operation failed at $path');
     }
+  }
+
+  // ============================================================================
+  // Navigation Support
+  // ============================================================================
+
+  /// Checks if a string is a navigation action
+  bool _isNavigationAction(String action) {
+    return action.startsWith('navigate:') ||
+           action.startsWith('goBack') ||
+           action.startsWith('replace:') ||
+           action.startsWith('popToRoot');
+  }
+
+  /// Handles navigation actions
+  void _handleNavigationAction(String action) {
+    if (navigationManager == null) {
+      developer.log(
+        'Navigation action ignored: no navigation manager',
+        name: 'SchemaInterpreter',
+        level: 900,
+      );
+      return;
+    }
+
+    if (action.startsWith('navigate:')) {
+      // Format: navigate:routeName or navigate:routeName?param1=value1&param2=value2
+      final parts = action.substring(9).split('?');
+      final routeName = parts[0];
+      Map<String, dynamic>? params;
+      
+      if (parts.length > 1) {
+        params = _parseQueryParams(parts[1]);
+      }
+      
+      _navigateTo(routeName, params: params);
+    } else if (action == 'goBack') {
+      navigationManager!.pop();
+    } else if (action.startsWith('replace:')) {
+      // Format: replace:routeName or replace:routeName?param1=value1&param2=value2
+      final parts = action.substring(8).split('?');
+      final routeName = parts[0];
+      Map<String, dynamic>? params;
+      
+      if (parts.length > 1) {
+        params = _parseQueryParams(parts[1]);
+      }
+      
+      navigationManager!.replace(routeName, params: params);
+    } else if (action == 'popToRoot') {
+      navigationManager!.popToRoot();
+    }
+  }
+
+  /// Navigates to a route
+  void _navigateTo(String routeName, {Map<String, dynamic>? params}) {
+    if (navigationManager == null) {
+      developer.log(
+        'Cannot navigate: no navigation manager',
+        name: 'SchemaInterpreter',
+        level: 900,
+      );
+      return;
+    }
+
+    navigationManager!.push(routeName, params: params);
+  }
+
+  /// Parses query parameters from a query string
+  Map<String, dynamic> _parseQueryParams(String queryString) {
+    final params = <String, dynamic>{};
+    
+    for (final pair in queryString.split('&')) {
+      final parts = pair.split('=');
+      if (parts.length == 2) {
+        final key = Uri.decodeComponent(parts[0]);
+        final value = Uri.decodeComponent(parts[1]);
+        
+        // Try to parse as number or boolean
+        if (value == 'true') {
+          params[key] = true;
+        } else if (value == 'false') {
+          params[key] = false;
+        } else {
+          final numValue = num.tryParse(value);
+          params[key] = numValue ?? value;
+        }
+      }
+    }
+    
+    return params;
+  }
+
+  /// Gets the current route name from navigation manager
+  String? getCurrentRoute() {
+    return navigationManager?.currentRoute;
+  }
+
+  /// Gets the current route parameters from navigation manager
+  Map<String, dynamic> getCurrentRouteParams() {
+    return navigationManager?.currentParams ?? {};
+  }
+
+  /// Checks if can navigate back
+  bool canNavigateBack() {
+    return navigationManager?.canPop ?? false;
+  }
+
+  // ============================================================================
+  // Platform Support
+  // ============================================================================
+
+  /// Gets current platform type
+  String getCurrentPlatform() {
+    return PlatformManager.getCurrentPlatform();
+  }
+
+  /// Checks if current platform matches specified platform
+  bool isPlatform(String platform) {
+    return PlatformManager.isPlatform(platform);
+  }
+
+  /// Gets platform capabilities
+  Map<String, dynamic> getPlatformCapabilities() {
+    return _platformManager.getPlatformCapabilities();
+  }
+
+  /// Validates platform code block
+  bool validatePlatformCode(Map<String, dynamic> platformCode) {
+    return _platformManager.validatePlatformCode(platformCode);
   }
 }
 

@@ -73,8 +73,8 @@ class SchemaToDart {
     const widgetMapping = this.mapping[nodeType];
 
     if (!widgetMapping) {
-      // Unknown type, return placeholder
-      return `Container(child: Text('Unknown type: ${nodeType}'))`;
+      // Unknown type, return placeholder with helpful comment
+      return `// TODO: Add mapping for widget type '${nodeType}'\nContainer(\n  child: Text('Unknown type: ${nodeType}'),\n)`;
     }
 
     const dartWidget = widgetMapping.dart;
@@ -100,7 +100,7 @@ class SchemaToDart {
   }
 
   /**
-   * Generate Container widget
+   * Generate Container widget with proper formatting
    * @param {object} props - Props object
    * @param {array} children - Children nodes
    * @returns {string} Dart code
@@ -143,25 +143,32 @@ class SchemaToDart {
         params.push(`child: ${childCode}`);
       } else {
         const childrenCode = this.generateChildren(children);
-        params.push(`child: Column(children: ${childrenCode})`);
+        params.push(`child: Column(\n    children: ${childrenCode},\n  )`);
       }
     }
 
     if (params.length === 0) {
-      return 'Container()';
+      return 'const Container()';
+    }
+
+    // Format with proper line breaks for readability
+    if (params.length > 2) {
+      return `Container(\n  ${params.join(',\n  ')},\n)`;
     }
 
     return `Container(${params.join(', ')})`;
   }
 
   /**
-   * Generate Text widget
+   * Generate Text widget with proper formatting
    * @param {object} props - Props object
    * @returns {string} Dart code
    */
   generateText(props) {
     const text = props.text || '';
     const params = [`'${this.escapeString(text)}'`];
+    const hasStyle = props.style && Object.keys(props.style).length > 0;
+    const hasAlign = props.textAlign;
 
     // Handle style - check for typography token first
     if (props.style) {
@@ -187,7 +194,7 @@ class SchemaToDart {
           }
 
           if (overrides.length > 0) {
-            params.push(`style: ${typographyToken}.copyWith(${overrides.join(', ')})`);
+            params.push(`style: ${typographyToken}.copyWith(\n    ${overrides.join(',\n    ')},\n  )`);
           } else {
             params.push(`style: ${typographyToken}`);
           }
@@ -207,7 +214,16 @@ class SchemaToDart {
       params.push(`textAlign: ${textAlign}`);
     }
 
-    return `Text(${params.join(', ')})`;
+    // Use const constructor when possible (no dynamic content)
+    const isConst = !text.includes('$') && !hasStyle;
+    const constPrefix = isConst ? 'const ' : '';
+
+    // Format with proper line breaks for readability
+    if (params.length > 2) {
+      return `${constPrefix}Text(\n  ${params.join(',\n  ')},\n)`;
+    }
+
+    return `${constPrefix}Text(${params.join(', ')})`;
   }
 
   /**
@@ -240,7 +256,7 @@ class SchemaToDart {
   }
 
   /**
-   * Generate ElevatedButton widget
+   * Generate ElevatedButton widget with proper formatting
    * @param {object} props - Props object
    * @param {array} children - Children nodes
    * @returns {string} Dart code
@@ -250,7 +266,7 @@ class SchemaToDart {
 
     // Handle onPressed (onTap -> onPressed)
     if (props.onTap) {
-      params.push(`onPressed: () { /* ${props.onTap} */ }`);
+      params.push(`onPressed: () {\n    // TODO: Implement ${props.onTap}\n  }`);
     } else {
       params.push('onPressed: null');
     }
@@ -258,7 +274,7 @@ class SchemaToDart {
     // Handle child (title)
     if (props.title) {
       if (typeof props.title === 'string') {
-        params.push(`child: Text('${this.escapeString(props.title)}')`);
+        params.push(`child: const Text('${this.escapeString(props.title)}')`);
       } else if (typeof props.title === 'object' && props.title.type) {
         // Title is a widget node
         const childCode = this.generateWidget(props.title);
@@ -269,11 +285,16 @@ class SchemaToDart {
       params.push(`child: ${childCode}`);
     }
 
+    // Format with proper line breaks for readability
+    if (params.length > 2) {
+      return `ElevatedButton(\n  ${params.join(',\n  ')},\n)`;
+    }
+
     return `ElevatedButton(${params.join(', ')})`;
   }
 
   /**
-   * Generate ListView widget
+   * Generate ListView widget with optimization
    * @param {object} props - Props object
    * @param {array} children - Children nodes
    * @returns {string} Dart code
@@ -297,11 +318,16 @@ class SchemaToDart {
       return 'ListView()';
     }
 
+    // Format with proper line breaks for readability
+    if (params.length > 1) {
+      return `ListView(\n  ${params.join(',\n  ')},\n)`;
+    }
+
     return `ListView(${params.join(', ')})`;
   }
 
   /**
-   * Generate Image.network widget
+   * Generate Image.network widget with proper formatting
    * @param {object} props - Props object
    * @returns {string} Dart code
    */
@@ -319,11 +345,21 @@ class SchemaToDart {
       params.push(`height: ${props.height}`);
     }
 
+    // Add error handling for network images
+    if (params.length > 1) {
+      params.push(`errorBuilder: (context, error, stackTrace) => const Icon(Icons.error)`);
+    }
+
+    // Format with proper line breaks for readability
+    if (params.length > 2) {
+      return `Image.network(\n  ${params.join(',\n  ')},\n)`;
+    }
+
     return `Image.network(${params.join(', ')})`;
   }
 
   /**
-   * Generate TextField widget
+   * Generate TextField widget with proper formatting
    * @param {object} props - Props object
    * @returns {string} Dart code
    */
@@ -332,19 +368,49 @@ class SchemaToDart {
 
     // Handle decoration (placeholder -> hintText)
     if (props.placeholder) {
-      params.push(`decoration: InputDecoration(hintText: '${this.escapeString(props.placeholder)}')`);
+      params.push(`decoration: const InputDecoration(\n    hintText: '${this.escapeString(props.placeholder)}',\n  )`);
     }
 
     // Handle onChange
     if (props.onChange) {
-      params.push(`onChanged: (value) { /* ${props.onChange} */ }`);
+      params.push(`onChanged: (value) {\n    // TODO: Implement ${props.onChange}\n  }`);
+    }
+
+    // Handle keyboard type
+    if (props.keyboardType) {
+      const keyboardType = this.convertKeyboardType(props.keyboardType);
+      params.push(`keyboardType: ${keyboardType}`);
     }
 
     if (params.length === 0) {
-      return 'TextField()';
+      return 'const TextField()';
+    }
+
+    // Format with proper line breaks for readability
+    if (params.length > 1) {
+      return `TextField(\n  ${params.join(',\n  ')},\n)`;
     }
 
     return `TextField(${params.join(', ')})`;
+  }
+
+  /**
+   * Convert keyboard type to Dart TextInputType
+   * @param {string} type - Keyboard type
+   * @returns {string} Dart TextInputType code
+   */
+  convertKeyboardType(type) {
+    const typeMap = {
+      'default': 'TextInputType.text',
+      'text': 'TextInputType.text',
+      'number': 'TextInputType.number',
+      'phone': 'TextInputType.phone',
+      'email': 'TextInputType.emailAddress',
+      'url': 'TextInputType.url',
+      'multiline': 'TextInputType.multiline'
+    };
+
+    return typeMap[type] || 'TextInputType.text';
   }
 
   /**

@@ -1,37 +1,60 @@
 import 'package:get/get.dart';
 
+/// GetX Controller for managing {{featureName}} feature state.
+/// 
+/// This controller handles all state mutations for the {{featureName}} feature
+/// using GetX reactive programming. It automatically loads data on initialization
+/// and provides reactive state updates.
 class {{featureName}}Controller extends GetxController {
   {{#if stateFields}}
+  // Reactive state fields
   {{#each stateFields}}
+  /// {{this.description}}
   final _{{this.name}} = {{this.defaultValue}}.obs;
+  
+  /// Getter for {{this.name}}
   {{this.type}} get {{this.name}} => _{{this.name}}.value;
+  
+  /// Setter for {{this.name}}
   set {{this.name}}({{this.type}} value) => _{{this.name}}.value = value;
   {{/each}}
   {{/if}}
 
+  // Loading state
   final _isLoading = false.obs;
+  
+  /// Whether data is currently being loaded
   bool get isLoading => _isLoading.value;
 
+  // Error state
   final _error = Rxn<String>();
+  
+  /// Error message if an error occurred, null otherwise
   String? get error => _error.value;
 
   @override
   void onInit() {
     super.onInit();
+    // Load data when controller is initialized
     load();
   }
 
+  /// Loads initial data for the {{featureName}} feature.
+  /// 
+  /// Sets loading state, fetches data, and updates reactive state.
   Future<void> load() async {
     _isLoading.value = true;
     _error.value = null;
 
     try {
-      // TODO: Implement load logic
+      // TODO: Implement data loading logic here
+      // Example: final data = await repository.fetchData();
       {{#if stateFields}}
       {{#each stateFields}}
       _{{this.name}}.value = {{this.defaultValue}};
       {{/each}}
       {{/if}}
+      
       _isLoading.value = false;
     } catch (e) {
       _error.value = e.toString();
@@ -40,6 +63,14 @@ class {{featureName}}Controller extends GetxController {
   }
 
   {{#each methods}}
+  /// {{this.description}}
+  {{#if this.params}}
+  /// 
+  /// Parameters:
+  {{#each this.params}}
+  /// - {{this.name}}: {{this.type}}
+  {{/each}}
+  {{/if}}
   Future<void> {{this.name}}({{#if this.params}}{{#each this.params}}{{#if @index}}, {{/if}}{{this.type}} {{this.name}}{{/each}}{{/if}}) async {
     // TODO: Implement {{this.name}} logic
     {{#if this.params}}
@@ -51,6 +82,7 @@ class {{featureName}}Controller extends GetxController {
 
   @override
   void onClose() {
+    // Clean up reactive streams
     {{#if stateFields}}
     {{#each stateFields}}
     _{{this.name}}.close();

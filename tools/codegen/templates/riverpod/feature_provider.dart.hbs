@@ -1,37 +1,47 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 {{#if stateFields}}
+/// Immutable state class for {{featureName}} feature.
+/// 
+/// This class holds all the state data for the {{featureName}} feature.
+/// It provides a copyWith method for creating modified copies.
 class {{featureName}}State {
   {{#each stateFields}}
+  /// {{this.description}}
   final {{this.type}} {{this.name}};
   {{/each}}
 
   const {{featureName}}State({
     {{#each stateFields}}
-    {{#if @index}}, {{/if}}required this.{{this.name}}
+    required this.{{this.name}},
     {{/each}}
   });
 
+  /// Creates a copy of this state with the given fields replaced.
   {{featureName}}State copyWith({
     {{#each stateFields}}
-    {{#if @index}}, {{/if}}{{this.type}}? {{this.name}}
+    {{this.type}}? {{this.name}},
     {{/each}}
   }) {
     return {{featureName}}State(
       {{#each stateFields}}
-      {{#if @index}}, {{/if}}{{this.name}}: {{this.name}} ?? this.{{this.name}}
+      {{this.name}}: {{this.name}} ?? this.{{this.name}},
       {{/each}}
     );
   }
 }
 {{/if}}
 
+/// StateNotifier for managing {{featureName}} feature state.
+/// 
+/// This notifier handles all state mutations for the {{featureName}} feature
+/// and provides methods for updating the state in response to user actions.
 class {{featureName}}Notifier extends StateNotifier<{{#if stateFields}}{{featureName}}State{{else}}AsyncValue<void>{{/if}}> {
   {{featureName}}Notifier() : super(
     {{#if stateFields}}
     const {{featureName}}State(
       {{#each stateFields}}
-      {{#if @index}}, {{/if}}{{this.name}}: {{this.defaultValue}}
+      {{this.name}}: {{this.defaultValue}},
       {{/each}}
     )
     {{else}}
@@ -39,13 +49,17 @@ class {{featureName}}Notifier extends StateNotifier<{{#if stateFields}}{{feature
     {{/if}}
   );
 
+  /// Loads initial data for the {{featureName}} feature.
   Future<void> load() async {
     {{#if stateFields}}
-    // TODO: Implement load logic
+    // TODO: Implement data loading logic here
+    // Example: final data = await repository.fetchData();
+    // state = state.copyWith(field: data);
     {{else}}
     state = const AsyncValue.loading();
     try {
-      // TODO: Implement load logic
+      // TODO: Implement data loading logic here
+      // Example: final data = await repository.fetchData();
       state = const AsyncValue.data(null);
     } catch (e, stack) {
       state = AsyncValue.error(e, stack);
@@ -54,10 +68,18 @@ class {{featureName}}Notifier extends StateNotifier<{{#if stateFields}}{{feature
   }
 
   {{#each methods}}
+  /// {{this.description}}
+  {{#if this.params}}
+  /// 
+  /// Parameters:
+  {{#each this.params}}
+  /// - {{this.name}}: {{this.type}}
+  {{/each}}
+  {{/if}}
   Future<void> {{this.name}}({{#if this.params}}{{#each this.params}}{{#if @index}}, {{/if}}{{this.type}} {{this.name}}{{/each}}{{/if}}) async {
     // TODO: Implement {{this.name}} logic
     {{#if ../stateFields}}
-    // Update state using copyWith
+    // Update state using copyWith:
     // state = state.copyWith(field: newValue);
     {{/if}}
   }
@@ -65,6 +87,10 @@ class {{featureName}}Notifier extends StateNotifier<{{#if stateFields}}{{feature
   {{/each}}
 }
 
+/// Provider for the {{featureName}} feature.
+/// 
+/// Use this provider to access the {{featureName}} state and notifier
+/// throughout the widget tree.
 final {{featureName}}Provider = StateNotifierProvider<{{featureName}}Notifier, {{#if stateFields}}{{featureName}}State{{else}}AsyncValue<void>{{/if}}>((ref) {
   return {{featureName}}Notifier();
 });

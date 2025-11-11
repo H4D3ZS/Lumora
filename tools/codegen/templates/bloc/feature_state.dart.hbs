@@ -1,5 +1,9 @@
 import 'package:equatable/equatable.dart';
 
+/// Base class for all {{featureName}} states.
+/// 
+/// All states in the {{featureName}} feature should extend this class.
+/// Uses Equatable for value equality comparison.
 abstract class {{featureName}}State extends Equatable {
   const {{featureName}}State();
 
@@ -7,34 +11,44 @@ abstract class {{featureName}}State extends Equatable {
   List<Object?> get props => [];
 }
 
+/// Initial state before any data is loaded.
 class {{featureName}}Initial extends {{featureName}}State {
   const {{featureName}}Initial();
 }
 
+/// State indicating that data is currently being loaded.
 class {{featureName}}Loading extends {{featureName}}State {
   const {{featureName}}Loading();
 }
 
+/// State indicating that data has been successfully loaded.
 class {{featureName}}Loaded extends {{featureName}}State {
   {{#if stateFields}}
   {{#each stateFields}}
+  /// {{this.description}}
   final {{this.type}} {{this.name}};
   {{/each}}
 
   const {{featureName}}Loaded({
     {{#each stateFields}}
-    {{#if @index}}, {{/if}}required this.{{this.name}}
+    required this.{{this.name}},
     {{/each}}
   });
 
   @override
-  List<Object?> get props => [{{#each stateFields}}{{#if @index}}, {{/if}}{{this.name}}{{/each}}];
+  List<Object?> get props => [
+    {{#each stateFields}}
+    {{this.name}},
+    {{/each}}
+  ];
   {{else}}
   const {{featureName}}Loaded();
   {{/if}}
 }
 
+/// State indicating that an error occurred during data loading or processing.
 class {{featureName}}Error extends {{featureName}}State {
+  /// The error message describing what went wrong.
   final String message;
 
   const {{featureName}}Error(this.message);

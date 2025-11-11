@@ -1,31 +1,50 @@
 import 'package:flutter/foundation.dart';
 
+/// ChangeNotifier for managing {{featureName}} feature state.
+/// 
+/// This notifier handles all state mutations for the {{featureName}} feature
+/// using the Provider pattern. It notifies listeners when state changes occur.
 class {{featureName}}Notifier extends ChangeNotifier {
   {{#if stateFields}}
+  // State fields
   {{#each stateFields}}
+  /// {{this.description}}
   {{this.type}} _{{this.name}} = {{this.defaultValue}};
+  
+  /// Getter for {{this.name}}
   {{this.type}} get {{this.name}} => _{{this.name}};
   {{/each}}
   {{/if}}
 
+  // Loading state
   bool _isLoading = false;
+  
+  /// Whether data is currently being loaded
   bool get isLoading => _isLoading;
 
+  // Error state
   String? _error;
+  
+  /// Error message if an error occurred, null otherwise
   String? get error => _error;
 
+  /// Loads initial data for the {{featureName}} feature.
+  /// 
+  /// Sets loading state, fetches data, and notifies listeners of changes.
   Future<void> load() async {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
-      // TODO: Implement load logic
+      // TODO: Implement data loading logic here
+      // Example: final data = await repository.fetchData();
       {{#if stateFields}}
       {{#each stateFields}}
       _{{this.name}} = {{this.defaultValue}};
       {{/each}}
       {{/if}}
+      
       _isLoading = false;
       notifyListeners();
     } catch (e) {
@@ -36,21 +55,34 @@ class {{featureName}}Notifier extends ChangeNotifier {
   }
 
   {{#each methods}}
+  /// {{this.description}}
+  {{#if this.params}}
+  /// 
+  /// Parameters:
+  {{#each this.params}}
+  /// - {{this.name}}: {{this.type}}
+  {{/each}}
+  {{/if}}
   Future<void> {{this.name}}({{#if this.params}}{{#each this.params}}{{#if @index}}, {{/if}}{{this.type}} {{this.name}}{{/each}}{{/if}}) async {
     // TODO: Implement {{this.name}} logic
     {{#if this.params}}
     // Available parameters: {{#each this.params}}{{this.name}}{{#unless @last}}, {{/unless}}{{/each}}
     {{/if}}
+    
     notifyListeners();
   }
 
   {{/each}}
   {{#if stateFields}}
+  // Setters for state fields
   {{#each stateFields}}
-
+  
+  /// Updates the {{this.name}} value and notifies listeners.
   void set{{capitalize this.name}}({{this.type}} value) {
-    _{{this.name}} = value;
-    notifyListeners();
+    if (_{{this.name}} != value) {
+      _{{this.name}} = value;
+      notifyListeners();
+    }
   }
   {{/each}}
   {{/if}}

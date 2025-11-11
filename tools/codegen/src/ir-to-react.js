@@ -1,8 +1,11 @@
 const fs = require('fs');
 const path = require('path');
+const ReactOptimizer = require('./react-optimizer');
+const ReactHooksGenerator = require('./react-hooks-generator');
 
 /**
  * IRToReact - Converts Lumora IR to React/TypeScript code
+ * Enhanced with code quality improvements, optimizations, and proper hooks generation
  */
 class IRToReact {
   constructor() {
@@ -11,6 +14,9 @@ class IRToReact {
     this.stateVariables = [];
     this.eventHandlers = [];
     this.indentLevel = 0;
+    this.optimizer = new ReactOptimizer();
+    this.hooksGenerator = new ReactHooksGenerator();
+    this.shouldOptimize = true; // Enable optimizations by default
   }
 
   /**
@@ -133,8 +139,20 @@ class IRToReact {
       code += `export { ${contextName}, use${contextName} };\n`;
     }
 
-    // Format the code (basic formatting)
-    return this.formatTypeScriptCode(code);
+    // Format the code
+    code = this.formatTypeScriptCode(code);
+
+    // Apply optimizations if enabled
+    if (this.shouldOptimize) {
+      code = this.optimizer.optimize(code, {
+        removeDebug: true,
+        removeUnused: true,
+        memoizeComponents: false, // Don't auto-memoize, let developer decide
+        optimizeHandlers: false // Don't auto-optimize, preserve explicit code
+      });
+    }
+
+    return code;
   }
 
   /**
@@ -204,23 +222,36 @@ class IRToReact {
   }
 
   /**
-   * Generate imports section
+   * Generate imports section with proper hooks and optimization imports
    * @returns {string} Import statements
    */
   generateImports() {
     const importStatements = [];
     
-    // React import
+    // React import with hooks
     const reactImports = ['React'];
     
-    if (this.stateVariables.length > 0 || this.lifecycleMethods.length > 0) {
-      reactImports.push('useState', 'useEffect');
+    // Add useState if component has state
+    if (this.stateVariables.length > 0) {
+      reactImports.push('useState');
     }
     
+    // Add useEffect if component has lifecycle methods
+    if (this.lifecycleMethods.length > 0) {
+      reactImports.push('useEffect');
+    }
+    
+    // Add useCallback if component has event handlers
+    if (this.eventHandlers.length > 0) {
+      reactImports.push('useCallback');
+    }
+    
+    // Add context hooks for InheritedWidget
     if (this.isInheritedWidget) {
       reactImports.push('createContext', 'useContext');
     }
     
+    // Build React import statement
     if (reactImports.length > 1) {
       const hooks = reactImports.slice(1).join(', ');
       importStatements.push(`import React, { ${hooks} } from 'react';`);
@@ -334,12 +365,31 @@ class IRToReact {
 
   /**
    * Generate functional component without state
+   * Pure components can be wrapped with React.memo for optimization
    * @param {string} name - Component name
    * @param {array} nodes - IR nodes
    * @returns {string} Component code
    */
   generateFunctionalComponent(name, nodes) {
-    let code = `const ${name}: React.FC<${name}Props> = (props) => {\n`;
+    let code = '';
+    
+    // Determine if component should be memoized
+    const shouldMemoize = this.shouldMemoizeComponent(nodes);
+    
+    // Add JSDoc comment
+    code += `/**\n`;
+    code += ` * ${name} - Pure functional component\n`;
+    if (shouldMemoize) {
+      code += ` * Memoized to prevent unnecessary re-renders\n`;
+    }
+    code += ` * @param {${name}Props} props - Component props\n`;
+    code += ` * @returns {JSX.Element} Rendered component\n`;
+    code += ` */\n`;
+    
+    // Use internal name if memoizing
+    const componentFnName = shouldMemoize ? `${name}Internal` : name;
+    
+    code += `const ${componentFnName}: React.FC<${name}Props> = (props) => {\n`;
     
     // If this component has navigation, wrap in BrowserRouter with Routes
     if (this.navigationInfo && this.navigationInfo.routes.length > 0) {
@@ -392,38 +442,107 @@ class IRToReact {
     }
     
     code += `};\n`;
+    
+    // Wrap with React.memo if appropriate
+    if (shouldMemoize) {
+      code += `\n`;
+      code += `// Memoized to prevent unnecessary re-renders when props haven't changed\n`;
+      code += `const ${name} = React.memo(${componentFnName});\n`;
+      code += `${name}.displayName = '${name}';\n`;
+    }
+    
     return code;
   }
 
   /**
+   * Determine if component should be memoized
+   * @param {array} nodes - Component nodes
+   * @returns {boolean} Should memoize
+   */
+  shouldMemoizeComponent(nodes) {
+    // Don't memoize if component has state
+    if (this.stateVariables.length > 0) {
+      return false;
+    }
+
+    // Don't memoize if component has effects
+    if (this.lifecycleMethods.length > 0) {
+      return false;
+    }
+
+    // Memoize if component has complex render (many children)
+    if (nodes && nodes.length > 0) {
+      const nodeCount = this.countNodes(nodes[0]);
+      if (nodeCount > 10) {
+        return true;
+      }
+    }
+
+    // Memoize pure components by default
+    return true;
+  }
+
+  /**
+   * Count total nodes in tree
+   * @param {object} node - Root node
+   * @returns {number} Node count
+   */
+  countNodes(node) {
+    if (!node) return 0;
+    
+    let count = 1;
+    if (node.children && node.children.length > 0) {
+      for (const child of node.children) {
+        count += this.countNodes(child);
+      }
+    }
+    
+    return count;
+  }
+
+  /**
    * Generate functional component with state
+   * Includes helpful comments explaining React patterns and best practices
    * @param {string} name - Component name
    * @param {array} nodes - IR nodes
    * @returns {string} Component code
    */
   generateFunctionalComponentWithState(name, nodes) {
-    let code = `const ${name}: React.FC<${name}Props> = (props) => {\n`;
+    let code = '';
+    
+    // Add JSDoc comment for the component
+    code += `/**\n`;
+    code += ` * ${name} - Stateful functional component\n`;
+    if (this.stateManagementPattern) {
+      code += ` * Converted from Flutter ${this.stateManagementPattern.pattern} pattern\n`;
+    }
+    code += ` * @param {${name}Props} props - Component props\n`;
+    code += ` * @returns {JSX.Element} Rendered component\n`;
+    code += ` */\n`;
+    
+    code += `const ${name}: React.FC<${name}Props> = (props) => {\n`;
 
     // Add useNavigate hook if navigation is used
     if (this.navigationInfo && this.navigationInfo.navigateCalls.length > 0) {
+      code += `  // Navigation hook - use navigate() for programmatic navigation\n`;
       code += `  const navigate = useNavigate();\n\n`;
     }
 
-    // Add state hooks - ensure we have proper type inference
-    for (const stateVar of this.stateVariables) {
-      const tsType = this.mapDartTypeToTS(stateVar.dartType || stateVar.type);
-      const initialValue = this.formatTSValue(stateVar.initialValue, stateVar.type);
-      const setterName = this.generateSetterName(stateVar.name);
-      
-      // Add comment if this came from Flutter StatefulWidget
-      if (stateVar.fromFlutter) {
-        code += `  // Converted from Flutter StatefulWidget state variable\n`;
-      }
-      
-      code += `  const [${stateVar.name}, ${setterName}] = useState<${tsType}>(${initialValue});\n`;
-    }
-
+    // Add state hooks with helpful comments using hooks generator
     if (this.stateVariables.length > 0) {
+      code += `  // State management - useState hooks for component state\n`;
+      code += `  // Following React hooks rules: called at top level, in same order every render\n`;
+      
+      for (const stateVar of this.stateVariables) {
+        // Add context about Flutter conversion
+        if (stateVar.fromFlutter) {
+          stateVar.description = `Converted from Flutter StatefulWidget state`;
+        }
+        
+        // Use hooks generator for proper useState generation
+        code += this.hooksGenerator.generateUseState(stateVar);
+      }
+
       code += '\n';
     }
 
@@ -432,9 +551,32 @@ class IRToReact {
       code += this.generateUseEffectHooks();
     }
 
-    // Add event handler functions
-    for (const handler of this.eventHandlers) {
-      code += this.generateEventHandlerFunction(handler);
+    // Add event handler functions with useCallback
+    if (this.eventHandlers.length > 0) {
+      code += `  // Event handlers - memoized with useCallback to prevent re-creation\n`;
+      code += `  // Following React hooks rules: stable references improve performance\n`;
+      
+      for (const handler of this.eventHandlers) {
+        // Extract dependencies for useCallback
+        const stateVarNames = this.stateVariables.map(v => v.name);
+        const dependencies = this.hooksGenerator.extractDependencies(
+          handler.body || '',
+          stateVarNames
+        );
+        
+        // Prepare handler for hooks generator
+        const handlerDef = {
+          name: handler.name,
+          body: handler.body,
+          parameters: handler.parameters || [],
+          dependencies,
+          description: handler.description || `Handler for ${handler.name}`
+        };
+        
+        code += this.hooksGenerator.generateUseCallback(handlerDef);
+      }
+      
+      code += '\n';
     }
 
     code += `  return (\n`;
@@ -455,79 +597,82 @@ class IRToReact {
   }
 
   /**
-   * Generate useEffect hooks from lifecycle methods
+   * Generate useEffect hooks from lifecycle methods using hooks generator
+   * Properly follows React hooks rules and includes helpful comments
    * @returns {string} useEffect hooks code
    */
   generateUseEffectHooks() {
     let code = '';
 
+    code += `  // Effects - useEffect hooks for lifecycle and side effects\n`;
+    code += `  // Following React hooks rules: called at top level, in same order every render\n\n`;
+
     // Find mount effects (initState)
     const mountEffects = this.lifecycleMethods.filter(m => m.type === 'mount');
     if (mountEffects.length > 0) {
-      code += `  // Converted from Flutter initState\n`;
-      code += `  useEffect(() => {\n`;
       for (const effect of mountEffects) {
-        // Convert initState body to React code
         const convertedBody = this.convertFlutterToReactCode(effect.body);
-        if (convertedBody) {
-          code += `${this.indentCode(convertedBody, 2)}\n`;
-        } else {
-          code += `    // TODO: Implement mount effect from initState\n`;
-        }
+        
+        const effectDef = {
+          type: 'mount',
+          body: convertedBody || '// TODO: Implement mount effect',
+          dependencies: [],
+          description: 'Runs once on component mount (similar to Flutter initState)'
+        };
+        
+        code += this.hooksGenerator.generateUseEffect(effectDef);
+        code += '\n';
       }
-      code += `  }, []); // Empty deps array = runs once on mount\n\n`;
     }
 
     // Find cleanup effects (dispose)
     const cleanupEffects = this.lifecycleMethods.filter(m => m.type === 'cleanup');
     if (cleanupEffects.length > 0) {
-      code += `  // Converted from Flutter dispose\n`;
-      code += `  useEffect(() => {\n`;
-      code += `    return () => {\n`;
       for (const effect of cleanupEffects) {
-        // Convert dispose body to React cleanup code
         const convertedBody = this.convertFlutterToReactCode(effect.body);
-        if (convertedBody) {
-          code += `${this.indentCode(convertedBody, 3)}\n`;
-        } else {
-          code += `      // TODO: Implement cleanup from dispose\n`;
-        }
+        
+        const effectDef = {
+          type: 'cleanup',
+          body: convertedBody || '// TODO: Implement cleanup',
+          dependencies: [],
+          description: 'Cleanup on component unmount (similar to Flutter dispose)'
+        };
+        
+        code += this.hooksGenerator.generateUseEffect(effectDef);
+        code += '\n';
       }
-      code += `    };\n`;
-      code += `  }, []); // Cleanup function runs on unmount\n\n`;
     }
 
     // Find update effects (didUpdateWidget)
     const updateEffects = this.lifecycleMethods.filter(m => m.type === 'update');
     if (updateEffects.length > 0) {
-      // Extract dependencies from state variables or effect metadata
-      let dependencies = [];
-      
       for (const effect of updateEffects) {
+        // Extract dependencies
+        let dependencies = [];
+        
         if (effect.dependencies && effect.dependencies.length > 0) {
-          dependencies = [...new Set([...dependencies, ...effect.dependencies])];
-        }
-      }
-      
-      // If no specific dependencies, use all state variables
-      if (dependencies.length === 0) {
-        dependencies = this.stateVariables.map(v => v.name);
-      }
-      
-      const depsString = dependencies.join(', ');
-      
-      code += `  // Converted from Flutter didUpdateWidget\n`;
-      code += `  useEffect(() => {\n`;
-      for (const effect of updateEffects) {
-        // Convert didUpdateWidget body to React code
-        const convertedBody = this.convertFlutterToReactCode(effect.body);
-        if (convertedBody) {
-          code += `${this.indentCode(convertedBody, 2)}\n`;
+          dependencies = effect.dependencies;
         } else {
-          code += `    // TODO: Implement update effect from didUpdateWidget\n`;
+          // Auto-detect dependencies from effect body
+          const stateVarNames = this.stateVariables.map(v => v.name);
+          dependencies = this.hooksGenerator.extractDependencies(
+            effect.body || '',
+            stateVarNames
+          );
         }
+        
+        const convertedBody = this.convertFlutterToReactCode(effect.body);
+        
+        const effectDef = {
+          type: 'update',
+          body: convertedBody || '// TODO: Implement update effect',
+          dependencies,
+          description: 'Runs when dependencies change (similar to Flutter didUpdateWidget)'
+        };
+        
+        code += this.hooksGenerator.generateUseEffect(effectDef);
+        code += '\n';
       }
-      code += `  }, [${depsString}]); // Runs when dependencies change\n\n`;
     }
 
     return code;
@@ -1631,13 +1776,50 @@ class IRToReact {
   }
 
   /**
-   * Basic TypeScript code formatting
+   * Enhanced TypeScript code formatting
+   * Applies proper indentation, spacing, and formatting rules
    * @param {string} code - Code to format
    * @returns {string} Formatted code
    */
   formatTypeScriptCode(code) {
-    // This is a basic formatter - in production, use Prettier
-    return code;
+    let formatted = code;
+
+    // Normalize line endings
+    formatted = formatted.replace(/\r\n/g, '\n');
+
+    // Remove excessive blank lines (more than 2 consecutive)
+    formatted = formatted.replace(/\n{3,}/g, '\n\n');
+
+    // Fix spacing around = operator
+    // First normalize all = spacing to single space
+    formatted = formatted.replace(/\s*=\s*/g, ' = ');
+    
+    // Fix JSX attribute spacing - no spaces around =
+    formatted = formatted.replace(/(\w+)\s+=\s+{/g, '$1={');
+    formatted = formatted.replace(/(\w+)\s+=\s+"/g, '$1="');
+    formatted = formatted.replace(/(\w+)\s+=\s+'/g, "$1='");
+    
+    // Fix arrow functions - proper spacing
+    formatted = formatted.replace(/\s*=>\s*/g, ' => ');
+    formatted = formatted.replace(/\s+=\s+>/g, ' => ');
+
+    // Ensure space after commas (but not multiple spaces)
+    formatted = formatted.replace(/,\s*/g, ', ');
+    formatted = formatted.replace(/,\s+/g, ', ');
+
+    // Fix object literal spacing - single space after colon
+    formatted = formatted.replace(/:\s*/g, ': ');
+    formatted = formatted.replace(/:\s+/g, ': ');
+
+    // Fix style object spacing
+    formatted = formatted.replace(/style\s*=\s*{{/g, 'style={{');
+    formatted = formatted.replace(/}}\s*>/g, '}}>');
+
+    // Remove trailing whitespace
+    formatted = formatted.split('\n').map(line => line.trimEnd()).join('\n');
+
+    // Ensure file ends with single newline
+    return formatted.trim() + '\n';
   }
 
   /**

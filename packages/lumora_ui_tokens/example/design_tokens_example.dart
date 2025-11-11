@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:kiro_ui_tokens/kiro_ui_tokens.dart';
+import 'package:lumora_ui_tokens/kiro_ui_tokens.dart';
 
 /// Example demonstrating the usage of Kiro UI design tokens
 void main() {

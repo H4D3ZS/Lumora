@@ -7,10 +7,16 @@ const SchemaToDart = require('./schema-to-dart');
  * DartGenerator - Generates Dart code with Clean Architecture structure
  */
 class DartGenerator {
-  constructor(adapter = 'bloc') {
+  constructor(adapter = 'bloc', options = {}) {
     this.adapter = adapter;
     this.schemaToDart = new SchemaToDart();
     this.templates = {};
+    this.options = {
+      optimize: options.optimize !== false, // Default to true
+      removeDebugCode: options.removeDebugCode !== false,
+      useConstConstructors: options.useConstConstructors !== false,
+      ...options
+    };
     
     // Register Handlebars helpers
     this.registerHelpers();
@@ -115,7 +121,12 @@ class DartGenerator {
     const mappingPath = path.join(__dirname, '..', 'ui-mapping.json');
     this.schemaToDart.loadMapping(mappingPath);
     const schema = this.schemaToDart.loadSchema(schemaPath);
-    const widgetCode = this.schemaToDart.convertToDart(schema);
+    let widgetCode = this.schemaToDart.convertToDart(schema);
+
+    // Apply optimizations if enabled
+    if (this.options.optimize) {
+      widgetCode = this.optimizeWidgetCode(widgetCode);
+    }
 
     // Prepare template data
     const templateData = {
@@ -132,22 +143,191 @@ class DartGenerator {
     this.createDirectoryStructure(outputDir, featureName, structure);
 
     // Generate files based on adapter
+    let files = [];
     switch (this.adapter) {
       case 'bloc':
-        generatedFiles.push(...this.generateBlocFiles(outputDir, featureName, templateData));
+        files = this.generateBlocFiles(outputDir, featureName, templateData);
         break;
       case 'riverpod':
-        generatedFiles.push(...this.generateRiverpodFiles(outputDir, featureName, templateData));
+        files = this.generateRiverpodFiles(outputDir, featureName, templateData);
         break;
       case 'provider':
-        generatedFiles.push(...this.generateProviderFiles(outputDir, featureName, templateData));
+        files = this.generateProviderFiles(outputDir, featureName, templateData);
         break;
       case 'getx':
-        generatedFiles.push(...this.generateGetXFiles(outputDir, featureName, templateData));
+        files = this.generateGetXFiles(outputDir, featureName, templateData);
         break;
     }
 
+    // Optimize generated files
+    if (this.options.optimize) {
+      files.forEach(filePath => {
+        this.optimizeGeneratedFile(filePath);
+      });
+    }
+
+    generatedFiles.push(...files);
     return generatedFiles;
+  }
+
+  /**
+   * Optimize widget code
+   * @param {string} code - Widget code
+   * @returns {string} Optimized code
+   */
+  optimizeWidgetCode(code) {
+    let optimized = code;
+
+    // Use const constructors where possible
+    if (this.options.useConstConstructors) {
+      optimized = this.addConstConstructors(optimized);
+    }
+
+    return optimized;
+  }
+
+  /**
+   * Add const constructors where possible
+   * @param {string} code - Dart code
+   * @returns {string} Code with const constructors
+   */
+  addConstConstructors(code) {
+    // Add const to widgets that don't have dynamic content
+    let optimized = code;
+
+    // Pattern: Container() without variables -> const Container()
+    optimized = optimized.replace(/\bContainer\(\s*\)/g, 'const Container()');
+    
+    // Pattern: SizedBox() -> const SizedBox()
+    optimized = optimized.replace(/\bSizedBox\(\s*\)/g, 'const SizedBox()');
+    
+    // Pattern: SizedBox.shrink() -> const SizedBox.shrink()
+    optimized = optimized.replace(/\bSizedBox\.shrink\(\s*\)/g, 'const SizedBox.shrink()');
+
+    // Pattern: EdgeInsets.zero -> const EdgeInsets.zero (already handled in generator)
+    
+    return optimized;
+  }
+
+  /**
+   * Optimize a generated file
+   * @param {string} filePath - Path to file
+   */
+  optimizeGeneratedFile(filePath) {
+    let content = fs.readFileSync(filePath, 'utf-8');
+
+    // Remove debug code if enabled
+    if (this.options.removeDebugCode) {
+      content = this.removeDebugCode(content);
+    }
+
+    // Remove unused imports
+    content = this.removeUnusedImports(content);
+
+    // Format code
+    content = this.formatDartCode(content);
+
+    fs.writeFileSync(filePath, content, 'utf-8');
+  }
+
+  /**
+   * Remove debug code from generated file
+   * @param {string} content - File content
+   * @returns {string} Content without debug code
+   */
+  removeDebugCode(content) {
+    let cleaned = content;
+
+    // Remove debug print statements
+    cleaned = cleaned.replace(/^\s*print\([^)]*\);\s*$/gm, '');
+    cleaned = cleaned.replace(/^\s*debugPrint\([^)]*\);\s*$/gm, '');
+
+    // Remove debug comments (but keep doc comments)
+    cleaned = cleaned.replace(/^\s*\/\/ DEBUG:.*$/gm, '');
+    cleaned = cleaned.replace(/^\s*\/\/ TODO: Remove this debug code.*$/gm, '');
+
+    return cleaned;
+  }
+
+  /**
+   * Remove unused imports from file
+   * @param {string} content - File content
+   * @returns {string} Content with unused imports removed
+   */
+  removeUnusedImports(content) {
+    const lines = content.split('\n');
+    const imports = [];
+    const otherLines = [];
+
+    // Separate imports from other lines
+    lines.forEach(line => {
+      if (line.trim().startsWith('import ')) {
+        imports.push(line);
+      } else {
+        otherLines.push(line);
+      }
+    });
+
+    const codeContent = otherLines.join('\n');
+    const usedImports = [];
+
+    // Check which imports are actually used
+    imports.forEach(importLine => {
+      const match = importLine.match(/import\s+['"]([^'"]+)['"]/);
+      if (match) {
+        const importPath = match[1];
+        
+        // Extract package/library name
+        const packageMatch = importPath.match(/package:([^\/]+)/);
+        if (packageMatch) {
+          const packageName = packageMatch[1];
+          
+          // Check if package is used in code
+          // This is a simple heuristic - could be improved
+          if (codeContent.includes(packageName) || 
+              importPath.includes('_bloc.dart') ||
+              importPath.includes('_event.dart') ||
+              importPath.includes('_state.dart') ||
+              importPath.includes('_provider.dart') ||
+              importPath.includes('_notifier.dart') ||
+              importPath.includes('_controller.dart') ||
+              importPath.includes('_binding.dart')) {
+            usedImports.push(importLine);
+          }
+        } else {
+          // Keep relative imports
+          usedImports.push(importLine);
+        }
+      }
+    });
+
+    // Reconstruct file with only used imports
+    return [...usedImports, '', ...otherLines].join('\n');
+  }
+
+  /**
+   * Format Dart code (basic formatting)
+   * @param {string} content - File content
+   * @returns {string} Formatted content
+   */
+  formatDartCode(content) {
+    let formatted = content;
+
+    // Remove multiple consecutive blank lines
+    formatted = formatted.replace(/\n{3,}/g, '\n\n');
+
+    // Ensure single blank line after imports
+    formatted = formatted.replace(/(import\s+[^;]+;)\n+((?!import)[^\n])/g, '$1\n\n$2');
+
+    // Remove trailing whitespace
+    formatted = formatted.replace(/[ \t]+$/gm, '');
+
+    // Ensure file ends with newline
+    if (!formatted.endsWith('\n')) {
+      formatted += '\n';
+    }
+
+    return formatted;
   }
 
   /**
