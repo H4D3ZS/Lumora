@@ -1,6 +1,6 @@
 {
   "name": "lumora-cli",
-  "version": "0.1.0-alpha.1",
+  "version": "1.0.0",
   "description": "Lumora CLI - Expo-like development experience for Flutter",
   "main": "dist/index.js",
   "bin": {

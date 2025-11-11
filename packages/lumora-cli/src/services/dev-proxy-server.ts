@@ -11,7 +11,7 @@ import * as qrcode from 'qrcode-terminal';
 import chalk from 'chalk';
 import * as os from 'os';
 import { HotReloadServer, HotReloadSession } from './hot-reload-server';
-import { LumoraIR } from 'lumora-ir/src/types/ir-types';
+import { LumoraIR } from 'lumora-ir';
 
 export interface DevProxyConfig {
   port: number;

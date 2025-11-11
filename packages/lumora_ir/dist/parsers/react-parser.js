@@ -48,9 +48,11 @@ const traverse_1 = __importDefault(require("@babel/traverse"));
 const t = __importStar(require("@babel/types"));
 const ir_utils_1 = require("../utils/ir-utils");
 const error_handler_1 = require("../errors/error-handler");
+const platform_parser_1 = require("./platform-parser");
 /**
  * React AST Parser
  * Converts React/TSX code to Lumora IR
+ * OPTIMIZED: Includes caching and performance improvements
  */
 class ReactParser {
     constructor(config = {}) {
@@ -58,12 +60,50 @@ class ReactParser {
         this.sourceFile = '';
         this.sourceCode = '';
         this.typeDefinitions = new Map();
+        // Cache for component extraction results
+        this.componentCache = new Map();
+        // Cache for JSX conversion results
+        this.jsxCache = new Map();
+        // Enable/disable caching (useful for debugging)
+        this.enableCaching = true;
         this.config = {
             sourceType: 'module',
             plugins: ['jsx', 'typescript', 'decorators-legacy'],
             ...config,
         };
         this.errorHandler = config.errorHandler || (0, error_handler_1.getErrorHandler)();
+    }
+    /**
+     * Enable or disable caching
+     */
+    setCachingEnabled(enabled) {
+        this.enableCaching = enabled;
+        if (!enabled) {
+            this.clearCaches();
+        }
+    }
+    /**
+     * Clear all caches
+     */
+    clearCaches() {
+        this.componentCache.clear();
+        this.jsxCache.clear();
+    }
+    /**
+     * Clear static AST cache
+     */
+    static clearASTCache() {
+        ReactParser.astCache.clear();
+    }
+    /**
+     * Get cache statistics
+     */
+    getCacheStats() {
+        return {
+            astCacheSize: ReactParser.astCache.size,
+            componentCacheSize: this.componentCache.size,
+            jsxCacheSize: this.jsxCache.size,
+        };
     }
     /**
      * Parse React/TSX source code to Lumora IR
@@ -77,6 +117,9 @@ class ReactParser {
             this.extractTypeDefinitions(this.ast);
             const components = this.extractComponents(this.ast);
             const nodes = components.map(c => this.convertComponent(c));
+            // Extract platform-specific code
+            const platformParser = new platform_parser_1.ReactPlatformParser(this.errorHandler);
+            const platformResult = platformParser.extractPlatformCode(this.ast, source);
             // Include type definitions in metadata if any were found
             const metadata = {
                 sourceFramework: 'react',
@@ -86,7 +129,19 @@ class ReactParser {
             if (this.typeDefinitions.size > 0) {
                 metadata.typeDefinitions = Array.from(this.typeDefinitions.values());
             }
-            return (0, ir_utils_1.createIR)(metadata, nodes);
+            const ir = (0, ir_utils_1.createIR)(metadata, nodes);
+            // Add platform schema if platform-specific code was found
+            if (platformResult.hasPlatformCode) {
+                ir.platform = {
+                    platformCode: platformResult.platformCode,
+                    config: {
+                        includeFallback: true,
+                        warnOnPlatformCode: true,
+                        stripUnsupportedPlatforms: false,
+                    },
+                };
+            }
+            return ir;
         }
         catch (error) {
             this.errorHandler.handleParseError({
@@ -100,13 +155,44 @@ class ReactParser {
     }
     /**
      * Parse source code to AST using Babel parser
+     * OPTIMIZED: Uses caching to avoid re-parsing the same code
      */
     parseAST(source) {
+        // Generate cache key based on source code hash
+        const cacheKey = this.enableCaching ? this.generateCacheKey(source) : null;
+        // Check cache first
+        if (cacheKey && ReactParser.astCache.has(cacheKey)) {
+            const cached = ReactParser.astCache.get(cacheKey);
+            // Check if cache entry is still valid
+            if (Date.now() - cached.timestamp < ReactParser.AST_CACHE_TTL) {
+                return cached.ast;
+            }
+            else {
+                // Remove expired entry
+                ReactParser.astCache.delete(cacheKey);
+            }
+        }
         try {
-            return parser.parse(source, {
+            const ast = parser.parse(source, {
                 sourceType: this.config.sourceType,
                 plugins: this.config.plugins,
             });
+            // Cache the result
+            if (cacheKey && this.enableCaching) {
+                // Enforce cache size limit
+                if (ReactParser.astCache.size >= ReactParser.AST_CACHE_MAX_SIZE) {
+                    // Remove oldest entry
+                    const firstKey = ReactParser.astCache.keys().next().value;
+                    if (firstKey) {
+                        ReactParser.astCache.delete(firstKey);
+                    }
+                }
+                ReactParser.astCache.set(cacheKey, {
+                    ast,
+                    timestamp: Date.now(),
+                });
+            }
+            return ast;
         }
         catch (error) {
             if (error instanceof SyntaxError) {
@@ -119,6 +205,20 @@ class ReactParser {
             }
             throw error;
         }
+    }
+    /**
+     * Generate cache key from source code
+     * OPTIMIZATION: Simple hash function for cache keys
+     */
+    generateCacheKey(source) {
+        // Simple hash function - for production, consider using a proper hash library
+        let hash = 0;
+        for (let i = 0; i < source.length; i++) {
+            const char = source.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash = hash & hash; // Convert to 32bit integer
+        }
+        return hash.toString(36);
     }
     /**
      * Extract TypeScript type definitions from AST
@@ -306,8 +406,14 @@ class ReactParser {
     }
     /**
      * Extract all React components from AST
+     * OPTIMIZED: Uses caching to avoid re-extracting components
      */
     extractComponents(ast) {
+        // Check cache first
+        const cacheKey = this.enableCaching ? `components_${this.sourceFile}` : null;
+        if (cacheKey && this.componentCache.has(cacheKey)) {
+            return this.componentCache.get(cacheKey);
+        }
         const components = [];
         (0, traverse_1.default)(ast, {
             // Function components (arrow functions and function declarations)
@@ -356,6 +462,10 @@ class ReactParser {
                 }
             },
         });
+        // Cache the result
+        if (cacheKey && this.enableCaching) {
+            this.componentCache.set(cacheKey, components);
+        }
         return components;
     }
     /**
@@ -1962,6 +2072,13 @@ class ReactParser {
     }
 }
 exports.ReactParser = ReactParser;
+// ============================================================================
+// PERFORMANCE OPTIMIZATIONS
+// ============================================================================
+// Cache for parsed ASTs to avoid re-parsing the same code
+ReactParser.astCache = new Map();
+ReactParser.AST_CACHE_TTL = 60000; // 1 minute TTL
+ReactParser.AST_CACHE_MAX_SIZE = 100; // Max 100 cached ASTs
 /**
  * Get singleton React parser instance
  */

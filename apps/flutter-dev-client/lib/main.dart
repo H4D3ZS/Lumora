@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:kiro_core/kiro_core.dart';
+import 'package:lumora_core/lumora_core.dart';
 import 'services/kiro_client_service.dart';
 import 'services/session_manager.dart';
 import 'services/dev_proxy_connection.dart' as proxy;

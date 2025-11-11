@@ -142,11 +142,30 @@ export declare class HotReloadServer {
      * Log message if verbose mode is enabled
      */
     private log;
+    private updateBatches;
+    private readonly BATCH_DELAY_MS;
     /**
      * Push schema update to all devices in a session
      * Automatically determines whether to use full or incremental update
+     * OPTIMIZED: Batches rapid updates to reduce message overhead
      */
     pushUpdate(sessionId: string, schema: LumoraIR, preserveState?: boolean): {
+        success: boolean;
+        devicesUpdated: number;
+        updateType: 'full' | 'incremental';
+        error?: string;
+        batched?: boolean;
+    };
+    /**
+     * Flush batched update immediately
+     * OPTIMIZATION: Sends the accumulated update
+     */
+    private flushUpdate;
+    /**
+     * Push update immediately without batching
+     * OPTIMIZATION: Bypasses batching for critical updates
+     */
+    pushUpdateImmediate(sessionId: string, schema: LumoraIR, preserveState?: boolean): {
         success: boolean;
         devicesUpdated: number;
         updateType: 'full' | 'incremental';

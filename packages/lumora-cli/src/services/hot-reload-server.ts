@@ -17,7 +17,7 @@ import {
   isConnectMessage,
   isPingMessage,
   isAckMessage,
-} from 'lumora-ir/src/protocol/hot-reload-protocol';
+} from 'lumora-ir';
 import {
   serializeMessage,
   deserializeMessage,
@@ -31,8 +31,8 @@ import {
   createErrorMessage,
   calculateSchemaDelta,
   shouldUseIncrementalUpdate,
-} from 'lumora-ir/src/protocol/protocol-serialization';
-import { LumoraIR } from 'lumora-ir/src/types/ir-types';
+} from 'lumora-ir';
+import { LumoraIR } from 'lumora-ir';
 
 /**
  * Device connection information

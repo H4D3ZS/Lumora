@@ -348,15 +348,20 @@ export {
   createConnectMessage,
   createConnectedMessage,
   createUpdateMessage,
+  createFullUpdate,
+  createIncrementalUpdate,
   createReloadMessage,
   createErrorMessage,
   createPingMessage,
   createPongMessage,
   createAckMessage,
+  calculateSchemaDelta,
+  shouldUseIncrementalUpdate,
   type ValidationResult,
   validateProtocolVersion,
   validateSessionId,
-  validateChecksum
+  validateChecksum,
+  calculateChecksum
 } from './protocol';
 
 // Bundler

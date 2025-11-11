@@ -7,6 +7,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.DartParser = exports.CustomWidgetRegistry = void 0;
 const ir_utils_1 = require("../utils/ir-utils");
 const error_handler_1 = require("../errors/error-handler");
+const platform_parser_1 = require("./platform-parser");
 /**
  * Widget registry for custom widgets
  */
@@ -34,17 +35,65 @@ exports.CustomWidgetRegistry = CustomWidgetRegistry;
 /**
  * Dart AST Parser
  * Converts Dart/Flutter code to Lumora IR
+ * OPTIMIZED: Includes caching and performance improvements
  */
 class DartParser {
     constructor(config = {}) {
         this.sourceFile = '';
         this.sourceCode = '';
+        // Cache for widget conversion results
+        this.conversionCache = new Map();
+        // Enable/disable caching (useful for debugging)
+        this.enableCaching = true;
         this.config = {
             strictMode: false,
             ...config,
         };
         this.errorHandler = config.errorHandler || (0, error_handler_1.getErrorHandler)();
         this.customWidgetRegistry = new CustomWidgetRegistry();
+    }
+    /**
+     * Enable or disable caching
+     */
+    setCachingEnabled(enabled) {
+        this.enableCaching = enabled;
+        if (!enabled) {
+            this.clearCaches();
+        }
+    }
+    /**
+     * Clear all caches
+     */
+    clearCaches() {
+        this.conversionCache.clear();
+    }
+    /**
+     * Clear static widget cache
+     */
+    static clearWidgetCache() {
+        DartParser.widgetCache.clear();
+    }
+    /**
+     * Get cache statistics
+     */
+    getCacheStats() {
+        return {
+            widgetCacheSize: DartParser.widgetCache.size,
+            conversionCacheSize: this.conversionCache.size,
+        };
+    }
+    /**
+     * Generate cache key from source code
+     * OPTIMIZATION: Simple hash function for cache keys
+     */
+    generateCacheKey(source) {
+        let hash = 0;
+        for (let i = 0; i < source.length; i++) {
+            const char = source.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash = hash & hash; // Convert to 32bit integer
+        }
+        return hash.toString(36);
     }
     /**
      * Get the custom widget registry
@@ -61,6 +110,9 @@ class DartParser {
         try {
             const widgets = this.extractWidgets(source);
             const nodes = widgets.map(w => this.convertWidget(w));
+            // Extract platform-specific code
+            const platformParser = new platform_parser_1.DartPlatformParser(this.errorHandler);
+            const platformResult = platformParser.extractPlatformCode(source);
             const ir = (0, ir_utils_1.createIR)({
                 sourceFramework: 'flutter',
                 sourceFile: filename,
@@ -79,6 +131,17 @@ class DartParser {
                         defaultValue: p.defaultValue,
                     })),
                 }));
+            }
+            // Add platform schema if platform-specific code was found
+            if (platformResult.hasPlatformCode) {
+                ir.platform = {
+                    platformCode: platformResult.platformCode,
+                    config: {
+                        includeFallback: true,
+                        warnOnPlatformCode: true,
+                        stripUnsupportedPlatforms: false,
+                    },
+                };
             }
             return ir;
         }
@@ -1262,3 +1325,10 @@ function build${widgetName}(props: ${widgetName}Props): Widget {
     }
 }
 exports.DartParser = DartParser;
+// ============================================================================
+// PERFORMANCE OPTIMIZATIONS
+// ============================================================================
+// Cache for parsed widgets to avoid re-parsing
+DartParser.widgetCache = new Map();
+DartParser.WIDGET_CACHE_TTL = 60000; // 1 minute TTL
+DartParser.WIDGET_CACHE_MAX_SIZE = 100; // Max 100 cached results

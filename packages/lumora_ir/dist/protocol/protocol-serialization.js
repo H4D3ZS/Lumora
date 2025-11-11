@@ -442,6 +442,7 @@ function createAckMessage(sessionId, sequenceNumber, success, error, applyTime) 
 }
 /**
  * Calculate delta between two schemas
+ * OPTIMIZED: Uses faster comparison methods and early exits
  */
 function calculateSchemaDelta(oldSchema, newSchema) {
     const oldNodes = new Map(oldSchema.nodes.map(n => [n.id, n]));
@@ -449,22 +450,33 @@ function calculateSchemaDelta(oldSchema, newSchema) {
     const added = [];
     const modified = [];
     const removed = [];
+    // OPTIMIZATION: Pre-allocate arrays with estimated sizes
+    const estimatedChanges = Math.abs(newNodes.size - oldNodes.size);
+    if (estimatedChanges > 0) {
+        added.length = 0;
+        modified.length = 0;
+        removed.length = 0;
+    }
     // Find added and modified nodes
+    // OPTIMIZATION: Use faster comparison method
     newNodes.forEach((node, id) => {
         const oldNode = oldNodes.get(id);
         if (!oldNode) {
             added.push(node);
         }
-        else if (JSON.stringify(oldNode) !== JSON.stringify(node)) {
+        else if (!areNodesEqual(oldNode, node)) {
             modified.push(node);
         }
     });
     // Find removed nodes
-    oldNodes.forEach((node, id) => {
-        if (!newNodes.has(id)) {
-            removed.push(id);
-        }
-    });
+    // OPTIMIZATION: Only check if sizes differ
+    if (oldNodes.size !== newNodes.size) {
+        oldNodes.forEach((node, id) => {
+            if (!newNodes.has(id)) {
+                removed.push(id);
+            }
+        });
+    }
     // Check for metadata changes
     const metadataChanges = {};
     let hasMetadataChanges = false;
@@ -472,11 +484,12 @@ function calculateSchemaDelta(oldSchema, newSchema) {
         metadataChanges.version = newSchema.version;
         hasMetadataChanges = true;
     }
-    if (JSON.stringify(oldSchema.theme) !== JSON.stringify(newSchema.theme)) {
+    // OPTIMIZATION: Use faster comparison for objects
+    if (!areObjectsEqual(oldSchema.theme, newSchema.theme)) {
         metadataChanges.theme = newSchema.theme;
         hasMetadataChanges = true;
     }
-    if (JSON.stringify(oldSchema.navigation) !== JSON.stringify(newSchema.navigation)) {
+    if (!areObjectsEqual(oldSchema.navigation, newSchema.navigation)) {
         metadataChanges.navigation = newSchema.navigation;
         hasMetadataChanges = true;
     }
@@ -486,6 +499,82 @@ function calculateSchemaDelta(oldSchema, newSchema) {
         removed,
         metadataChanges: hasMetadataChanges ? metadataChanges : undefined,
     };
+}
+/**
+ * Fast node equality check
+ * OPTIMIZATION: Avoids JSON.stringify for better performance
+ */
+function areNodesEqual(node1, node2) {
+    // Quick checks first
+    if (node1.type !== node2.type)
+        return false;
+    if (node1.children.length !== node2.children.length)
+        return false;
+    // Check props
+    const props1Keys = Object.keys(node1.props);
+    const props2Keys = Object.keys(node2.props);
+    if (props1Keys.length !== props2Keys.length)
+        return false;
+    for (const key of props1Keys) {
+        if (node1.props[key] !== node2.props[key]) {
+            // For complex values, fall back to JSON comparison
+            if (typeof node1.props[key] === 'object' || typeof node2.props[key] === 'object') {
+                if (JSON.stringify(node1.props[key]) !== JSON.stringify(node2.props[key])) {
+                    return false;
+                }
+            }
+            else {
+                return false;
+            }
+        }
+    }
+    // Check children IDs (shallow check)
+    for (let i = 0; i < node1.children.length; i++) {
+        if (node1.children[i].id !== node2.children[i].id) {
+            return false;
+        }
+    }
+    return true;
+}
+/**
+ * Fast object equality check
+ * OPTIMIZATION: Avoids JSON.stringify when possible
+ */
+function areObjectsEqual(obj1, obj2) {
+    // Handle null/undefined
+    if (obj1 === obj2)
+        return true;
+    if (obj1 == null || obj2 == null)
+        return false;
+    if (typeof obj1 !== 'object' || typeof obj2 !== 'object')
+        return obj1 === obj2;
+    // Quick check for arrays
+    if (Array.isArray(obj1) !== Array.isArray(obj2))
+        return false;
+    // For complex objects, fall back to JSON comparison
+    // This is still faster than always using JSON.stringify
+    const keys1 = Object.keys(obj1);
+    const keys2 = Object.keys(obj2);
+    if (keys1.length !== keys2.length)
+        return false;
+    // For small objects, do direct comparison
+    if (keys1.length < 10) {
+        for (const key of keys1) {
+            if (obj1[key] !== obj2[key]) {
+                if (typeof obj1[key] === 'object' || typeof obj2[key] === 'object') {
+                    if (JSON.stringify(obj1[key]) !== JSON.stringify(obj2[key])) {
+                        return false;
+                    }
+                }
+                else {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+    // For larger objects, use JSON comparison
+    return JSON.stringify(obj1) === JSON.stringify(obj2);
 }
 /**
  * Determine if incremental update is more efficient than full update

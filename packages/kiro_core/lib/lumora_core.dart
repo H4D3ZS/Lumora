@@ -2,7 +2,7 @@
 /// 
 /// This library provides the core functionality for interpreting JSON UI schemas
 /// and rendering them as native Flutter widgets.
-library kiro_core;
+library lumora_core;
 
 export 'src/schema_interpreter.dart';
 export 'src/renderer_registry.dart';

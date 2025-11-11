@@ -4,6 +4,8 @@
  */
 import type { NavigationSchema } from '../navigation/navigation-types';
 import type { AnimationSchema, AnimationGroup, AnimationTransition } from './animation-types';
+import type { NetworkSchema } from './network-types';
+import type { PlatformSchema } from './platform-types';
 export interface LumoraIR {
     version: string;
     metadata: IRMetadata;
@@ -19,6 +21,10 @@ export interface LumoraIR {
     animationGroups?: AnimationGroup[];
     /** Page/screen transition animations */
     transitions?: Record<string, AnimationTransition>;
+    /** Network configuration */
+    network?: NetworkSchema;
+    /** Platform-specific code configuration */
+    platform?: PlatformSchema;
 }
 export interface IRMetadata {
     sourceFramework: 'react' | 'flutter';

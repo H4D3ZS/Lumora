@@ -15,6 +15,12 @@ const protocol_serialization_1 = require("lumora-ir/src/protocol/protocol-serial
  */
 class HotReloadServer {
     constructor(config) {
+        // ============================================================================
+        // PERFORMANCE OPTIMIZATIONS
+        // ============================================================================
+        // Batch updates to reduce message overhead
+        this.updateBatches = new Map();
+        this.BATCH_DELAY_MS = 50; // 50ms batching window
         this.config = {
             server: config.server,
             path: config.path || '/ws',
@@ -294,6 +300,11 @@ class HotReloadServer {
         if (this.cleanupTimer) {
             clearInterval(this.cleanupTimer);
         }
+        // OPTIMIZATION: Clear all pending batches
+        this.updateBatches.forEach((batch) => {
+            clearTimeout(batch.timeout);
+        });
+        this.updateBatches.clear();
         // Close all sessions
         this.sessions.forEach((session, sessionId) => {
             this.deleteSession(sessionId);
@@ -324,8 +335,69 @@ class HotReloadServer {
     /**
      * Push schema update to all devices in a session
      * Automatically determines whether to use full or incremental update
+     * OPTIMIZED: Batches rapid updates to reduce message overhead
      */
     pushUpdate(sessionId, schema, preserveState = true) {
+        const session = this.sessions.get(sessionId);
+        if (!session) {
+            return {
+                success: false,
+                devicesUpdated: 0,
+                updateType: 'full',
+                error: 'Session not found',
+            };
+        }
+        // OPTIMIZATION: Batch rapid updates
+        const existingBatch = this.updateBatches.get(sessionId);
+        if (existingBatch) {
+            // Clear existing timeout
+            clearTimeout(existingBatch.timeout);
+            // Update the batch with new schema
+            existingBatch.schema = schema;
+            existingBatch.preserveState = preserveState;
+            // Set new timeout
+            existingBatch.timeout = setTimeout(() => {
+                this.flushUpdate(sessionId);
+            }, this.BATCH_DELAY_MS);
+            return {
+                success: true,
+                devicesUpdated: 0,
+                updateType: 'full',
+                batched: true,
+            };
+        }
+        // Create new batch
+        const timeout = setTimeout(() => {
+            this.flushUpdate(sessionId);
+        }, this.BATCH_DELAY_MS);
+        this.updateBatches.set(sessionId, {
+            schema,
+            preserveState,
+            timeout,
+        });
+        return {
+            success: true,
+            devicesUpdated: 0,
+            updateType: 'full',
+            batched: true,
+        };
+    }
+    /**
+     * Flush batched update immediately
+     * OPTIMIZATION: Sends the accumulated update
+     */
+    flushUpdate(sessionId) {
+        const batch = this.updateBatches.get(sessionId);
+        if (!batch) {
+            return {
+                success: false,
+                devicesUpdated: 0,
+                updateType: 'full',
+                error: 'No batch found',
+            };
+        }
+        // Remove batch
+        this.updateBatches.delete(sessionId);
         const session = this.sessions.get(sessionId);
         if (!session) {
             return {
@@ -341,29 +413,29 @@ class HotReloadServer {
         let updateType;
         // Calculate delta if we have a previous schema
         if (session.currentSchema) {
-            const delta = (0, protocol_serialization_1.calculateSchemaDelta)(session.currentSchema, schema);
+            const delta = (0, protocol_serialization_1.calculateSchemaDelta)(session.currentSchema, batch.schema);
             // Decide whether to use incremental or full update
             if ((0, protocol_serialization_1.shouldUseIncrementalUpdate)(delta)) {
-                update = (0, protocol_serialization_1.createIncrementalUpdate)(delta, session.sequenceNumber, preserveState);
+                update = (0, protocol_serialization_1.createIncrementalUpdate)(delta, session.sequenceNumber, batch.preserveState);
                 updateType = 'incremental';
                 this.log(`Incremental update for session ${sessionId}: ` +
                     `${delta.added.length} added, ${delta.modified.length} modified, ` +
                     `${delta.removed.length} removed`);
             }
             else {
-                update = (0, protocol_serialization_1.createFullUpdate)(schema, session.sequenceNumber, preserveState);
+                update = (0, protocol_serialization_1.createFullUpdate)(batch.schema, session.sequenceNumber, batch.preserveState);
                 updateType = 'full';
                 this.log(`Full update for session ${sessionId} (delta too large)`);
             }
         }
         else {
             // First update, always full
-            update = (0, protocol_serialization_1.createFullUpdate)(schema, session.sequenceNumber, preserveState);
+            update = (0, protocol_serialization_1.createFullUpdate)(batch.schema, session.sequenceNumber, batch.preserveState);
             updateType = 'full';
             this.log(`Initial full update for session ${sessionId}`);
         }
         // Update current schema
-        session.currentSchema = schema;
+        session.currentSchema = batch.schema;
         // Broadcast to all connected devices
         const devicesUpdated = this.broadcastUpdate(session, update);
         return {
@@ -371,6 +443,25 @@ class HotReloadServer {
             devicesUpdated,
             updateType,
         };
+    }
+    /**
+     * Push update immediately without batching
+     * OPTIMIZATION: Bypasses batching for critical updates
+     */
+    pushUpdateImmediate(sessionId, schema, preserveState = true) {
+        // Cancel any pending batch
+        const existingBatch = this.updateBatches.get(sessionId);
+        if (existingBatch) {
+            clearTimeout(existingBatch.timeout);
+            this.updateBatches.delete(sessionId);
+        }
+        // Create temporary batch and flush immediately
+        this.updateBatches.set(sessionId, {
+            schema,
+            preserveState,
+            timeout: setTimeout(() => { }, 0), // Dummy timeout
+        });
+        return this.flushUpdate(sessionId);
     }
     /**
      * Broadcast update to all devices in a session

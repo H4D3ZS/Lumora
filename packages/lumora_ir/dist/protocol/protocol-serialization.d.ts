@@ -73,6 +73,7 @@ export declare function createPongMessage(sessionId: string): PongMessage;
 export declare function createAckMessage(sessionId: string, sequenceNumber: number, success: boolean, error?: string, applyTime?: number): AckMessage;
 /**
  * Calculate delta between two schemas
+ * OPTIMIZED: Uses faster comparison methods and early exits
  */
 export declare function calculateSchemaDelta(oldSchema: LumoraIR, newSchema: LumoraIR): SchemaDelta;
 /**

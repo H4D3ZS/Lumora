@@ -45,15 +45,22 @@ export {
   createConnectMessage,
   createConnectedMessage,
   createUpdateMessage,
+  createFullUpdate,
+  createIncrementalUpdate,
   createReloadMessage,
   createErrorMessage,
   createPingMessage,
   createPongMessage,
   createAckMessage,
   
+  // Delta calculation
+  calculateSchemaDelta,
+  shouldUseIncrementalUpdate,
+  
   // Validation
   type ValidationResult,
   validateProtocolVersion,
   validateSessionId,
   validateChecksum,
+  calculateChecksum,
 } from './protocol-serialization';

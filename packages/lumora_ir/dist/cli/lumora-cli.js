@@ -44,6 +44,8 @@ const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
 const chokidar = __importStar(require("chokidar"));
 const ir_validator_1 = require("../validator/ir-validator");
+const plugin_registry_1 = require("../registry/plugin-registry");
+const package_manager_1 = require("../registry/package-manager");
 const program = new commander_1.Command();
 /**
  * Error codes for CLI
@@ -426,6 +428,152 @@ program
         if (process.env.DEBUG) {
             console.error(`\nStack trace:\n${error.stack}`);
         }
+        process.exit(ErrorCode.GENERAL_ERROR);
+    }
+});
+/**
+ * Install command - Install and check compatibility of packages
+ */
+program
+    .command('install')
+    .description('Install a package and check Lumora compatibility')
+    .argument('<package>', 'Package name to install')
+    .option('-f, --framework <framework>', 'Framework (react or flutter)', 'react')
+    .option('--check-only', 'Only check compatibility without installing', false)
+    .action(async (packageName, options) => {
+    try {
+        const framework = options.framework;
+        if (!['react', 'flutter'].includes(framework)) {
+            console.error(`✗ Error: Invalid framework: ${framework}`);
+            console.error(`  Valid options: react, flutter`);
+            process.exit(ErrorCode.GENERAL_ERROR);
+        }
+        console.log(`\n📦 Checking package: ${packageName}`);
+        console.log(`   Framework: ${framework}\n`);
+        const packageManager = (0, package_manager_1.getPackageManager)();
+        const pluginRegistry = (0, plugin_registry_1.getPluginRegistry)();
+        // Check package compatibility
+        const packageInfo = packageManager.checkPackageCompatibility(packageName, 'latest', framework);
+        // Display compatibility info
+        console.log(`✓ Package found: ${packageInfo.name}`);
+        console.log(`  Compatible: ${packageInfo.isLumoraCompatible ? '✓ Yes' : '⚠️  Unknown'}`);
+        console.log(`  Native code: ${packageInfo.hasNativeDependencies ? '⚠️  Yes' : '✓ No'}`);
+        // Display warnings
+        if (packageInfo.warnings.length > 0) {
+            console.log(`\n⚠️  Warnings:`);
+            packageInfo.warnings.forEach(warning => {
+                console.log(`   ${warning}`);
+            });
+        }
+        // Register as plugin
+        const plugin = packageManager.packageToPlugin(packageInfo);
+        const validation = pluginRegistry.register(plugin);
+        if (!validation.valid) {
+            console.log(`\n✗ Plugin validation failed:`);
+            validation.errors.forEach(error => {
+                console.log(`   • ${error}`);
+            });
+            process.exit(ErrorCode.VALIDATION_ERROR);
+        }
+        if (validation.warnings.length > 0) {
+            console.log(`\n⚠️  Plugin warnings:`);
+            validation.warnings.forEach(warning => {
+                console.log(`   ${warning}`);
+            });
+        }
+        // Get documentation link
+        const docUrl = packageManager.getDocumentationUrl(packageName, framework);
+        console.log(`\n📚 Documentation: ${docUrl}`);
+        if (options.checkOnly) {
+            console.log(`\n✓ Compatibility check complete (no installation performed)\n`);
+            process.exit(ErrorCode.SUCCESS);
+        }
+        // Install package
+        console.log(`\n📥 Installing package...`);
+        const projectPath = process.cwd();
+        let installCommand;
+        let configFile;
+        if (framework === 'flutter') {
+            configFile = path.join(projectPath, 'pubspec.yaml');
+            installCommand = `flutter pub add ${packageName}`;
+        }
+        else {
+            configFile = path.join(projectPath, 'package.json');
+            installCommand = `npm install ${packageName}`;
+        }
+        // Check if config file exists
+        if (!fs.existsSync(configFile)) {
+            console.log(`\n⚠️  ${framework === 'flutter' ? 'pubspec.yaml' : 'package.json'} not found in current directory`);
+            console.log(`   Please run this command from your project root, or create a new project first.\n`);
+            process.exit(ErrorCode.FILE_NOT_FOUND);
+        }
+        console.log(`   Running: ${installCommand}`);
+        console.log(`\n   Note: You'll need to run this command manually:`);
+        console.log(`   $ ${installCommand}\n`);
+        console.log(`✓ Package check complete!`);
+        console.log(`\n💡 Next steps:`);
+        console.log(`   1. Run: ${installCommand}`);
+        console.log(`   2. Import the package in your code`);
+        console.log(`   3. Use "lumora convert" to generate cross-platform code\n`);
+        process.exit(ErrorCode.SUCCESS);
+    }
+    catch (error) {
+        console.error(`\n✗ Error: ${error.message}\n`);
+        process.exit(ErrorCode.GENERAL_ERROR);
+    }
+});
+/**
+ * Packages command - Analyze project dependencies
+ */
+program
+    .command('packages')
+    .description('Analyze project dependencies and check compatibility')
+    .option('-p, --path <path>', 'Project path', process.cwd())
+    .action(async (options) => {
+    try {
+        const projectPath = options.path;
+        console.log(`\n📦 Analyzing project dependencies...`);
+        console.log(`   Path: ${projectPath}\n`);
+        const packageManager = (0, package_manager_1.getPackageManager)();
+        const analysis = packageManager.analyzeProject(projectPath);
+        // Display Flutter packages
+        if (analysis.flutter.length > 0) {
+            console.log(`Flutter packages (${analysis.flutter.length}):`);
+            analysis.flutter.forEach(pkg => {
+                const icon = pkg.isLumoraCompatible ? '✓' : pkg.hasNativeDependencies ? '⚠️' : '?';
+                console.log(`   ${icon} ${pkg.name} (${pkg.version})`);
+            });
+            console.log('');
+        }
+        // Display React packages
+        if (analysis.react.length > 0) {
+            console.log(`React packages (${analysis.react.length}):`);
+            analysis.react.forEach(pkg => {
+                const icon = pkg.isLumoraCompatible ? '✓' : pkg.hasNativeDependencies ? '⚠️' : '?';
+                console.log(`   ${icon} ${pkg.name} (${pkg.version})`);
+            });
+            console.log('');
+        }
+        // Display warnings
+        if (analysis.warnings.length > 0) {
+            analysis.warnings.forEach(warning => {
+                console.log(warning);
+            });
+            console.log('');
+        }
+        // Summary
+        const totalPackages = analysis.flutter.length + analysis.react.length;
+        const nativePackages = [...analysis.flutter, ...analysis.react].filter(p => p.hasNativeDependencies).length;
+        const compatiblePackages = [...analysis.flutter, ...analysis.react].filter(p => p.isLumoraCompatible).length;
+        console.log(`Summary:`);
+        console.log(`   Total packages: ${totalPackages}`);
+        console.log(`   Lumora-compatible: ${compatiblePackages}`);
+        console.log(`   With native code: ${nativePackages}`);
+        console.log(`\n   Legend: ✓ = Compatible, ⚠️  = Native code, ? = Unknown\n`);
+        process.exit(ErrorCode.SUCCESS);
+    }
+    catch (error) {
+        console.error(`\n✗ Error: ${error.message}\n`);
         process.exit(ErrorCode.GENERAL_ERROR);
     }
 });

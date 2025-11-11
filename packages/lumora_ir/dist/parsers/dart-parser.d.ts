@@ -156,6 +156,7 @@ export declare class CustomWidgetRegistry {
 /**
  * Dart AST Parser
  * Converts Dart/Flutter code to Lumora IR
+ * OPTIMIZED: Includes caching and performance improvements
  */
 export declare class DartParser {
     private sourceFile;
@@ -163,7 +164,36 @@ export declare class DartParser {
     private errorHandler;
     private config;
     private customWidgetRegistry;
+    private static widgetCache;
+    private static readonly WIDGET_CACHE_TTL;
+    private static readonly WIDGET_CACHE_MAX_SIZE;
+    private conversionCache;
+    private enableCaching;
     constructor(config?: DartParserConfig);
+    /**
+     * Enable or disable caching
+     */
+    setCachingEnabled(enabled: boolean): void;
+    /**
+     * Clear all caches
+     */
+    clearCaches(): void;
+    /**
+     * Clear static widget cache
+     */
+    static clearWidgetCache(): void;
+    /**
+     * Get cache statistics
+     */
+    getCacheStats(): {
+        widgetCacheSize: number;
+        conversionCacheSize: number;
+    };
+    /**
+     * Generate cache key from source code
+     * OPTIMIZATION: Simple hash function for cache keys
+     */
+    private generateCacheKey;
     /**
      * Get the custom widget registry
      */

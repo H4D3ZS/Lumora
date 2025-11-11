@@ -1,6 +1,6 @@
 name: lumora_ui_tokens
 description: Design tokens package for Lumora with colors, typography, and spacing constants. Provides consistent styling across Flutter applications.
-version: 0.1.0-alpha.1
+version: 1.0.0
 homepage: https://github.com/lumora/lumora
 repository: https://github.com/lumora/lumora
 issue_tracker: https://github.com/lumora/lumora/issues

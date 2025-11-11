@@ -4,7 +4,7 @@ import 'dart:developer' as developer;
 import 'dart:io' show Platform;
 
 import 'package:web_socket_channel/web_socket_channel.dart';
-import 'package:kiro_core/kiro_core.dart';
+import 'package:lumora_core/lumora_core.dart';
 
 /// Protocol version for hot reload
 const String protocolVersion = '1.0.0';

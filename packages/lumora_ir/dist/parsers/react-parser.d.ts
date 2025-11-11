@@ -55,6 +55,7 @@ export interface TypeInfo {
 /**
  * React AST Parser
  * Converts React/TSX code to Lumora IR
+ * OPTIMIZED: Includes caching and performance improvements
  */
 export declare class ReactParser {
     private ast;
@@ -63,15 +64,47 @@ export declare class ReactParser {
     private errorHandler;
     private config;
     private typeDefinitions;
+    private static astCache;
+    private static readonly AST_CACHE_TTL;
+    private static readonly AST_CACHE_MAX_SIZE;
+    private componentCache;
+    private jsxCache;
+    private enableCaching;
     constructor(config?: ReactParserConfig);
+    /**
+     * Enable or disable caching
+     */
+    setCachingEnabled(enabled: boolean): void;
+    /**
+     * Clear all caches
+     */
+    clearCaches(): void;
+    /**
+     * Clear static AST cache
+     */
+    static clearASTCache(): void;
+    /**
+     * Get cache statistics
+     */
+    getCacheStats(): {
+        astCacheSize: number;
+        componentCacheSize: number;
+        jsxCacheSize: number;
+    };
     /**
      * Parse React/TSX source code to Lumora IR
      */
     parse(source: string, filename: string): LumoraIR;
     /**
      * Parse source code to AST using Babel parser
+     * OPTIMIZED: Uses caching to avoid re-parsing the same code
      */
     private parseAST;
+    /**
+     * Generate cache key from source code
+     * OPTIMIZATION: Simple hash function for cache keys
+     */
+    private generateCacheKey;
     /**
      * Extract TypeScript type definitions from AST
      */
@@ -110,6 +143,7 @@ export declare class ReactParser {
     private serializeTSMethodSignature;
     /**
      * Extract all React components from AST
+     * OPTIMIZED: Uses caching to avoid re-extracting components
      */
     extractComponents(ast: t.File): ComponentInfo[];
     /**

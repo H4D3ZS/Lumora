@@ -4,7 +4,7 @@
  * Exports all protocol types and utilities
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.validateChecksum = exports.validateSessionId = exports.validateProtocolVersion = exports.createAckMessage = exports.createPongMessage = exports.createPingMessage = exports.createErrorMessage = exports.createReloadMessage = exports.createUpdateMessage = exports.createConnectedMessage = exports.createConnectMessage = exports.validateMessage = exports.deserializeMessage = exports.serializeMessage = exports.ProtocolErrorCode = exports.isAckMessage = exports.isPongMessage = exports.isPingMessage = exports.isErrorMessage = exports.isReloadMessage = exports.isUpdateMessage = exports.isConnectedMessage = exports.isConnectMessage = exports.PROTOCOL_VERSION = void 0;
+exports.calculateChecksum = exports.validateChecksum = exports.validateSessionId = exports.validateProtocolVersion = exports.shouldUseIncrementalUpdate = exports.calculateSchemaDelta = exports.createAckMessage = exports.createPongMessage = exports.createPingMessage = exports.createErrorMessage = exports.createReloadMessage = exports.createIncrementalUpdate = exports.createFullUpdate = exports.createUpdateMessage = exports.createConnectedMessage = exports.createConnectMessage = exports.validateMessage = exports.deserializeMessage = exports.serializeMessage = exports.ProtocolErrorCode = exports.isAckMessage = exports.isPongMessage = exports.isPingMessage = exports.isErrorMessage = exports.isReloadMessage = exports.isUpdateMessage = exports.isConnectedMessage = exports.isConnectMessage = exports.PROTOCOL_VERSION = void 0;
 var hot_reload_protocol_1 = require("./hot-reload-protocol");
 // Protocol version
 Object.defineProperty(exports, "PROTOCOL_VERSION", { enumerable: true, get: function () { return hot_reload_protocol_1.PROTOCOL_VERSION; } });
@@ -28,11 +28,17 @@ Object.defineProperty(exports, "validateMessage", { enumerable: true, get: funct
 Object.defineProperty(exports, "createConnectMessage", { enumerable: true, get: function () { return protocol_serialization_1.createConnectMessage; } });
 Object.defineProperty(exports, "createConnectedMessage", { enumerable: true, get: function () { return protocol_serialization_1.createConnectedMessage; } });
 Object.defineProperty(exports, "createUpdateMessage", { enumerable: true, get: function () { return protocol_serialization_1.createUpdateMessage; } });
+Object.defineProperty(exports, "createFullUpdate", { enumerable: true, get: function () { return protocol_serialization_1.createFullUpdate; } });
+Object.defineProperty(exports, "createIncrementalUpdate", { enumerable: true, get: function () { return protocol_serialization_1.createIncrementalUpdate; } });
 Object.defineProperty(exports, "createReloadMessage", { enumerable: true, get: function () { return protocol_serialization_1.createReloadMessage; } });
 Object.defineProperty(exports, "createErrorMessage", { enumerable: true, get: function () { return protocol_serialization_1.createErrorMessage; } });
 Object.defineProperty(exports, "createPingMessage", { enumerable: true, get: function () { return protocol_serialization_1.createPingMessage; } });
 Object.defineProperty(exports, "createPongMessage", { enumerable: true, get: function () { return protocol_serialization_1.createPongMessage; } });
 Object.defineProperty(exports, "createAckMessage", { enumerable: true, get: function () { return protocol_serialization_1.createAckMessage; } });
+// Delta calculation
+Object.defineProperty(exports, "calculateSchemaDelta", { enumerable: true, get: function () { return protocol_serialization_1.calculateSchemaDelta; } });
+Object.defineProperty(exports, "shouldUseIncrementalUpdate", { enumerable: true, get: function () { return protocol_serialization_1.shouldUseIncrementalUpdate; } });
 Object.defineProperty(exports, "validateProtocolVersion", { enumerable: true, get: function () { return protocol_serialization_1.validateProtocolVersion; } });
 Object.defineProperty(exports, "validateSessionId", { enumerable: true, get: function () { return protocol_serialization_1.validateSessionId; } });
 Object.defineProperty(exports, "validateChecksum", { enumerable: true, get: function () { return protocol_serialization_1.validateChecksum; } });
+Object.defineProperty(exports, "calculateChecksum", { enumerable: true, get: function () { return protocol_serialization_1.calculateChecksum; } });
