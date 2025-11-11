@@ -2,12 +2,23 @@
  * Lumora IR Type Definitions
  * Framework-agnostic intermediate representation for UI components
  */
+import type { NavigationSchema } from '../navigation/navigation-types';
+import type { AnimationSchema, AnimationGroup, AnimationTransition } from './animation-types';
 export interface LumoraIR {
     version: string;
     metadata: IRMetadata;
     nodes: LumoraNode[];
     theme?: ThemeDefinition;
+    /** @deprecated Use navigationSchema instead */
     navigation?: NavigationDefinition;
+    /** Complete navigation configuration */
+    navigationSchema?: NavigationSchema;
+    /** Animation definitions */
+    animations?: AnimationSchema[];
+    /** Animation groups for coordinated animations */
+    animationGroups?: AnimationGroup[];
+    /** Page/screen transition animations */
+    transitions?: Record<string, AnimationTransition>;
 }
 export interface IRMetadata {
     sourceFramework: 'react' | 'flutter';
@@ -15,6 +26,18 @@ export interface IRMetadata {
     generatedAt: number;
     author?: string;
     irVersion?: string;
+    customWidgets?: CustomWidgetMetadata[];
+}
+export interface CustomWidgetMetadata {
+    name: string;
+    type: 'StatelessWidget' | 'StatefulWidget' | 'Component';
+    properties: CustomWidgetProperty[];
+}
+export interface CustomWidgetProperty {
+    name: string;
+    type: string;
+    required: boolean;
+    defaultValue?: string;
 }
 export interface LumoraNode {
     id: string;
@@ -24,6 +47,8 @@ export interface LumoraNode {
     state?: StateDefinition;
     events?: EventDefinition[];
     lifecycle?: LifecycleDefinition[];
+    /** Animation IDs applied to this node */
+    animations?: string[];
     metadata: NodeMetadata;
 }
 export interface NodeMetadata {
@@ -60,9 +85,17 @@ export interface ThemeDefinition {
     typography?: Record<string, any>;
     spacing?: Record<string, any>;
 }
+/**
+ * @deprecated Use NavigationSchema from '../navigation/navigation-types' instead
+ * This is kept for backward compatibility
+ */
 export interface NavigationDefinition {
     routes?: Route[];
 }
+/**
+ * @deprecated Use Route from '../navigation/navigation-types' instead
+ * This is kept for backward compatibility
+ */
 export interface Route {
     path: string;
     component: string;

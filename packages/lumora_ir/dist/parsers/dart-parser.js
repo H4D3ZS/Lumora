@@ -4,9 +4,33 @@
  * Parses Dart widgets and converts them to Lumora IR
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.DartParser = void 0;
+exports.DartParser = exports.CustomWidgetRegistry = void 0;
 const ir_utils_1 = require("../utils/ir-utils");
 const error_handler_1 = require("../errors/error-handler");
+/**
+ * Widget registry for custom widgets
+ */
+class CustomWidgetRegistry {
+    constructor() {
+        this.widgets = new Map();
+    }
+    register(widget) {
+        this.widgets.set(widget.name, widget);
+    }
+    get(name) {
+        return this.widgets.get(name);
+    }
+    has(name) {
+        return this.widgets.has(name);
+    }
+    getAll() {
+        return Array.from(this.widgets.values());
+    }
+    clear() {
+        this.widgets.clear();
+    }
+}
+exports.CustomWidgetRegistry = CustomWidgetRegistry;
 /**
  * Dart AST Parser
  * Converts Dart/Flutter code to Lumora IR
@@ -20,6 +44,13 @@ class DartParser {
             ...config,
         };
         this.errorHandler = config.errorHandler || (0, error_handler_1.getErrorHandler)();
+        this.customWidgetRegistry = new CustomWidgetRegistry();
+    }
+    /**
+     * Get the custom widget registry
+     */
+    getCustomWidgetRegistry() {
+        return this.customWidgetRegistry;
     }
     /**
      * Parse Dart/Flutter source code to Lumora IR
@@ -30,11 +61,26 @@ class DartParser {
         try {
             const widgets = this.extractWidgets(source);
             const nodes = widgets.map(w => this.convertWidget(w));
-            return (0, ir_utils_1.createIR)({
+            const ir = (0, ir_utils_1.createIR)({
                 sourceFramework: 'flutter',
                 sourceFile: filename,
                 generatedAt: Date.now(),
             }, nodes);
+            // Add custom widget definitions to metadata
+            const customWidgets = this.customWidgetRegistry.getAll();
+            if (customWidgets.length > 0) {
+                ir.metadata.customWidgets = customWidgets.map(w => ({
+                    name: w.name,
+                    type: w.type,
+                    properties: w.properties.map(p => ({
+                        name: p.name,
+                        type: this.mapDartTypeToTS(p.type),
+                        required: p.isRequired,
+                        defaultValue: p.defaultValue,
+                    })),
+                }));
+            }
+            return ir;
         }
         catch (error) {
             this.errorHandler.handleParseError({
@@ -57,7 +103,354 @@ class DartParser {
         // Find StatefulWidget classes
         const statefulWidgets = this.findStatefulWidgets(source);
         widgets.push(...statefulWidgets);
+        // Register custom widgets
+        this.registerCustomWidgets(widgets);
         return widgets;
+    }
+    /**
+     * Register custom widgets in the registry
+     */
+    registerCustomWidgets(widgets) {
+        const coreWidgets = new Set([
+            'Container', 'Text', 'Column', 'Row', 'Stack', 'Scaffold',
+            'AppBar', 'Center', 'Padding', 'SizedBox', 'Expanded',
+            'ListView', 'GridView', 'Image', 'Icon', 'IconButton',
+            'ElevatedButton', 'TextButton', 'OutlinedButton',
+            'TextField', 'Checkbox', 'Radio', 'Switch', 'Slider',
+            'Card', 'Divider', 'CircularProgressIndicator',
+            'LinearProgressIndicator', 'AlertDialog', 'BottomSheet',
+        ]);
+        widgets.forEach(widget => {
+            // Only register if it's not a core Flutter widget
+            if (!coreWidgets.has(widget.name)) {
+                this.customWidgetRegistry.register({
+                    name: widget.name,
+                    type: widget.type,
+                    properties: widget.properties,
+                    buildMethod: widget.buildMethod,
+                    isCustom: true,
+                });
+            }
+        });
+    }
+    /**
+     * Check if a widget is a custom widget
+     */
+    isCustomWidget(widgetName) {
+        return this.customWidgetRegistry.has(widgetName);
+    }
+    /**
+     * Extract custom widget builder
+     */
+    extractCustomWidgetBuilder(widgetName) {
+        const widget = this.customWidgetRegistry.get(widgetName);
+        if (!widget) {
+            return null;
+        }
+        // Generate a builder function for the custom widget
+        const propsInterface = this.generatePropsInterface(widget.properties);
+        const builderCode = `
+// Custom widget: ${widgetName}
+interface ${widgetName}Props {
+${propsInterface}
+}
+
+function build${widgetName}(props: ${widgetName}Props): Widget {
+  // Build method implementation
+  ${widget.buildMethod}
+}
+`;
+        return builderCode;
+    }
+    /**
+     * Generate TypeScript props interface from widget properties
+     */
+    generatePropsInterface(properties) {
+        return properties
+            .map(prop => {
+            let tsType = this.mapDartTypeToTS(prop.type);
+            const optional = !prop.isRequired ? '?' : '';
+            const defaultComment = prop.defaultValue ? ` // default: ${prop.defaultValue}` : '';
+            // For nullable types, the optional marker is redundant with | null
+            // But we keep it for clarity in the interface
+            return `  ${prop.name}${optional}: ${tsType};${defaultComment}`;
+        })
+            .join('\n');
+    }
+    /**
+     * Extract Bloc definitions from source code
+     */
+    extractBlocs(source) {
+        const blocs = [];
+        // Find Bloc classes (extends Bloc<Event, State>)
+        const blocPattern = /class\s+(\w+)\s+extends\s+Bloc<(\w+),\s*(\w+)>\s*\{/g;
+        let match;
+        while ((match = blocPattern.exec(source)) !== null) {
+            const blocName = match[1];
+            const eventType = match[2];
+            const stateType = match[3];
+            const lineNumber = this.getLineNumber(source, match.index);
+            const classStartIndex = match.index + match[0].length;
+            try {
+                const classBody = this.extractMethodBody(source, classStartIndex);
+                // Find event and state definitions
+                const events = this.findBlocEvents(source, eventType);
+                const states = this.findBlocStates(source, stateType);
+                const eventHandlers = this.extractBlocEventHandlers(classBody);
+                blocs.push({
+                    name: blocName,
+                    events,
+                    states,
+                    eventHandlers,
+                    lineNumber,
+                });
+            }
+            catch (error) {
+                this.errorHandler.handleParseError({
+                    filePath: this.sourceFile,
+                    line: lineNumber,
+                    errorMessage: `Failed to parse Bloc ${blocName}: ${error}`,
+                    sourceCode: this.sourceCode,
+                    framework: 'flutter',
+                });
+            }
+        }
+        return blocs;
+    }
+    /**
+     * Find Bloc event definitions
+     */
+    findBlocEvents(source, baseEventName) {
+        const events = [];
+        // Pattern to match event class definitions that extend the base event
+        const eventPattern = new RegExp(`class\\s+(\\w+)\\s+extends\\s+${baseEventName}\\s*\\{`, 'g');
+        let match;
+        while ((match = eventPattern.exec(source)) !== null) {
+            const eventName = match[1];
+            const classStartIndex = match.index + match[0].length;
+            try {
+                const classBody = this.extractMethodBody(source, classStartIndex);
+                const properties = this.extractProperties(classBody);
+                events.push({
+                    name: eventName,
+                    properties,
+                });
+            }
+            catch (error) {
+                // Skip malformed event classes
+            }
+        }
+        return events;
+    }
+    /**
+     * Find Bloc state definitions
+     */
+    findBlocStates(source, baseStateName) {
+        const states = [];
+        // Pattern to match state class definitions that extend the base state
+        const statePattern = new RegExp(`class\\s+(\\w+)\\s+extends\\s+${baseStateName}\\s*\\{`, 'g');
+        let match;
+        while ((match = statePattern.exec(source)) !== null) {
+            const stateName = match[1];
+            const classStartIndex = match.index + match[0].length;
+            try {
+                const classBody = this.extractMethodBody(source, classStartIndex);
+                const properties = this.extractProperties(classBody);
+                // Check if this is the initial state (often named with "Initial" suffix)
+                const isInitial = stateName.includes('Initial');
+                states.push({
+                    name: stateName,
+                    properties,
+                    isInitial,
+                });
+            }
+            catch (error) {
+                // Skip malformed state classes
+            }
+        }
+        return states;
+    }
+    /**
+     * Extract Bloc event handlers (on<Event> methods)
+     */
+    extractBlocEventHandlers(classBody) {
+        const handlers = [];
+        // Pattern to match on<Event> handlers
+        const handlerPattern = /on<(\w+)>\s*\(\s*\(([^,]+),\s*([^)]+)\)\s*(?:async)?\s*\{/g;
+        let match;
+        while ((match = handlerPattern.exec(classBody)) !== null) {
+            const eventName = match[1];
+            const eventParam = match[2].trim();
+            const emitParam = match[3].trim();
+            const handlerStartIndex = match.index + match[0].length;
+            const handlerBody = this.extractMethodBody(classBody, handlerStartIndex);
+            // Extract emitted state from handler
+            const emitPattern = /emit\s*\(\s*(\w+)\s*\(/;
+            const emitMatch = emitPattern.exec(handlerBody);
+            const stateName = emitMatch ? emitMatch[1] : '';
+            handlers.push({
+                eventName,
+                stateName,
+                handler: handlerBody,
+            });
+        }
+        return handlers;
+    }
+    /**
+     * Extract Riverpod provider definitions from source code
+     */
+    extractRiverpodProviders(source) {
+        const providers = [];
+        // Extract Provider<Type>
+        const providerPattern = /final\s+(\w+)\s+=\s+Provider<([^>]+)>\s*\(/g;
+        let match;
+        while ((match = providerPattern.exec(source)) !== null) {
+            const providerName = match[1];
+            const valueType = match[2];
+            const lineNumber = this.getLineNumber(source, match.index);
+            providers.push({
+                name: providerName,
+                type: 'Provider',
+                valueType,
+                lineNumber,
+            });
+        }
+        // Extract StateProvider<Type>
+        const stateProviderPattern = /final\s+(\w+)\s+=\s+StateProvider<([^>]+)>\s*\(\s*\([^)]*\)\s*=>\s*([^)]+)\)/g;
+        while ((match = stateProviderPattern.exec(source)) !== null) {
+            const providerName = match[1];
+            const valueType = match[2];
+            const initialValue = match[3].trim();
+            const lineNumber = this.getLineNumber(source, match.index);
+            providers.push({
+                name: providerName,
+                type: 'StateProvider',
+                valueType,
+                initialValue,
+                lineNumber,
+            });
+        }
+        // Extract StateNotifierProvider<Notifier, State>
+        const stateNotifierPattern = /final\s+(\w+)\s+=\s+StateNotifierProvider<([^,]+),\s*([^>]+)>\s*\(\s*\([^)]*\)\s*=>\s*(\w+)\s*\(/g;
+        while ((match = stateNotifierPattern.exec(source)) !== null) {
+            const providerName = match[1];
+            const notifierClass = match[2].trim();
+            const valueType = match[3].trim();
+            const initialValue = match[4];
+            const lineNumber = this.getLineNumber(source, match.index);
+            providers.push({
+                name: providerName,
+                type: 'StateNotifierProvider',
+                valueType,
+                notifierClass,
+                initialValue,
+                lineNumber,
+            });
+        }
+        // Extract FutureProvider<Type>
+        const futureProviderPattern = /final\s+(\w+)\s+=\s+FutureProvider<([^>]+)>\s*\(/g;
+        while ((match = futureProviderPattern.exec(source)) !== null) {
+            const providerName = match[1];
+            const valueType = match[2];
+            const lineNumber = this.getLineNumber(source, match.index);
+            providers.push({
+                name: providerName,
+                type: 'FutureProvider',
+                valueType,
+                lineNumber,
+            });
+        }
+        // Extract StreamProvider<Type>
+        const streamProviderPattern = /final\s+(\w+)\s+=\s+StreamProvider<([^>]+)>\s*\(/g;
+        while ((match = streamProviderPattern.exec(source)) !== null) {
+            const providerName = match[1];
+            const valueType = match[2];
+            const lineNumber = this.getLineNumber(source, match.index);
+            providers.push({
+                name: providerName,
+                type: 'StreamProvider',
+                valueType,
+                lineNumber,
+            });
+        }
+        return providers;
+    }
+    /**
+     * Extract StateNotifier classes
+     */
+    extractStateNotifiers(source) {
+        const notifiers = [];
+        // Pattern to match StateNotifier classes
+        const notifierPattern = /class\s+(\w+)\s+extends\s+StateNotifier<([^>]+)>\s*\{/g;
+        let match;
+        while ((match = notifierPattern.exec(source)) !== null) {
+            const notifierName = match[1];
+            const stateType = match[2];
+            const lineNumber = this.getLineNumber(source, match.index);
+            const classStartIndex = match.index + match[0].length;
+            try {
+                const classBody = this.extractMethodBody(source, classStartIndex);
+                // Find constructor to get initial state
+                const constructorPattern = new RegExp(`${notifierName}\\s*\\([^)]*\\)\\s*:\\s*super\\s*\\(([^)]+)\\)`);
+                const constructorMatch = constructorPattern.exec(classBody);
+                const initialState = constructorMatch ? constructorMatch[1].trim() : '';
+                const methods = this.extractMethods(classBody);
+                notifiers.push({
+                    name: notifierName,
+                    stateType,
+                    initialState,
+                    methods,
+                    lineNumber,
+                });
+            }
+            catch (error) {
+                this.errorHandler.handleParseError({
+                    filePath: this.sourceFile,
+                    line: lineNumber,
+                    errorMessage: `Failed to parse StateNotifier ${notifierName}: ${error}`,
+                    sourceCode: this.sourceCode,
+                    framework: 'flutter',
+                });
+            }
+        }
+        return notifiers;
+    }
+    /**
+     * Convert Riverpod provider to state definition
+     */
+    convertRiverpodToState(provider, notifier) {
+        const variables = [];
+        if (provider.type === 'StateProvider' || provider.type === 'Provider') {
+            // Simple state provider
+            variables.push({
+                name: provider.name,
+                type: this.mapDartTypeToTS(provider.valueType),
+                initialValue: provider.initialValue ? this.parseValue(provider.initialValue) : undefined,
+                mutable: provider.type === 'StateProvider',
+            });
+        }
+        else if (provider.type === 'StateNotifierProvider' && notifier) {
+            // StateNotifier - extract state from notifier class
+            variables.push({
+                name: provider.name,
+                type: this.mapDartTypeToTS(notifier.stateType),
+                initialValue: notifier.initialState ? this.parseValue(notifier.initialState) : undefined,
+                mutable: true,
+            });
+        }
+        else if (provider.type === 'FutureProvider' || provider.type === 'StreamProvider') {
+            // Async providers
+            variables.push({
+                name: provider.name,
+                type: this.mapDartTypeToTS(provider.valueType),
+                initialValue: undefined,
+                mutable: false,
+            });
+        }
+        return {
+            type: 'global', // Riverpod providers are global
+            variables,
+        };
     }
     /**
      * Find StatelessWidget classes in source code
@@ -124,6 +517,7 @@ class DartParser {
                         name: stateClassName,
                         stateVariables: stateClass.stateVariables,
                         methods: stateClass.methods,
+                        setStateCalls: stateClass.setStateCalls,
                     } : undefined,
                     lineNumber,
                 });
@@ -156,6 +550,7 @@ class DartParser {
             buildMethod: this.extractBuildMethod(classBody),
             stateVariables: this.extractStateVariables(classBody),
             methods: this.extractMethods(classBody),
+            setStateCalls: this.extractSetStateCalls(classBody),
         };
     }
     /**
@@ -163,13 +558,13 @@ class DartParser {
      */
     extractProperties(classBody) {
         const properties = [];
-        // Pattern to match property declarations
-        const propPattern = /(?:final\s+)?(\w+(?:<[^>]+>)?)\s+(\w+)\s*(?:=\s*([^;]+))?;/g;
+        // Pattern to match property declarations including nullable types
+        const propPattern = /(?:final\s+)?(\w+(?:<[^>]+>)?(\?)?)\s+(\w+)\s*(?:=\s*([^;]+))?;/g;
         let match;
         while ((match = propPattern.exec(classBody)) !== null) {
-            const type = match[1];
-            const name = match[2];
-            const defaultValue = match[3]?.trim();
+            const type = match[1]; // Includes ? if nullable
+            const name = match[3];
+            const defaultValue = match[4]?.trim();
             const isFinal = classBody.substring(Math.max(0, match.index - 10), match.index).includes('final');
             // Skip if it's inside a method
             if (this.isInsideMethod(classBody, match.index)) {
@@ -191,25 +586,31 @@ class DartParser {
      * Update properties with required information from constructor
      */
     updateRequiredProperties(classBody, properties) {
-        // Pattern to match constructor with named parameters
-        const constructorPattern = /\w+\s*\(\s*\{([^}]+)\}\s*\)/s;
+        // Pattern to match constructor with both positional and named parameters
+        // Handles: MyWidget(this.title, {this.value = 0})
+        const constructorPattern = /\w+\s*\(([^)]*)\)/s;
         const match = constructorPattern.exec(classBody);
         if (!match) {
             return;
         }
-        const params = match[1];
+        const allParams = match[1];
+        // Extract named parameters section (inside {})
+        const namedParamsMatch = /\{([^}]+)\}/.exec(allParams);
+        const namedParams = namedParamsMatch ? namedParamsMatch[1] : '';
         properties.forEach(prop => {
-            // Check if required
-            const requiredPattern = new RegExp(`required\\s+this\\.${prop.name}\\b`);
-            if (requiredPattern.test(params)) {
-                prop.isRequired = true;
-            }
-            // Extract default value from constructor if present
-            // Pattern: this.propName = value
-            const defaultPattern = new RegExp(`this\\.${prop.name}\\s*=\\s*([^,}\\n]+)`);
-            const defaultMatch = defaultPattern.exec(params);
-            if (defaultMatch) {
-                prop.defaultValue = defaultMatch[1].trim();
+            // Check if required (only in named parameters)
+            if (namedParams) {
+                const requiredPattern = new RegExp(`required\\s+this\\.${prop.name}\\b`);
+                if (requiredPattern.test(namedParams)) {
+                    prop.isRequired = true;
+                }
+                // Extract default value from named parameters
+                // Pattern: this.propName = value
+                const defaultPattern = new RegExp(`this\\.${prop.name}\\s*=\\s*([^,}\\n]+)`);
+                const defaultMatch = defaultPattern.exec(namedParams);
+                if (defaultMatch && !prop.defaultValue) {
+                    prop.defaultValue = defaultMatch[1].trim();
+                }
             }
         });
     }
@@ -257,14 +658,15 @@ class DartParser {
     extractStateVariables(classBody) {
         const variables = [];
         // Pattern to match state variable declarations
-        const varPattern = /(late\s+)?(final\s+)?(\w+(?:<[^>]+>)?)\s+(\w+)\s*(?:=\s*([^;]+))?;/g;
+        // Handles: Type name; Type? name; late Type name; final Type name = value;
+        const varPattern = /(late\s+)?(final\s+)?(\w+(?:<[^>]+>)?(\?)?)\s+(\w+)\s*(?:=\s*([^;]+))?;/g;
         let match;
         while ((match = varPattern.exec(classBody)) !== null) {
             const isLate = !!match[1];
             const isFinal = !!match[2];
-            const type = match[3];
-            const name = match[4];
-            const initialValue = match[5]?.trim();
+            const type = match[3]; // Includes ? if nullable
+            const name = match[5];
+            const initialValue = match[6]?.trim();
             // Skip if it's inside a method
             if (this.isInsideMethod(classBody, match.index)) {
                 continue;
@@ -276,6 +678,55 @@ class DartParser {
                 isFinal,
                 isLate,
             });
+        }
+        return variables;
+    }
+    /**
+     * Extract setState calls from State class body
+     */
+    extractSetStateCalls(classBody) {
+        const setStateCalls = [];
+        // Pattern to match setState calls
+        const setStatePattern = /setState\s*\(\s*\(\s*\)\s*\{([^}]+)\}\s*\)/g;
+        let match;
+        while ((match = setStatePattern.exec(classBody)) !== null) {
+            const code = match[1].trim();
+            const lineNumber = this.getLineNumber(classBody, match.index);
+            const updatedVariables = this.extractUpdatedVariables(code);
+            setStateCalls.push({
+                lineNumber,
+                updatedVariables,
+                code,
+            });
+        }
+        // Also match arrow function syntax: setState(() => variable = value)
+        const arrowSetStatePattern = /setState\s*\(\s*\(\s*\)\s*=>\s*([^)]+)\)/g;
+        while ((match = arrowSetStatePattern.exec(classBody)) !== null) {
+            const code = match[1].trim();
+            const lineNumber = this.getLineNumber(classBody, match.index);
+            const updatedVariables = this.extractUpdatedVariables(code);
+            setStateCalls.push({
+                lineNumber,
+                updatedVariables,
+                code,
+            });
+        }
+        return setStateCalls;
+    }
+    /**
+     * Extract variable names that are being updated in setState
+     */
+    extractUpdatedVariables(code) {
+        const variables = [];
+        // Pattern to match variable assignments: variableName = value
+        const assignmentPattern = /(\w+)\s*=\s*/g;
+        let match;
+        while ((match = assignmentPattern.exec(code)) !== null) {
+            const varName = match[1];
+            // Exclude 'this' and other keywords
+            if (varName !== 'this' && !['var', 'final', 'const'].includes(varName)) {
+                variables.push(varName);
+            }
         }
         return variables;
     }
@@ -312,20 +763,82 @@ class DartParser {
             return [];
         }
         const parameters = [];
-        // Simple parameter parsing (can be enhanced)
-        const params = paramsString.split(',').map(p => p.trim());
-        for (const param of params) {
-            const match = /(\w+)\s+(\w+)/.exec(param);
-            if (match) {
-                parameters.push({
-                    name: match[2],
-                    type: match[1],
-                    isRequired: param.includes('required'),
-                    isNamed: false,
-                });
+        // Check if there are named parameters (enclosed in {})
+        const namedParamsMatch = /\{([^}]+)\}/.exec(paramsString);
+        const positionalParamsStr = namedParamsMatch
+            ? paramsString.substring(0, namedParamsMatch.index).trim()
+            : paramsString;
+        // Parse positional parameters
+        if (positionalParamsStr) {
+            const positionalParams = this.splitAtDepth(positionalParamsStr, ',');
+            for (const param of positionalParams) {
+                const paramInfo = this.parseParameter(param.trim(), false);
+                if (paramInfo) {
+                    parameters.push(paramInfo);
+                }
+            }
+        }
+        // Parse named parameters
+        if (namedParamsMatch) {
+            const namedParamsStr = namedParamsMatch[1];
+            const namedParams = this.splitAtDepth(namedParamsStr, ',');
+            for (const param of namedParams) {
+                const paramInfo = this.parseParameter(param.trim(), true);
+                if (paramInfo) {
+                    parameters.push(paramInfo);
+                }
             }
         }
         return parameters;
+    }
+    /**
+     * Parse a single parameter
+     */
+    parseParameter(paramStr, isNamed) {
+        paramStr = paramStr.trim();
+        if (!paramStr) {
+            return null;
+        }
+        // Check if required
+        const isRequired = paramStr.startsWith('required ');
+        if (isRequired) {
+            paramStr = paramStr.substring('required '.length).trim();
+        }
+        // Extract default value if present
+        let defaultValue;
+        const defaultMatch = /=\s*(.+)$/.exec(paramStr);
+        if (defaultMatch) {
+            defaultValue = defaultMatch[1].trim();
+            paramStr = paramStr.substring(0, defaultMatch.index).trim();
+        }
+        // Parse type and name
+        // Patterns: "Type name", "Type? name" (nullable), or "this.name" (for constructor parameters)
+        let type;
+        let name;
+        if (paramStr.startsWith('this.')) {
+            // Constructor parameter: this.name
+            name = paramStr.substring(5);
+            type = 'dynamic'; // Type will be inferred from field
+        }
+        else {
+            // Regular parameter: Type name or Type? name
+            const parts = paramStr.split(/\s+/);
+            if (parts.length >= 2) {
+                type = parts[0]; // Includes ? if nullable
+                name = parts[1];
+            }
+            else {
+                // Fallback for malformed parameters
+                return null;
+            }
+        }
+        return {
+            name,
+            type,
+            isRequired,
+            isNamed,
+            defaultValue,
+        };
     }
     /**
      * Check if position is inside a method
@@ -387,6 +900,38 @@ class DartParser {
         return props;
     }
     /**
+     * Convert parameters to IR props with metadata
+     */
+    convertParametersToProps(parameters) {
+        const props = {};
+        const required = [];
+        const optional = [];
+        const defaults = {};
+        parameters.forEach(param => {
+            // Track required vs optional
+            if (param.isRequired) {
+                required.push(param.name);
+            }
+            else {
+                optional.push(param.name);
+            }
+            // Store default values
+            if (param.defaultValue) {
+                const parsedValue = this.parseValue(param.defaultValue);
+                defaults[param.name] = parsedValue;
+                props[param.name] = parsedValue;
+            }
+        });
+        return {
+            props,
+            metadata: {
+                required,
+                optional,
+                defaults,
+            },
+        };
+    }
+    /**
      * Convert state class to state definition
      */
     convertState(stateClass) {
@@ -398,6 +943,30 @@ class DartParser {
                 initialValue: v.initialValue ? this.parseValue(v.initialValue) : undefined,
                 mutable: !v.isFinal,
             })),
+        };
+    }
+    /**
+     * Convert Bloc to state definition
+     */
+    convertBlocToState(bloc) {
+        const variables = [];
+        // Extract variables from all state classes
+        bloc.states.forEach(state => {
+            state.properties.forEach(prop => {
+                // Only add if not already present
+                if (!variables.find(v => v.name === prop.name)) {
+                    variables.push({
+                        name: prop.name,
+                        type: this.mapDartTypeToTS(prop.type),
+                        initialValue: prop.defaultValue ? this.parseValue(prop.defaultValue) : undefined,
+                        mutable: true, // Bloc state is mutable through events
+                    });
+                }
+            });
+        });
+        return {
+            type: 'global', // Bloc is typically used for global state
+            variables,
         };
     }
     /**
@@ -621,6 +1190,13 @@ class DartParser {
             'dynamic': 'any',
             'void': 'void',
         };
+        // Handle nullable types (Type?)
+        const isNullable = dartType.endsWith('?');
+        if (isNullable) {
+            const baseType = dartType.slice(0, -1);
+            const mappedType = this.mapDartTypeToTS(baseType);
+            return `${mappedType} | null`;
+        }
         // Handle generic types
         const genericMatch = /^(\w+)<(.+)>$/.exec(dartType);
         if (genericMatch) {
@@ -629,9 +1205,60 @@ class DartParser {
             if (baseType === 'List') {
                 return `${this.mapDartTypeToTS(genericType)}[]`;
             }
+            if (baseType === 'Map') {
+                // Map<K, V> -> Record<K, V>
+                const types = genericType.split(',').map(t => t.trim());
+                if (types.length === 2) {
+                    return `Record<${this.mapDartTypeToTS(types[0])}, ${this.mapDartTypeToTS(types[1])}>`;
+                }
+            }
             return typeMap[baseType] || dartType;
         }
         return typeMap[dartType] || dartType;
+    }
+    /**
+     * Convert Dart null-aware operators to TypeScript equivalents
+     */
+    convertNullAwareOperators(dartCode) {
+        let tsCode = dartCode;
+        // Convert null-aware access (?.) to optional chaining (?.)
+        // Already the same in TypeScript, no conversion needed
+        // Convert null coalescing (??) to TypeScript (??)
+        // Already the same in TypeScript, no conversion needed
+        // Convert null assertion (!) to TypeScript (!)
+        // Already the same in TypeScript, no conversion needed
+        // Convert late keyword - remove it as TypeScript doesn't have equivalent
+        tsCode = tsCode.replace(/\blate\s+/g, '');
+        return tsCode;
+    }
+    /**
+     * Check if a type is nullable
+     */
+    isNullableType(dartType) {
+        return dartType.endsWith('?');
+    }
+    /**
+     * Get non-nullable version of a type
+     */
+    getNonNullableType(dartType) {
+        return dartType.endsWith('?') ? dartType.slice(0, -1) : dartType;
+    }
+    /**
+     * Parse value with null safety awareness
+     */
+    parseValueWithNullSafety(value, type) {
+        value = value.trim();
+        // Handle null
+        if (value === 'null') {
+            return null;
+        }
+        // Handle null-aware operators in expressions
+        if (value.includes('?.') || value.includes('??') || value.includes('!')) {
+            // Keep as expression string for complex null-aware operations
+            return this.convertNullAwareOperators(value);
+        }
+        // Use regular parsing for simple values
+        return this.parseValue(value);
     }
 }
 exports.DartParser = DartParser;

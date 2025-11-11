@@ -5,6 +5,9 @@
 
 // Types
 export * from './types/ir-types';
+export * from './types/animation-types';
+export * from './types/network-types';
+export * from './types/platform-types';
 export { TypeMapper, getTypeMapper, type TypeMapping, type GenericType } from './types/type-mapper';
 export { 
   InterfaceConverter, 
@@ -41,6 +44,30 @@ export {
   type FrameworkMapping,
   type WidgetMappings
 } from './registry/widget-mapping-registry';
+
+// Plugin Registry
+export {
+  PluginRegistry,
+  getPluginRegistry,
+  resetPluginRegistry,
+  type Plugin,
+  type PluginMetadata,
+  type PluginCompatibility,
+  type PluginDependency,
+  type PluginWidget,
+  type PluginCapabilities,
+  type PluginValidationResult
+} from './registry/plugin-registry';
+
+// Package Manager
+export {
+  PackageManager,
+  getPackageManager,
+  resetPackageManager,
+  type PackageInfo,
+  type PubspecYaml,
+  type PackageJson
+} from './registry/package-manager';
 
 // Utility functions
 export { createIR, createNode } from './utils/ir-utils';
@@ -371,4 +398,64 @@ export {
   type ReactParserConfig,
   type ComponentInfo,
   type HookInfo,
+  ReactPlatformParser,
+  DartPlatformParser,
+  ReactPlatformGenerator,
+  DartPlatformGenerator,
+  PlatformCodeGenerator,
+  createPlatformGenerator,
+  type PlatformGeneratorConfig,
 } from './parsers';
+
+// State Bridge
+export {
+  StateBridge,
+  type StateBridgeConfig,
+  type ReactHookInfo,
+  type ReducerAction,
+  type FlutterStateInfo,
+  type FlutterStateVariable,
+  type FlutterStateMethod,
+  type StateSnapshot,
+  type StateChange,
+  type StateComparison,
+  // State Adapters
+  type StateAdapter,
+  BaseStateAdapter,
+  type AdapterConfig,
+  type GeneratedCode,
+  BlocAdapter,
+  RiverpodAdapter,
+  ProviderAdapter,
+  type AdapterType,
+  getAdapter,
+  getAllAdapters,
+  isValidAdapterType,
+} from './bridge';
+
+// Navigation System
+export {
+  // Navigation Types
+  type NavigationSchema,
+  type Route,
+  type RouteParam,
+  type RouteMeta,
+  type RouteRedirect,
+  type TransitionConfig,
+  type TransitionType,
+  type EasingFunction,
+  type TransitionProperties,
+  type NavigationMode,
+  type DeepLinkingConfig,
+  type DeepLinkHandler,
+  type NavigationGuard,
+  type NavigationAction,
+  type NavigationContext,
+  type NavigationHistoryEntry,
+  type NavigationMethods,
+  type RouteMatch,
+  type NavigationEventType,
+  type NavigationEvent,
+  // Route Parser
+  RouteParser,
+} from './navigation';

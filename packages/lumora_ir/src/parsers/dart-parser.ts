@@ -6,6 +6,7 @@
 import { LumoraIR, LumoraNode, StateDefinition, StateVariable, EventDefinition, Parameter } from '../types/ir-types';
 import { createIR, createNode } from '../utils/ir-utils';
 import { ErrorHandler, getErrorHandler, ErrorSeverity, ErrorCategory } from '../errors/error-handler';
+import { DartPlatformParser } from './platform-parser';
 
 /**
  * Configuration for Dart parser
@@ -190,6 +191,7 @@ export class CustomWidgetRegistry {
 /**
  * Dart AST Parser
  * Converts Dart/Flutter code to Lumora IR
+ * OPTIMIZED: Includes caching and performance improvements
  */
 export class DartParser {
   private sourceFile: string = '';
@@ -198,6 +200,21 @@ export class DartParser {
   private config: DartParserConfig;
   private customWidgetRegistry: CustomWidgetRegistry;
 
+  // ============================================================================
+  // PERFORMANCE OPTIMIZATIONS
+  // ============================================================================
+
+  // Cache for parsed widgets to avoid re-parsing
+  private static widgetCache: Map<string, { widgets: WidgetInfo[]; timestamp: number }> = new Map();
+  private static readonly WIDGET_CACHE_TTL = 60000; // 1 minute TTL
+  private static readonly WIDGET_CACHE_MAX_SIZE = 100; // Max 100 cached results
+
+  // Cache for widget conversion results
+  private conversionCache: Map<string, LumoraNode> = new Map();
+
+  // Enable/disable caching (useful for debugging)
+  private enableCaching: boolean = true;
+
   constructor(config: DartParserConfig = {}) {
     this.config = {
       strictMode: false,
@@ -205,6 +222,57 @@ export class DartParser {
     };
     this.errorHandler = config.errorHandler || getErrorHandler();
     this.customWidgetRegistry = new CustomWidgetRegistry();
+  }
+
+  /**
+   * Enable or disable caching
+   */
+  public setCachingEnabled(enabled: boolean): void {
+    this.enableCaching = enabled;
+    if (!enabled) {
+      this.clearCaches();
+    }
+  }
+
+  /**
+   * Clear all caches
+   */
+  public clearCaches(): void {
+    this.conversionCache.clear();
+  }
+
+  /**
+   * Clear static widget cache
+   */
+  public static clearWidgetCache(): void {
+    DartParser.widgetCache.clear();
+  }
+
+  /**
+   * Get cache statistics
+   */
+  public getCacheStats(): {
+    widgetCacheSize: number;
+    conversionCacheSize: number;
+  } {
+    return {
+      widgetCacheSize: DartParser.widgetCache.size,
+      conversionCacheSize: this.conversionCache.size,
+    };
+  }
+
+  /**
+   * Generate cache key from source code
+   * OPTIMIZATION: Simple hash function for cache keys
+   */
+  private generateCacheKey(source: string): string {
+    let hash = 0;
+    for (let i = 0; i < source.length; i++) {
+      const char = source.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32bit integer
+    }
+    return hash.toString(36);
   }
 
   /**
@@ -224,6 +292,10 @@ export class DartParser {
     try {
       const widgets = this.extractWidgets(source);
       const nodes = widgets.map(w => this.convertWidget(w));
+
+      // Extract platform-specific code
+      const platformParser = new DartPlatformParser(this.errorHandler);
+      const platformResult = platformParser.extractPlatformCode(source);
 
       const ir = createIR(
         {
@@ -247,6 +319,18 @@ export class DartParser {
             defaultValue: p.defaultValue,
           })),
         }));
+      }
+
+      // Add platform schema if platform-specific code was found
+      if (platformResult.hasPlatformCode) {
+        ir.platform = {
+          platformCode: platformResult.platformCode,
+          config: {
+            includeFallback: true,
+            warnOnPlatformCode: true,
+            stripUnsupportedPlatforms: false,
+          },
+        };
       }
 
       return ir;

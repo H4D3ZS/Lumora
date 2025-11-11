@@ -9,6 +9,7 @@ import * as t from '@babel/types';
 import { LumoraIR, LumoraNode, StateDefinition, StateVariable, EventDefinition, Parameter, LifecycleDefinition } from '../types/ir-types';
 import { createIR, createNode } from '../utils/ir-utils';
 import { ErrorHandler, getErrorHandler, ErrorSeverity, ErrorCategory } from '../errors/error-handler';
+import { ReactPlatformParser } from './platform-parser';
 
 /**
  * Configuration for React parser
@@ -63,6 +64,7 @@ export interface TypeInfo {
 /**
  * React AST Parser
  * Converts React/TSX code to Lumora IR
+ * OPTIMIZED: Includes caching and performance improvements
  */
 export class ReactParser {
   private ast: t.File | null = null;
@@ -72,6 +74,24 @@ export class ReactParser {
   private config: ReactParserConfig;
   private typeDefinitions: Map<string, TypeInfo> = new Map();
 
+  // ============================================================================
+  // PERFORMANCE OPTIMIZATIONS
+  // ============================================================================
+
+  // Cache for parsed ASTs to avoid re-parsing the same code
+  private static astCache: Map<string, { ast: t.File; timestamp: number }> = new Map();
+  private static readonly AST_CACHE_TTL = 60000; // 1 minute TTL
+  private static readonly AST_CACHE_MAX_SIZE = 100; // Max 100 cached ASTs
+
+  // Cache for component extraction results
+  private componentCache: Map<string, ComponentInfo[]> = new Map();
+
+  // Cache for JSX conversion results
+  private jsxCache: Map<string, LumoraNode[]> = new Map();
+
+  // Enable/disable caching (useful for debugging)
+  private enableCaching: boolean = true;
+
   constructor(config: ReactParserConfig = {}) {
     this.config = {
       sourceType: 'module',
@@ -79,6 +99,46 @@ export class ReactParser {
       ...config,
     };
     this.errorHandler = config.errorHandler || getErrorHandler();
+  }
+
+  /**
+   * Enable or disable caching
+   */
+  public setCachingEnabled(enabled: boolean): void {
+    this.enableCaching = enabled;
+    if (!enabled) {
+      this.clearCaches();
+    }
+  }
+
+  /**
+   * Clear all caches
+   */
+  public clearCaches(): void {
+    this.componentCache.clear();
+    this.jsxCache.clear();
+  }
+
+  /**
+   * Clear static AST cache
+   */
+  public static clearASTCache(): void {
+    ReactParser.astCache.clear();
+  }
+
+  /**
+   * Get cache statistics
+   */
+  public getCacheStats(): {
+    astCacheSize: number;
+    componentCacheSize: number;
+    jsxCacheSize: number;
+  } {
+    return {
+      astCacheSize: ReactParser.astCache.size,
+      componentCacheSize: this.componentCache.size,
+      jsxCacheSize: this.jsxCache.size,
+    };
   }
 
   /**
@@ -97,6 +157,10 @@ export class ReactParser {
       const components = this.extractComponents(this.ast);
       const nodes = components.map(c => this.convertComponent(c));
 
+      // Extract platform-specific code
+      const platformParser = new ReactPlatformParser(this.errorHandler);
+      const platformResult = platformParser.extractPlatformCode(this.ast, source);
+
       // Include type definitions in metadata if any were found
       const metadata = {
         sourceFramework: 'react' as const,
@@ -108,7 +172,21 @@ export class ReactParser {
         (metadata as any).typeDefinitions = Array.from(this.typeDefinitions.values());
       }
 
-      return createIR(metadata, nodes);
+      const ir = createIR(metadata, nodes);
+
+      // Add platform schema if platform-specific code was found
+      if (platformResult.hasPlatformCode) {
+        ir.platform = {
+          platformCode: platformResult.platformCode,
+          config: {
+            includeFallback: true,
+            warnOnPlatformCode: true,
+            stripUnsupportedPlatforms: false,
+          },
+        };
+      }
+
+      return ir;
     } catch (error) {
       this.errorHandler.handleParseError({
         filePath: filename,
@@ -122,13 +200,49 @@ export class ReactParser {
 
   /**
    * Parse source code to AST using Babel parser
+   * OPTIMIZED: Uses caching to avoid re-parsing the same code
    */
   private parseAST(source: string): t.File {
+    // Generate cache key based on source code hash
+    const cacheKey = this.enableCaching ? this.generateCacheKey(source) : null;
+
+    // Check cache first
+    if (cacheKey && ReactParser.astCache.has(cacheKey)) {
+      const cached = ReactParser.astCache.get(cacheKey)!;
+      
+      // Check if cache entry is still valid
+      if (Date.now() - cached.timestamp < ReactParser.AST_CACHE_TTL) {
+        return cached.ast;
+      } else {
+        // Remove expired entry
+        ReactParser.astCache.delete(cacheKey);
+      }
+    }
+
     try {
-      return parser.parse(source, {
+      const ast = parser.parse(source, {
         sourceType: this.config.sourceType,
         plugins: this.config.plugins,
       });
+
+      // Cache the result
+      if (cacheKey && this.enableCaching) {
+        // Enforce cache size limit
+        if (ReactParser.astCache.size >= ReactParser.AST_CACHE_MAX_SIZE) {
+          // Remove oldest entry
+          const firstKey = ReactParser.astCache.keys().next().value;
+          if (firstKey) {
+            ReactParser.astCache.delete(firstKey);
+          }
+        }
+
+        ReactParser.astCache.set(cacheKey, {
+          ast,
+          timestamp: Date.now(),
+        });
+      }
+
+      return ast;
     } catch (error) {
       if (error instanceof SyntaxError) {
         this.errorHandler.handleParseError({
@@ -140,6 +254,21 @@ export class ReactParser {
       }
       throw error;
     }
+  }
+
+  /**
+   * Generate cache key from source code
+   * OPTIMIZATION: Simple hash function for cache keys
+   */
+  private generateCacheKey(source: string): string {
+    // Simple hash function - for production, consider using a proper hash library
+    let hash = 0;
+    for (let i = 0; i < source.length; i++) {
+      const char = source.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32bit integer
+    }
+    return hash.toString(36);
   }
 
   /**
@@ -349,8 +478,15 @@ export class ReactParser {
 
   /**
    * Extract all React components from AST
+   * OPTIMIZED: Uses caching to avoid re-extracting components
    */
   extractComponents(ast: t.File): ComponentInfo[] {
+    // Check cache first
+    const cacheKey = this.enableCaching ? `components_${this.sourceFile}` : null;
+    if (cacheKey && this.componentCache.has(cacheKey)) {
+      return this.componentCache.get(cacheKey)!;
+    }
+
     const components: ComponentInfo[] = [];
 
     traverse(ast, {
@@ -404,6 +540,11 @@ export class ReactParser {
         }
       },
     });
+
+    // Cache the result
+    if (cacheKey && this.enableCaching) {
+      this.componentCache.set(cacheKey, components);
+    }
 
     return components;
   }

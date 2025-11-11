@@ -3,12 +3,30 @@
  * Framework-agnostic intermediate representation for UI components
  */
 
+import type { NavigationSchema } from '../navigation/navigation-types';
+import type { AnimationSchema, AnimationGroup, AnimationTransition } from './animation-types';
+import type { NetworkSchema } from './network-types';
+import type { PlatformSchema } from './platform-types';
+
 export interface LumoraIR {
   version: string;
   metadata: IRMetadata;
   nodes: LumoraNode[];
   theme?: ThemeDefinition;
+  /** @deprecated Use navigationSchema instead */
   navigation?: NavigationDefinition;
+  /** Complete navigation configuration */
+  navigationSchema?: NavigationSchema;
+  /** Animation definitions */
+  animations?: AnimationSchema[];
+  /** Animation groups for coordinated animations */
+  animationGroups?: AnimationGroup[];
+  /** Page/screen transition animations */
+  transitions?: Record<string, AnimationTransition>;
+  /** Network configuration */
+  network?: NetworkSchema;
+  /** Platform-specific code configuration */
+  platform?: PlatformSchema;
 }
 
 export interface IRMetadata {
@@ -41,6 +59,8 @@ export interface LumoraNode {
   state?: StateDefinition;
   events?: EventDefinition[];
   lifecycle?: LifecycleDefinition[];
+  /** Animation IDs applied to this node */
+  animations?: string[];
   metadata: NodeMetadata;
 }
 
@@ -85,10 +105,18 @@ export interface ThemeDefinition {
   spacing?: Record<string, any>;
 }
 
+/**
+ * @deprecated Use NavigationSchema from '../navigation/navigation-types' instead
+ * This is kept for backward compatibility
+ */
 export interface NavigationDefinition {
   routes?: Route[];
 }
 
+/**
+ * @deprecated Use Route from '../navigation/navigation-types' instead
+ * This is kept for backward compatibility
+ */
 export interface Route {
   path: string;
   component: string;

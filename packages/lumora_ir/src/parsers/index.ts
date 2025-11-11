@@ -22,3 +22,44 @@ export {
   type MethodInfo,
   type ParameterInfo,
 } from './dart-parser';
+
+export {
+  ReactAnimationParser,
+  getReactAnimationParser,
+  resetReactAnimationParser,
+  type ReactAnimationParserConfig,
+} from './react-animation-parser';
+
+export {
+  FlutterAnimationParser,
+  getFlutterAnimationParser,
+  resetFlutterAnimationParser,
+  type FlutterAnimationParserConfig,
+} from './flutter-animation-parser';
+
+export {
+  ReactNetworkParser,
+  parseReactNetwork,
+  type ReactNetworkParserConfig,
+  type NetworkCallInfo,
+} from './react-network-parser';
+
+export {
+  FlutterNetworkParser,
+  parseFlutterNetwork,
+  type FlutterNetworkParserConfig,
+  type DartNetworkCallInfo,
+} from './flutter-network-parser';
+
+export {
+  ReactPlatformParser,
+  DartPlatformParser,
+} from './platform-parser';
+
+export {
+  ReactPlatformGenerator,
+  DartPlatformGenerator,
+  PlatformCodeGenerator,
+  createPlatformGenerator,
+  type PlatformGeneratorConfig,
+} from './platform-generator';

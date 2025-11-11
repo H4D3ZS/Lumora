@@ -1,372 +1,239 @@
-# Widget Mapping Registry
+# Plugin and Package Management System
 
-The Widget Mapping Registry provides bidirectional mappings between React and Flutter widgets, enabling seamless conversion between the two frameworks.
+This directory contains the plugin registry and package management system for Lumora.
 
 ## Overview
 
-The registry manages:
-- Widget type mappings (e.g., React `div` ↔ Flutter `Container`)
-- Property name mappings (e.g., React `children` ↔ Flutter `child`)
-- Style property mappings (e.g., React `backgroundColor` ↔ Flutter `decoration.color`)
-- Event handler mappings (e.g., React `onClick` ↔ Flutter `onPressed`)
-- Import statements for each framework
-- Fallback widgets for unmapped types
+The plugin system allows Lumora to:
+- Register and manage third-party plugins
+- Check package compatibility with Lumora
+- Parse and validate dependencies from `pubspec.yaml` and `package.json`
+- Warn about native dependencies that won't work in dev preview mode
+- Provide documentation links for packages
 
-## Usage
+## Components
 
-### Basic Usage
+### PluginRegistry
 
-```typescript
-import { getRegistry } from '@lumora/ir';
-
-const registry = getRegistry();
-
-// Convert React component to Flutter widget
-const flutterWidget = registry.getFlutterWidget('div');
-// Returns: "Container"
-
-// Convert Flutter widget to React component
-const reactComponent = registry.getReactComponent('Text');
-// Returns: "span"
-
-// Get prop mapping
-const propMapping = registry.getPropMapping('Text', 'children');
-// Returns: { react: "children", flutter: "data", type: "string" }
-
-// Convert prop names
-const flutterProp = registry.getFlutterProp('Text', 'children');
-// Returns: "data"
-
-// Convert event names
-const flutterEvent = registry.getFlutterEvent('Button', 'onClick');
-// Returns: "onPressed"
-```
-
-### Loading Custom Mappings
+Manages plugin registration, compatibility checking, and dependency resolution.
 
 ```typescript
-import { getRegistry } from '@lumora/ir';
-
-const registry = getRegistry();
-
-// Load custom mappings from your project
-registry.loadCustomMappings('./path/to/custom-widget-mappings.yaml');
-```
-
-### Getting Widget Information
-
-```typescript
-// Get complete widget mapping
-const mapping = registry.getMapping('Container');
-
-// Check if mapping exists
-const exists = registry.hasMapping('Container');
-
-// Get all widget names
-const allWidgets = registry.getAllWidgetNames();
-
-// Get required imports
-const flutterImport = registry.getImport('Container', 'flutter');
-// Returns: "package:flutter/material.dart"
-
-// Get fallback widget
-const fallback = registry.getFallback('UnknownWidget', 'flutter');
-// Returns: "Container"
-```
-
-## Widget Mappings Schema
-
-Widget mappings are defined in YAML format:
-
-```yaml
-schemaVersion: "1.0"
-
-WidgetName:
-  react:
-    component: "div"              # React component name
-    import: "react-native"        # Optional import statement
-  flutter:
-    widget: "Container"           # Flutter widget name
-    import: "package:flutter/material.dart"
-  props:
-    propName:
-      react: "padding"            # React prop name
-      flutter: "padding"          # Flutter prop name
-      type: "number"              # Data type
-      transform: "EdgeInsets.all" # Optional transformation
-      default: 0                  # Optional default value
-  styles:
-    styleName:
-      react: "backgroundColor"
-      flutter: "decoration.color"
-      type: "color"
-      transform: "Color"
-  events:
-    eventName:
-      react: "onClick"
-      flutter: "onPressed"
-      parameters: []              # Optional parameter mappings
-  fallback:
-    react: "div"                  # Fallback React component
-    flutter: "Container"          # Fallback Flutter widget
-  custom: false                   # Whether this is a custom mapping
-```
-
-## Supported Data Types
-
-- `string`: Text values
-- `number`: Numeric values (int, double, float)
-- `boolean`: True/false values
-- `color`: Color values (hex, rgb, named)
-- `function`: Callback functions
-- `widget`: Child widget/component
-- `widgetList`: Array of child widgets
-- `object`: Complex nested object
-- `enum`: Enumerated values
-- `axis`: Scroll direction (horizontal, vertical)
-- `alignment`: Layout alignment values
-- `textAlign`: Text alignment values
-- `fontWeight`: Font weight values
-
-## Transformation Functions
-
-The registry supports various transformation functions for converting values between frameworks:
-
-- `EdgeInsets.all`: Convert number to EdgeInsets
-- `EdgeInsets.symmetric`: Convert object to symmetric EdgeInsets
-- `Color`: Convert hex/rgb to Color object
-- `TextStyle`: Convert style object to TextStyle
-- `BoxDecoration`: Convert style object to BoxDecoration
-- `Axis`: Convert string to Axis enum
-- `MainAxisAlignment`: Convert string to alignment enum
-- `CrossAxisAlignment`: Convert string to alignment enum
-- `TextAlign`: Convert string to TextAlign enum
-- `FontWeight`: Convert string/number to FontWeight
-- `BorderRadius.circular`: Convert number to BorderRadius
-- `Border`: Convert border object to Border
-- `Icons`: Convert icon name to Icons enum
-- `Duration.milliseconds`: Convert number to Duration
-
-## Default Mappings
-
-The registry includes 50+ default widget mappings covering:
-
-### Layout Widgets
-- Container, View, Row, Column, Stack
-- Padding, Center, Align, SizedBox
-- Expanded, Flexible, Spacer, Wrap
-
-### Text Widgets
-- Text
-
-### Button Widgets
-- Button, ElevatedButton, TextButton, OutlinedButton
-- IconButton, TouchableOpacity, GestureDetector
-- FloatingActionButton, InkWell
-
-### Input Widgets
-- TextField, TextInput, Checkbox, Radio
-- Switch, Slider
-
-### List Widgets
-- ListView, FlatList, GridView, ListTile
-
-### Image Widgets
-- Image, ImageNetwork, Icon
-
-### Card Widgets
-- Card
-
-### App Structure Widgets
-- Scaffold, AppBar, Drawer, BottomNavigationBar
-- TabBar, SafeArea
-
-### Progress Indicators
-- CircularProgressIndicator, LinearProgressIndicator
-
-### Dialog Widgets
-- AlertDialog, SnackBar
-
-### Other Widgets
-- Divider, Chip, Tooltip, RefreshIndicator
-- Opacity, ClipRRect, SingleChildScrollView
-- Form, AnimatedContainer
-
-## Custom Mappings
-
-You can define custom mappings in your project's `widget-mappings.yaml` file:
-
-```yaml
-schemaVersion: "1.0"
-
-# Custom widget mapping
-MyCustomWidget:
-  react:
-    component: "CustomComponent"
-    import: "./components/CustomComponent"
-  flutter:
-    widget: "CustomWidget"
-    import: "package:my_app/widgets/custom_widget.dart"
-  props:
-    title:
-      react: "title"
-      flutter: "title"
-      type: "string"
-  custom: true  # Mark as custom to override defaults
-```
-
-Load custom mappings:
-
-```typescript
-registry.loadCustomMappings('./widget-mappings.yaml');
-```
-
-## API Reference
-
-### WidgetMappingRegistry
-
-#### Methods
-
-- `getMapping(widgetName: string): WidgetMapping | undefined`
-  - Get complete widget mapping by name
-
-- `getWidgetNameFromReact(reactComponent: string): string | undefined`
-  - Get widget name from React component name
-
-- `getWidgetNameFromFlutter(flutterWidget: string): string | undefined`
-  - Get widget name from Flutter widget name
-
-- `getFlutterWidget(reactComponent: string): string`
-  - Convert React component to Flutter widget
-
-- `getReactComponent(flutterWidget: string): string`
-  - Convert Flutter widget to React component
-
-- `getPropMapping(widgetName: string, propName: string): PropMapping | undefined`
-  - Get property mapping for a widget
-
-- `getFlutterProp(widgetName: string, reactProp: string): string`
-  - Convert React prop name to Flutter prop name
-
-- `getReactProp(widgetName: string, flutterProp: string): string`
-  - Convert Flutter prop name to React prop name
-
-- `getStyleMapping(widgetName: string, styleName: string): StyleMapping | undefined`
-  - Get style property mapping
-
-- `getEventMapping(widgetName: string, eventName: string): EventMapping | undefined`
-  - Get event handler mapping
-
-- `getFlutterEvent(widgetName: string, reactEvent: string): string`
-  - Convert React event name to Flutter event name
-
-- `getReactEvent(widgetName: string, flutterEvent: string): string`
-  - Convert Flutter event name to React event name
-
-- `getImport(widgetName: string, framework: 'react' | 'flutter'): string | undefined`
-  - Get required import statement for a widget
-
-- `getFallback(widgetName: string, framework: 'react' | 'flutter'): string`
-  - Get fallback widget for unmapped types
-
-- `getAllWidgetNames(): string[]`
-  - Get all registered widget names
-
-- `hasMapping(widgetName: string): boolean`
-  - Check if a widget mapping exists
-
-- `getSchemaVersion(): string`
-  - Get the schema version
-
-- `loadCustomMappings(customMappingsPath: string): void`
-  - Load custom widget mappings from a file
-
-### Singleton Functions
-
-- `getRegistry(): WidgetMappingRegistry`
-  - Get the singleton registry instance
-
-- `resetRegistry(): void`
-  - Reset the singleton instance (useful for testing)
-
-## Examples
-
-### Converting a React Component Tree
-
-```typescript
-import { getRegistry } from '@lumora/ir';
-
-const registry = getRegistry();
-
-function convertReactToFlutter(reactComponent: any) {
-  const widgetName = registry.getWidgetNameFromReact(reactComponent.type);
-  const flutterWidget = registry.getFlutterWidget(reactComponent.type);
-  
-  // Convert props
-  const flutterProps = {};
-  for (const [key, value] of Object.entries(reactComponent.props)) {
-    const flutterPropName = registry.getFlutterProp(widgetName, key);
-    flutterProps[flutterPropName] = value;
-  }
-  
-  return {
-    widget: flutterWidget,
-    props: flutterProps
-  };
+import { getPluginRegistry, Plugin } from 'lumora-ir';
+
+const registry = getPluginRegistry();
+
+// Register a plugin
+const plugin: Plugin = {
+  metadata: {
+    name: 'my-plugin',
+    version: '1.0.0',
+    description: 'A custom plugin',
+  },
+  compatibility: {
+    lumora: '^0.1.0',
+    platforms: ['ios', 'android', 'web'],
+  },
+  capabilities: {
+    widgets: [
+      {
+        name: 'CustomButton',
+        type: 'component',
+        framework: 'react',
+      },
+    ],
+  },
+  enabled: true,
+};
+
+const result = registry.register(plugin);
+if (result.valid) {
+  console.log('Plugin registered successfully');
+} else {
+  console.error('Validation errors:', result.errors);
 }
 ```
 
-### Converting Event Handlers
+### PackageManager
+
+Parses and validates packages from Flutter and React projects.
 
 ```typescript
-import { getRegistry } from '@lumora/ir';
+import { getPackageManager } from 'lumora-ir';
 
-const registry = getRegistry();
+const manager = getPackageManager();
 
-function convertEventHandlers(widgetName: string, reactEvents: any) {
-  const flutterEvents = {};
-  
-  for (const [eventName, handler] of Object.entries(reactEvents)) {
-    const flutterEventName = registry.getFlutterEvent(widgetName, eventName);
-    flutterEvents[flutterEventName] = handler;
-  }
-  
-  return flutterEvents;
-}
+// Check package compatibility
+const packageInfo = manager.checkPackageCompatibility(
+  'provider',
+  '6.0.0',
+  'flutter'
+);
 
-// Usage
-const reactEvents = { onClick: () => console.log('clicked') };
-const flutterEvents = convertEventHandlers('Button', reactEvents);
-// Returns: { onPressed: () => console.log('clicked') }
+console.log('Compatible:', packageInfo.isLumoraCompatible);
+console.log('Native code:', packageInfo.hasNativeDependencies);
+console.log('Warnings:', packageInfo.warnings);
+
+// Parse project dependencies
+const analysis = manager.analyzeProject('./my-project');
+console.log('Flutter packages:', analysis.flutter);
+console.log('React packages:', analysis.react);
+console.log('Warnings:', analysis.warnings);
 ```
 
-## Testing
+## CLI Commands
 
-The registry includes comprehensive tests covering:
-- Default mappings loading
-- Widget lookup and conversion
-- Property mappings
-- Style mappings
-- Event mappings
-- Import statements
-- Fallback behavior
-- Custom mappings
-- Singleton pattern
+### Install Command
 
-Run tests:
+Check package compatibility and get installation instructions:
+
 ```bash
-npm test -- --testPathPattern=widget-mapping-registry
+# Check React package
+lumora install axios --framework react
+
+# Check Flutter package
+lumora install provider --framework flutter
+
+# Check only (don't install)
+lumora install camera --framework flutter --check-only
 ```
 
-## Contributing
+### Packages Command
 
-To add new widget mappings:
+Analyze all dependencies in a project:
 
-1. Edit `src/schema/widget-mappings.yaml`
-2. Add the widget mapping following the schema
-3. Run tests to ensure mappings work correctly
-4. Update documentation if needed
+```bash
+# Analyze current directory
+lumora packages
 
-## License
+# Analyze specific directory
+lumora packages --path ./my-project
+```
 
-MIT
+## Plugin Capabilities
+
+Plugins can declare various capabilities:
+
+- **widgets**: Custom UI components
+- **stateManagement**: State management solutions
+- **navigation**: Navigation systems
+- **networking**: Network clients
+- **storage**: Data persistence
+- **nativeCode**: Native platform code (iOS/Android)
+
+## Compatibility Checking
+
+The system checks compatibility with:
+
+- **Lumora version**: Using semver ranges (^, ~, >=, >)
+- **Platform support**: iOS, Android, Web, macOS, Windows, Linux
+- **Native dependencies**: Warns if package requires native code
+
+## Native Dependencies
+
+Packages with native code:
+- ✅ Work in production builds
+- ❌ Don't work in Lumora Go (dev preview mode)
+- ⚠️  Generate warnings during installation
+
+Common native packages:
+- Flutter: `camera`, `image_picker`, `firebase_*`, `google_maps_flutter`
+- React: `react-native-camera`, `react-native-maps`, `@react-native-firebase/*`
+
+## Known Compatible Packages
+
+### Flutter
+- State management: `provider`, `riverpod`, `flutter_bloc`, `get`
+- Networking: `dio`, `http`
+- Utilities: `json_annotation`, `freezed_annotation`, `equatable`
+
+### React
+- State management: `zustand`, `jotai`, `recoil`, `react-query`
+- Networking: `axios`, `swr`
+- Core: `react`, `react-dom`
+
+## Dependency Resolution
+
+The plugin registry can resolve dependencies:
+
+```typescript
+// Register plugins with dependencies
+registry.register(pluginA);
+registry.register(pluginB); // depends on pluginA
+
+// Resolve installation order
+const order = registry.resolveDependencies('pluginB');
+// Returns: ['pluginA', 'pluginB']
+
+// Check for conflicts
+const conflicts = registry.checkDependencyConflicts(['pluginA', 'pluginB']);
+if (conflicts.length > 0) {
+  console.error('Dependency conflicts:', conflicts);
+}
+```
+
+## Widget Registration
+
+Plugins can provide custom widgets:
+
+```typescript
+const plugin: Plugin = {
+  metadata: { name: 'ui-kit', version: '1.0.0' },
+  compatibility: {},
+  capabilities: {
+    widgets: [
+      {
+        name: 'CustomButton',
+        type: 'component',
+        framework: 'react',
+        import: "import { CustomButton } from 'ui-kit';",
+        props: {
+          variant: 'primary' | 'secondary',
+          size: 'small' | 'medium' | 'large',
+        },
+      },
+    ],
+  },
+  enabled: true,
+};
+
+registry.register(plugin);
+
+// Get all widgets from enabled plugins
+const widgets = registry.getAllPluginWidgets();
+```
+
+## Best Practices
+
+1. **Check compatibility before installing**: Use `lumora install --check-only`
+2. **Review warnings**: Pay attention to native dependency warnings
+3. **Test in dev mode**: Verify packages work in Lumora Go
+4. **Document custom plugins**: Include clear metadata and capabilities
+5. **Version constraints**: Use semver ranges for compatibility
+
+## Error Handling
+
+The system provides detailed error messages:
+
+```typescript
+const result = registry.register(plugin);
+
+if (!result.valid) {
+  // Critical errors that prevent registration
+  result.errors.forEach(error => {
+    console.error('Error:', error);
+  });
+}
+
+// Non-critical warnings
+result.warnings.forEach(warning => {
+  console.warn('Warning:', warning);
+});
+```
+
+## Future Enhancements
+
+- Plugin marketplace
+- Automatic dependency installation
+- Plugin versioning and updates
+- Custom widget code generation
+- Plugin testing framework
