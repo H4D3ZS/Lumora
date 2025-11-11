@@ -5,7 +5,7 @@
  * Handles release creation, asset uploads, version tagging, and release notes generation.
  */
 import { GitHubClient } from './github-client';
-import { Bundle } from '../../../lumora_ir/src/bundler';
+import { Bundle } from 'lumora-ir';
 export interface CreateReleaseOptions {
     owner: string;
     repo: string;

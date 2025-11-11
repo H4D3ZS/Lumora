@@ -5,7 +5,7 @@
  */
 import { WebSocket } from 'ws';
 import { HotReloadServer } from './hot-reload-server';
-import { LumoraIR } from 'lumora-ir/src/types/ir-types';
+import { LumoraIR } from 'lumora-ir';
 export interface DevProxyConfig {
     port: number;
     enableQR: boolean;

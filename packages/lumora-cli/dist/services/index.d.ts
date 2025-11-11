@@ -19,4 +19,6 @@ export { GitHubGistManager, createGitHubGistManager } from './github-gist-manage
 export type { GistFile, CreateGistOptions, UpdateGistOptions, GistInfo, GistFileInfo, ForkGistResult, ShareableGistUrl, } from './github-gist-manager';
 export { GitHubGistLoader, createGitHubGistLoader } from './github-gist-loader';
 export type { LoadGistOptions, LoadGistResult, ParsedProject, ProjectMetadata, ValidateProjectResult, } from './github-gist-loader';
+export { WebPreviewServer } from './web-preview-server';
+export type { WebPreviewServerConfig } from './web-preview-server';
 //# sourceMappingURL=index.d.ts.map

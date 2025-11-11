@@ -3,7 +3,7 @@
  * Services exports
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.createGitHubGistLoader = exports.GitHubGistLoader = exports.createGitHubGistManager = exports.GitHubGistManager = exports.createGitHubUpdateChecker = exports.GitHubUpdateChecker = exports.createGitHubReleaseManager = exports.GitHubReleaseManager = exports.createGitHubRepository = exports.GitHubRepository = exports.createGitHubClient = exports.GitHubClient = exports.HotReloadServer = exports.AutoConverter = exports.DevProxyServer = void 0;
+exports.WebPreviewServer = exports.createGitHubGistLoader = exports.GitHubGistLoader = exports.createGitHubGistManager = exports.GitHubGistManager = exports.createGitHubUpdateChecker = exports.GitHubUpdateChecker = exports.createGitHubReleaseManager = exports.GitHubReleaseManager = exports.createGitHubRepository = exports.GitHubRepository = exports.createGitHubClient = exports.GitHubClient = exports.HotReloadServer = exports.AutoConverter = exports.DevProxyServer = void 0;
 var dev_proxy_server_1 = require("./dev-proxy-server");
 Object.defineProperty(exports, "DevProxyServer", { enumerable: true, get: function () { return dev_proxy_server_1.DevProxyServer; } });
 var auto_converter_1 = require("./auto-converter");
@@ -28,4 +28,6 @@ Object.defineProperty(exports, "createGitHubGistManager", { enumerable: true, ge
 var github_gist_loader_1 = require("./github-gist-loader");
 Object.defineProperty(exports, "GitHubGistLoader", { enumerable: true, get: function () { return github_gist_loader_1.GitHubGistLoader; } });
 Object.defineProperty(exports, "createGitHubGistLoader", { enumerable: true, get: function () { return github_gist_loader_1.createGitHubGistLoader; } });
+var web_preview_server_1 = require("./web-preview-server");
+Object.defineProperty(exports, "WebPreviewServer", { enumerable: true, get: function () { return web_preview_server_1.WebPreviewServer; } });
 //# sourceMappingURL=index.js.map

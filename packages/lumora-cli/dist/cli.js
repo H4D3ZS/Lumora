@@ -13,11 +13,15 @@ const start_1 = require("./commands/start");
 const init_1 = require("./commands/init");
 const build_1 = require("./commands/build");
 const chalk_1 = __importDefault(require("chalk"));
+const fs_1 = require("fs");
+const path_1 = require("path");
+// Read version from package.json
+const packageJson = JSON.parse((0, fs_1.readFileSync)((0, path_1.join)(__dirname, '../package.json'), 'utf-8'));
 const program = new commander_1.Command();
 program
     .name('lumora')
     .description('Lumora CLI - Write React, Run Flutter')
-    .version('0.1.0');
+    .version(packageJson.version);
 // lumora start - Main development command (like expo start)
 program
     .command('start')
@@ -26,7 +30,7 @@ program
     .option('-m, --mode <mode>', 'Development mode: react, flutter, or universal', 'universal')
     .option('--no-qr', 'Disable QR code display')
     .option('--no-watch', 'Disable file watching')
-    .option('--no-codegen', 'Disable automatic code generation')
+    .option('--codegen', 'Enable automatic code generation (experimental)')
     .option('--web-only', 'Only start web server (no mobile)')
     .action(start_1.startCommand);
 // lumora init - Initialize new project
@@ -42,6 +46,8 @@ program
     .option('--platform <platform>', 'Platform: android, ios, or both', 'both')
     .option('--release', 'Build release version', true)
     .action(build_1.buildCommand);
+// Note: Conversion happens automatically in lumora start
+// No manual convert commands needed - it's all automatic!
 // Error handling
 program.on('command:*', () => {
     console.error(chalk_1.default.red(`\n✗ Invalid command: ${program.args.join(' ')}\n`));

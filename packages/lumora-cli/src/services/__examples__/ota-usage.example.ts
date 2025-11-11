@@ -10,7 +10,7 @@ import {
   createGitHubReleaseManager,
   createGitHubUpdateChecker,
 } from '../index';
-import { getBundler } from '../../../../lumora_ir/src/bundler';
+import { getBundler } from 'lumora-ir';
 
 /**
  * Example 1: Create a release and upload bundle

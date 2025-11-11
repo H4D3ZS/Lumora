@@ -9,13 +9,20 @@ import { startCommand } from './commands/start';
 import { initCommand } from './commands/init';
 import { buildCommand } from './commands/build';
 import chalk from 'chalk';
+import { readFileSync } from 'fs';
+import { join } from 'path';
+
+// Read version from package.json
+const packageJson = JSON.parse(
+  readFileSync(join(__dirname, '../package.json'), 'utf-8')
+);
 
 const program = new Command();
 
 program
   .name('lumora')
   .description('Lumora CLI - Write React, Run Flutter')
-  .version('0.1.0');
+  .version(packageJson.version);
 
 // lumora start - Main development command (like expo start)
 program
@@ -25,7 +32,7 @@ program
   .option('-m, --mode <mode>', 'Development mode: react, flutter, or universal', 'universal')
   .option('--no-qr', 'Disable QR code display')
   .option('--no-watch', 'Disable file watching')
-  .option('--no-codegen', 'Disable automatic code generation')
+  .option('--codegen', 'Enable automatic code generation (experimental)')
   .option('--web-only', 'Only start web server (no mobile)')
   .action(startCommand);
 
@@ -43,6 +50,9 @@ program
   .option('--platform <platform>', 'Platform: android, ios, or both', 'both')
   .option('--release', 'Build release version', true)
   .action(buildCommand);
+
+// Note: Conversion happens automatically in lumora start
+// No manual convert commands needed - it's all automatic!
 
 // Error handling
 program.on('command:*', () => {

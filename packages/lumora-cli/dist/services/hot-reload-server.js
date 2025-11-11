@@ -7,8 +7,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.HotReloadServer = void 0;
 const ws_1 = require("ws");
 const crypto_1 = require("crypto");
-const hot_reload_protocol_1 = require("lumora-ir/src/protocol/hot-reload-protocol");
-const protocol_serialization_1 = require("lumora-ir/src/protocol/protocol-serialization");
+const lumora_ir_1 = require("lumora-ir");
+const lumora_ir_2 = require("lumora-ir");
 /**
  * Hot Reload Server
  * Manages WebSocket connections and distributes schema updates
@@ -81,29 +81,29 @@ class HotReloadServer {
         // Handle incoming messages
         ws.on('message', (data) => {
             try {
-                const message = (0, protocol_serialization_1.deserializeMessage)(data, { validate: true });
+                const message = (0, lumora_ir_2.deserializeMessage)(data, { validate: true });
                 // Validate session ID matches
                 if (message.sessionId !== sessionId) {
-                    this.sendError(ws, sessionId, hot_reload_protocol_1.ProtocolErrorCode.SESSION_NOT_FOUND, 'Session ID mismatch', 'error', false);
+                    this.sendError(ws, sessionId, lumora_ir_1.ProtocolErrorCode.SESSION_NOT_FOUND, 'Session ID mismatch', 'error', false);
                     ws.close(4400, 'Session ID mismatch');
                     return;
                 }
                 // Handle connect message
-                if ((0, hot_reload_protocol_1.isConnectMessage)(message)) {
+                if ((0, lumora_ir_1.isConnectMessage)(message)) {
                     deviceConnection = this.handleConnect(ws, sessionId, session, message);
                     return;
                 }
                 // Require connection before other messages
                 if (!deviceConnection) {
-                    this.sendError(ws, sessionId, hot_reload_protocol_1.ProtocolErrorCode.AUTHENTICATION_FAILED, 'Must send connect message first', 'error', false);
+                    this.sendError(ws, sessionId, lumora_ir_1.ProtocolErrorCode.AUTHENTICATION_FAILED, 'Must send connect message first', 'error', false);
                     ws.close(4401, 'Not authenticated');
                     return;
                 }
                 // Handle other message types
-                if ((0, hot_reload_protocol_1.isPingMessage)(message)) {
+                if ((0, lumora_ir_1.isPingMessage)(message)) {
                     this.handlePing(deviceConnection, message);
                 }
-                else if ((0, hot_reload_protocol_1.isAckMessage)(message)) {
+                else if ((0, lumora_ir_1.isAckMessage)(message)) {
                     this.handleAck(deviceConnection, message);
                 }
                 else {
@@ -112,7 +112,7 @@ class HotReloadServer {
             }
             catch (error) {
                 console.error('Error handling message:', error);
-                this.sendError(ws, sessionId, hot_reload_protocol_1.ProtocolErrorCode.INVALID_MESSAGE, error instanceof Error ? error.message : 'Invalid message', 'error', true);
+                this.sendError(ws, sessionId, lumora_ir_1.ProtocolErrorCode.INVALID_MESSAGE, error instanceof Error ? error.message : 'Invalid message', 'error', true);
             }
         });
         // Handle connection close
@@ -135,9 +135,9 @@ class HotReloadServer {
     handleConnect(ws, sessionId, session, message) {
         const { deviceId, platform, deviceName, clientVersion } = message.payload;
         // Validate protocol version
-        const versionCheck = (0, protocol_serialization_1.validateProtocolVersion)(clientVersion, hot_reload_protocol_1.PROTOCOL_VERSION);
+        const versionCheck = (0, lumora_ir_2.validateProtocolVersion)(clientVersion, lumora_ir_1.PROTOCOL_VERSION);
         if (!versionCheck.valid) {
-            this.sendError(ws, sessionId, hot_reload_protocol_1.ProtocolErrorCode.UNSUPPORTED_VERSION, versionCheck.errors.join(', '), 'fatal', false);
+            this.sendError(ws, sessionId, lumora_ir_1.ProtocolErrorCode.UNSUPPORTED_VERSION, versionCheck.errors.join(', '), 'fatal', false);
             ws.close(4426, 'Unsupported protocol version');
             throw new Error('Unsupported protocol version');
         }
@@ -160,7 +160,7 @@ class HotReloadServer {
         this.log(`  Connection ID: ${connectionId}`);
         this.log(`  Total devices in session: ${session.devices.size}`);
         // Send connected acknowledgment with initial schema
-        const connectedMsg = (0, protocol_serialization_1.createConnectedMessage)(sessionId, connectionId, session.currentSchema);
+        const connectedMsg = (0, lumora_ir_2.createConnectedMessage)(sessionId, connectionId, session.currentSchema);
         this.sendMessage(ws, connectedMsg);
         return deviceConnection;
     }
@@ -170,7 +170,7 @@ class HotReloadServer {
     handlePing(device, message) {
         device.lastPing = Date.now();
         // Send pong response
-        const pongMsg = (0, protocol_serialization_1.createPongMessage)(message.sessionId);
+        const pongMsg = (0, lumora_ir_2.createPongMessage)(message.sessionId);
         this.sendMessage(device.ws, pongMsg);
         this.log(`Ping from device ${device.deviceId}, sent pong`);
     }
@@ -242,7 +242,7 @@ class HotReloadServer {
             return;
         }
         try {
-            const data = (0, protocol_serialization_1.serializeMessage)(message, { validate: true });
+            const data = (0, lumora_ir_2.serializeMessage)(message, { validate: true });
             ws.send(data);
         }
         catch (error) {
@@ -253,7 +253,7 @@ class HotReloadServer {
      * Send error message to WebSocket
      */
     sendError(ws, sessionId, code, message, severity, recoverable, details) {
-        const errorMsg = (0, protocol_serialization_1.createErrorMessage)(sessionId, code, message, severity, recoverable, details);
+        const errorMsg = (0, lumora_ir_2.createErrorMessage)(sessionId, code, message, severity, recoverable, details);
         this.sendMessage(ws, errorMsg);
     }
     /**
@@ -413,24 +413,24 @@ class HotReloadServer {
         let updateType;
         // Calculate delta if we have a previous schema
         if (session.currentSchema) {
-            const delta = (0, protocol_serialization_1.calculateSchemaDelta)(session.currentSchema, batch.schema);
+            const delta = (0, lumora_ir_2.calculateSchemaDelta)(session.currentSchema, batch.schema);
             // Decide whether to use incremental or full update
-            if ((0, protocol_serialization_1.shouldUseIncrementalUpdate)(delta)) {
-                update = (0, protocol_serialization_1.createIncrementalUpdate)(delta, session.sequenceNumber, batch.preserveState);
+            if ((0, lumora_ir_2.shouldUseIncrementalUpdate)(delta)) {
+                update = (0, lumora_ir_2.createIncrementalUpdate)(delta, session.sequenceNumber, batch.preserveState);
                 updateType = 'incremental';
                 this.log(`Incremental update for session ${sessionId}: ` +
                     `${delta.added.length} added, ${delta.modified.length} modified, ` +
                     `${delta.removed.length} removed`);
             }
             else {
-                update = (0, protocol_serialization_1.createFullUpdate)(batch.schema, session.sequenceNumber, batch.preserveState);
+                update = (0, lumora_ir_2.createFullUpdate)(batch.schema, session.sequenceNumber, batch.preserveState);
                 updateType = 'full';
                 this.log(`Full update for session ${sessionId} (delta too large)`);
             }
         }
         else {
             // First update, always full
-            update = (0, protocol_serialization_1.createFullUpdate)(batch.schema, session.sequenceNumber, batch.preserveState);
+            update = (0, lumora_ir_2.createFullUpdate)(batch.schema, session.sequenceNumber, batch.preserveState);
             updateType = 'full';
             this.log(`Initial full update for session ${sessionId}`);
         }
@@ -468,7 +468,7 @@ class HotReloadServer {
      */
     broadcastUpdate(session, update) {
         let devicesUpdated = 0;
-        const updateMsg = (0, protocol_serialization_1.createUpdateMessage)(session.id, update);
+        const updateMsg = (0, lumora_ir_2.createUpdateMessage)(session.id, update);
         session.devices.forEach(device => {
             if (device.ws.readyState === ws_1.WebSocket.OPEN) {
                 this.sendMessage(device.ws, updateMsg);
@@ -497,8 +497,8 @@ class HotReloadServer {
         // Increment sequence number
         session.sequenceNumber++;
         // Always send full update for individual device
-        const update = (0, protocol_serialization_1.createFullUpdate)(schema, session.sequenceNumber, preserveState);
-        const updateMsg = (0, protocol_serialization_1.createUpdateMessage)(sessionId, update);
+        const update = (0, lumora_ir_2.createFullUpdate)(schema, session.sequenceNumber, preserveState);
+        const updateMsg = (0, lumora_ir_2.createUpdateMessage)(sessionId, update);
         this.sendMessage(device.ws, updateMsg);
         this.log(`Sent full update (seq ${update.sequenceNumber}) to device ${device.deviceId}`);
         return true;
@@ -508,7 +508,7 @@ class HotReloadServer {
      * Exposed for testing and external use
      */
     calculateDelta(oldSchema, newSchema) {
-        return (0, protocol_serialization_1.calculateSchemaDelta)(oldSchema, newSchema);
+        return (0, lumora_ir_2.calculateSchemaDelta)(oldSchema, newSchema);
     }
     /**
      * Handle update acknowledgment tracking

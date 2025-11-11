@@ -6,7 +6,7 @@
  */
 import { GitHubClient } from './github-client';
 import { ReleaseInfo } from './github-release-manager';
-import { BundleManifest } from '../../../lumora_ir/src/bundler';
+import { BundleManifest } from 'lumora-ir';
 export interface UpdateCheckOptions {
     owner: string;
     repo: string;

@@ -7,7 +7,7 @@
 
 import { GitHubClient } from './github-client';
 import { GitHubReleaseManager, ReleaseInfo, ReleaseAsset } from './github-release-manager';
-import { BundleManifest } from '../../../lumora_ir/src/bundler';
+import { BundleManifest } from 'lumora-ir';
 import * as crypto from 'crypto';
 import * as https from 'https';
 import * as http from 'http';

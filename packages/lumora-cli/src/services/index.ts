@@ -68,3 +68,6 @@ export type {
   ProjectMetadata,
   ValidateProjectResult,
 } from './github-gist-loader';
+
+export { WebPreviewServer } from './web-preview-server';
+export type { WebPreviewServerConfig } from './web-preview-server';

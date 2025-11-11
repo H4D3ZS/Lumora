@@ -4,8 +4,8 @@
  */
 import { WebSocket } from 'ws';
 import * as http from 'http';
-import { SchemaDelta } from 'lumora-ir/src/protocol/hot-reload-protocol';
-import { LumoraIR } from 'lumora-ir/src/types/ir-types';
+import { SchemaDelta } from 'lumora-ir';
+import { LumoraIR } from 'lumora-ir';
 /**
  * Device connection information
  */

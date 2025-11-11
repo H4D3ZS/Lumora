@@ -14,7 +14,7 @@ exports.completeOTAWorkflow = completeOTAWorkflow;
 exports.publishPrerelease = publishPrerelease;
 exports.demonstrateVersionComparison = demonstrateVersionComparison;
 const index_1 = require("../index");
-const bundler_1 = require("../../../../lumora_ir/src/bundler");
+const lumora_ir_1 = require("lumora-ir");
 /**
  * Example 1: Create a release and upload bundle
  */
@@ -28,7 +28,7 @@ async function publishRelease() {
     });
     const releaseManager = (0, index_1.createGitHubReleaseManager)(client);
     // Create bundle
-    const bundler = (0, bundler_1.getBundler)();
+    const bundler = (0, lumora_ir_1.getBundler)();
     const bundle = await bundler.bundle({
         entry: './src/App.tsx',
         output: './dist/bundle.json',
@@ -223,7 +223,7 @@ async function publishPrerelease() {
         },
     });
     const releaseManager = (0, index_1.createGitHubReleaseManager)(client);
-    const bundler = (0, bundler_1.getBundler)();
+    const bundler = (0, lumora_ir_1.getBundler)();
     // Create bundle
     const bundle = await bundler.bundle({
         entry: './src/App.tsx',

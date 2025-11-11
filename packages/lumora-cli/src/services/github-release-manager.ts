@@ -6,7 +6,7 @@
  */
 
 import { GitHubClient } from './github-client';
-import { Bundle, BundleManifest } from '../../../lumora_ir/src/bundler';
+import { Bundle, BundleManifest } from 'lumora-ir';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as crypto from 'crypto';
