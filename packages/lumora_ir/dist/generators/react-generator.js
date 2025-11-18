@@ -1,0 +1,369 @@
+"use strict";
+/**
+ * React/TSX Code Generator
+ * Generates React components from Lumora IR
+ * Enables Flutter → React conversion
+ */
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.ReactGenerator = void 0;
+exports.createReactGenerator = createReactGenerator;
+exports.generateReactCode = generateReactCode;
+const error_handler_1 = require("../errors/error-handler");
+const widget_mapping_registry_1 = require("../registry/widget-mapping-registry");
+/**
+ * React Code Generator
+ * Converts Lumora IR to React/TypeScript code
+ */
+class ReactGenerator {
+    constructor(config = {}) {
+        this.imports = new Set();
+        this.config = {
+            useTypeScript: true,
+            useFunctionComponents: true,
+            stateManagement: 'useState',
+            styleFormat: 'inline',
+            indent: '  ',
+            addComments: true,
+            ...config,
+        };
+        this.errorHandler = config.errorHandler || (0, error_handler_1.getErrorHandler)();
+        this.registry = (0, widget_mapping_registry_1.getRegistry)();
+    }
+    /**
+     * Generate React component from Lumora IR
+     */
+    generate(ir) {
+        this.imports.clear();
+        // Add React import
+        this.imports.add("import React from 'react';");
+        // Generate components
+        const components = ir.nodes.map(node => this.generateComponent(node));
+        // Build final code
+        const importsCode = Array.from(this.imports).join('\n');
+        const componentsCode = components.join('\n\n');
+        return `${importsCode}\n\n${componentsCode}`;
+    }
+    /**
+     * Generate a single React component
+     */
+    generateComponent(node) {
+        const componentName = node.type;
+        if (this.config.useFunctionComponents) {
+            return this.generateFunctionComponent(node);
+        }
+        else {
+            return this.generateClassComponent(node);
+        }
+    }
+    /**
+     * Generate function component
+     */
+    generateFunctionComponent(node) {
+        const { type: name, props, state, events, children } = node;
+        let code = '';
+        // Add comment
+        if (this.config.addComments && node.metadata?.documentation) {
+            code += `// ${node.metadata.documentation}\n`;
+        }
+        // Props interface
+        if (this.config.useTypeScript && props && Object.keys(props).length > 0) {
+            code += this.generatePropsInterface(name, props);
+            code += '\n\n';
+        }
+        // Function signature
+        const propsParam = this.config.useTypeScript ? `props: ${name}Props` : 'props';
+        code += `export const ${name}: React.FC${this.config.useTypeScript ? `<${name}Props>` : ''} = (${propsParam}) => {\n`;
+        // State hooks
+        if (state) {
+            code += this.generateStateHooks(state);
+        }
+        // Event handlers
+        if (events && events.length > 0) {
+            code += this.generateEventHandlers(events);
+        }
+        // Lifecycle hooks
+        if (node.lifecycle && node.lifecycle.length > 0) {
+            code += this.generateLifecycleHooks(node.lifecycle);
+        }
+        // JSX return
+        code += `${this.config.indent}return (\n`;
+        code += this.generateJSX(node, 2);
+        code += `\n${this.config.indent});\n`;
+        code += '};\n';
+        return code;
+    }
+    /**
+     * Generate class component
+     */
+    generateClassComponent(node) {
+        const { type: name, props, state, events } = node;
+        let code = '';
+        // Add comment
+        if (this.config.addComments && node.metadata?.documentation) {
+            code += `// ${node.metadata.documentation}\n`;
+        }
+        // Props interface
+        if (this.config.useTypeScript && props && Object.keys(props).length > 0) {
+            code += this.generatePropsInterface(name, props);
+            code += '\n\n';
+        }
+        // State interface
+        if (this.config.useTypeScript && state) {
+            code += this.generateStateInterface(name, state);
+            code += '\n\n';
+        }
+        // Class declaration
+        const propsType = this.config.useTypeScript ? `<${name}Props${state ? `, ${name}State` : ''}` : '';
+        code += `export class ${name} extends React.Component${propsType}> {\n`;
+        // Constructor with state
+        if (state) {
+            code += this.generateConstructor(state);
+        }
+        // Event handlers
+        if (events && events.length > 0) {
+            code += this.generateClassMethods(events);
+        }
+        // Render method
+        code += `${this.config.indent}render() {\n`;
+        code += `${this.config.indent}${this.config.indent}return (\n`;
+        code += this.generateJSX(node, 3);
+        code += `\n${this.config.indent}${this.config.indent});\n`;
+        code += `${this.config.indent}}\n`;
+        code += '}\n';
+        return code;
+    }
+    /**
+     * Generate props interface
+     */
+    generatePropsInterface(componentName, props) {
+        let code = `interface ${componentName}Props {\n`;
+        for (const [key, value] of Object.entries(props)) {
+            const type = this.inferTypeScriptType(value);
+            const optional = value.optional !== false ? '?' : '';
+            code += `${this.config.indent}${key}${optional}: ${type};\n`;
+        }
+        code += '}';
+        return code;
+    }
+    /**
+     * Generate state interface
+     */
+    generateStateInterface(componentName, state) {
+        let code = `interface ${componentName}State {\n`;
+        for (const variable of state.variables) {
+            const type = variable.type || 'any';
+            code += `${this.config.indent}${variable.name}: ${type};\n`;
+        }
+        code += '}';
+        return code;
+    }
+    /**
+     * Generate state hooks (useState, etc.)
+     */
+    generateStateHooks(state) {
+        let code = '';
+        for (const variable of state.variables) {
+            const initialValue = this.serializeValue(variable.initialValue);
+            const setterName = `set${this.capitalize(variable.name)}`;
+            code += `${this.config.indent}const [${variable.name}, ${setterName}] = React.useState`;
+            if (this.config.useTypeScript && variable.type) {
+                code += `<${variable.type}>`;
+            }
+            code += `(${initialValue});\n`;
+        }
+        if (code) {
+            code += '\n';
+        }
+        return code;
+    }
+    /**
+     * Generate event handlers as functions
+     */
+    generateEventHandlers(events) {
+        let code = '';
+        for (const event of events) {
+            const params = event.parameters?.map(p => {
+                if (this.config.useTypeScript) {
+                    return `${p.name}: ${p.type}`;
+                }
+                return p.name;
+            }).join(', ') || '';
+            code += `${this.config.indent}const ${event.name} = (${params}) => {\n`;
+            code += `${this.config.indent}${this.config.indent}${event.handler || '// TODO: Implement handler'}\n`;
+            code += `${this.config.indent}};\n\n`;
+        }
+        return code;
+    }
+    /**
+     * Generate lifecycle hooks (useEffect, etc.)
+     */
+    generateLifecycleHooks(lifecycle) {
+        let code = '';
+        for (const hook of lifecycle) {
+            const deps = hook.dependencies ? `[${hook.dependencies.join(', ')}]` : '[]';
+            code += `${this.config.indent}React.useEffect(() => {\n`;
+            code += `${this.config.indent}${this.config.indent}${hook.handler || '// TODO: Implement effect'}\n`;
+            // Add cleanup for unmount
+            if (hook.type === 'unmount') {
+                code += `${this.config.indent}${this.config.indent}return () => {\n`;
+                code += `${this.config.indent}${this.config.indent}${this.config.indent}// Cleanup\n`;
+                code += `${this.config.indent}${this.config.indent}};\n`;
+            }
+            code += `${this.config.indent}}, ${deps});\n\n`;
+        }
+        return code;
+    }
+    /**
+     * Generate constructor for class component
+     */
+    generateConstructor(state) {
+        let code = `${this.config.indent}constructor(props${this.config.useTypeScript ? `: ${this.config.indent}Props` : ''}) {\n`;
+        code += `${this.config.indent}${this.config.indent}super(props);\n`;
+        code += `${this.config.indent}${this.config.indent}this.state = {\n`;
+        for (const variable of state.variables) {
+            const value = this.serializeValue(variable.initialValue);
+            code += `${this.config.indent}${this.config.indent}${this.config.indent}${variable.name}: ${value},\n`;
+        }
+        code += `${this.config.indent}${this.config.indent}};\n`;
+        code += `${this.config.indent}}\n\n`;
+        return code;
+    }
+    /**
+     * Generate class methods for event handlers
+     */
+    generateClassMethods(events) {
+        let code = '';
+        for (const event of events) {
+            const params = event.parameters?.map(p => {
+                if (this.config.useTypeScript) {
+                    return `${p.name}: ${p.type}`;
+                }
+                return p.name;
+            }).join(', ') || '';
+            code += `${this.config.indent}${event.name} = (${params}) => {\n`;
+            code += `${this.config.indent}${this.config.indent}${event.handler || '// TODO: Implement handler'}\n`;
+            code += `${this.config.indent}};\n\n`;
+        }
+        return code;
+    }
+    /**
+     * Generate JSX from node tree
+     */
+    generateJSX(node, indentLevel) {
+        const indent = this.config.indent.repeat(indentLevel);
+        const mapping = this.registry.getMapping(node.type);
+        // Get React component name
+        const reactComponent = mapping?.react.component || node.type;
+        // Generate props
+        const propsStr = this.generateJSXProps(node.props, mapping);
+        // Check if self-closing
+        if (!node.children || node.children.length === 0) {
+            return `${indent}<${reactComponent}${propsStr} />`;
+        }
+        // Generate children
+        let code = `${indent}<${reactComponent}${propsStr}>\n`;
+        for (const child of node.children) {
+            code += this.generateJSX(child, indentLevel + 1) + '\n';
+        }
+        code += `${indent}</${reactComponent}>`;
+        return code;
+    }
+    /**
+     * Generate JSX props string
+     */
+    generateJSXProps(props, mapping) {
+        if (!props || Object.keys(props).length === 0) {
+            return '';
+        }
+        let propsStr = '';
+        for (const [key, value] of Object.entries(props)) {
+            // Map prop name if needed
+            const reactProp = mapping?.props?.[key]?.react || key;
+            // Handle different value types
+            if (typeof value === 'string') {
+                propsStr += ` ${reactProp}="${value}"`;
+            }
+            else if (typeof value === 'boolean') {
+                if (value) {
+                    propsStr += ` ${reactProp}`;
+                }
+            }
+            else {
+                propsStr += ` ${reactProp}={${this.serializeValue(value)}}`;
+            }
+        }
+        return propsStr;
+    }
+    /**
+     * Infer TypeScript type from value
+     */
+    inferTypeScriptType(value) {
+        if (value === null || value === undefined) {
+            return 'any';
+        }
+        if (typeof value === 'object' && value.type) {
+            return value.type;
+        }
+        const type = typeof value;
+        switch (type) {
+            case 'string':
+                return 'string';
+            case 'number':
+                return 'number';
+            case 'boolean':
+                return 'boolean';
+            case 'function':
+                return '() => void';
+            case 'object':
+                if (Array.isArray(value)) {
+                    return 'any[]';
+                }
+                return 'object';
+            default:
+                return 'any';
+        }
+    }
+    /**
+     * Serialize value to code string
+     */
+    serializeValue(value) {
+        if (value === null)
+            return 'null';
+        if (value === undefined)
+            return 'undefined';
+        if (typeof value === 'string') {
+            return `'${value.replace(/'/g, "\\'")}'`;
+        }
+        if (typeof value === 'number' || typeof value === 'boolean') {
+            return String(value);
+        }
+        if (Array.isArray(value)) {
+            return `[${value.map(v => this.serializeValue(v)).join(', ')}]`;
+        }
+        if (typeof value === 'object') {
+            const entries = Object.entries(value).map(([k, v]) => `${k}: ${this.serializeValue(v)}`);
+            return `{ ${entries.join(', ')} }`;
+        }
+        return 'undefined';
+    }
+    /**
+     * Capitalize first letter
+     */
+    capitalize(str) {
+        return str.charAt(0).toUpperCase() + str.slice(1);
+    }
+}
+exports.ReactGenerator = ReactGenerator;
+/**
+ * Helper function to create React generator
+ */
+function createReactGenerator(config) {
+    return new ReactGenerator(config);
+}
+/**
+ * Helper function to generate React code from IR
+ */
+function generateReactCode(ir, config) {
+    const generator = new ReactGenerator(config);
+    return generator.generate(ir);
+}

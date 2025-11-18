@@ -13,6 +13,7 @@ export declare class WebPreviewServer {
     private config;
     private converter;
     private currentIR;
+    private lastUpdate;
     constructor(config: WebPreviewServerConfig);
     private setupRoutes;
     private generatePreviewPage;

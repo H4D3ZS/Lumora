@@ -1,0 +1,20 @@
+{
+  "name": "@lumora/notifications",
+  "version": "1.0.0",
+  "description": "Lumora Notifications module - Push and local notifications",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "keywords": ["lumora", "notifications", "push", "local", "expo"],
+  "author": "Lumora Team",
+  "license": "MIT",
+  "peerDependencies": {
+    "@lumora/native-bridge": "^1.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3",
+    "@types/node": "^20.10.6"
+  }
+}

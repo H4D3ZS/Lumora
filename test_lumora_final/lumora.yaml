@@ -1,0 +1,25 @@
+# Lumora Configuration
+mode: universal  # react | flutter | universal
+port: 3000
+
+# Source directories
+sources:
+  react: src/
+  flutter: lib/
+
+# File mapping
+mapping:
+  # src/App.tsx <-> lib/main.dart
+  # src/components/Button.tsx <-> lib/components/button.dart
+  # Automatic 1:1 mapping with proper naming conventions
+
+# Code generation
+codegen:
+  enabled: true
+  preserveComments: true
+  
+# Development
+dev:
+  hotReload: true
+  qrCode: true
+  webPreview: true

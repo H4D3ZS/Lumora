@@ -122,6 +122,7 @@ async function initCommand(projectName, options) {
         console.log(chalk_1.default.gray('  web/          # Web build output\n'));
         console.log(chalk_1.default.bold('📝 Next steps:\n'));
         console.log(chalk_1.default.cyan(`   cd ${projectName}`));
+        console.log(chalk_1.default.cyan('   npm install'));
         console.log(chalk_1.default.cyan('   lumora start\n'));
         console.log(chalk_1.default.yellow('💡 Edit src/App.tsx → lib/main.dart updates automatically!'));
         console.log(chalk_1.default.yellow('💡 Edit lib/main.dart → src/App.tsx updates automatically!\n'));
@@ -133,6 +134,27 @@ async function initCommand(projectName, options) {
     }
 }
 function createConfigFiles(projectPath, projectName) {
+    // package.json
+    const packageJson = {
+        name: projectName,
+        version: '1.0.0',
+        description: 'A Lumora project',
+        private: true,
+        scripts: {
+            start: 'lumora start',
+            build: 'flutter build apk',
+        },
+        dependencies: {
+            react: '^18.2.0',
+            'react-dom': '^18.2.0',
+        },
+        devDependencies: {
+            '@types/react': '^18.2.0',
+            '@types/react-dom': '^18.2.0',
+            typescript: '^5.0.0',
+        },
+    };
+    fs.writeFileSync(path.join(projectPath, 'package.json'), JSON.stringify(packageJson, null, 2));
     // lumora.yaml
     const config = `# Lumora Configuration
 mode: universal  # react | flutter | universal

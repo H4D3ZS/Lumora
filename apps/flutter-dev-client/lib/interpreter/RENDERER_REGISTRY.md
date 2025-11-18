@@ -372,7 +372,7 @@ class _DevClientScreenState extends State<DevClientScreen> {
   Widget build(BuildContext context) {
     // Use interpreter to render schemas
     return Scaffold(
-      appBar: AppBar(title: const Text('Kiro Dev Client')),
+      appBar: AppBar(title: const Text('Lumora Client')),
       body: Container(),
     );
   }

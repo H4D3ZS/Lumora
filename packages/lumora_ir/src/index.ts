@@ -403,6 +403,10 @@ export {
   type ReactParserConfig,
   type ComponentInfo,
   type HookInfo,
+  DartParser,
+  type DartParserConfig,
+  type WidgetInfo,
+  type PropertyInfo,
   ReactPlatformParser,
   DartPlatformParser,
   ReactPlatformGenerator,
@@ -411,6 +415,27 @@ export {
   createPlatformGenerator,
   type PlatformGeneratorConfig,
 } from './parsers';
+
+// Generators (Bidirectional Conversion)
+export {
+  ReactGenerator,
+  createReactGenerator,
+  generateReactCode,
+  type ReactGeneratorConfig,
+  FlutterGenerator,
+  createFlutterGenerator,
+  generateFlutterCode,
+  type FlutterGeneratorConfig,
+} from './generators';
+
+// Bidirectional Converters
+export {
+  BidirectionalConverter,
+  createBidirectionalConverter,
+  convertReactToFlutter,
+  convertFlutterToReact,
+  type BidirectionalConverterConfig,
+} from './converters';
 
 // State Bridge
 export {
@@ -437,6 +462,35 @@ export {
   getAllAdapters,
   isValidAdapterType,
 } from './bridge';
+
+// State Management Conversion
+export {
+  StateConverter,
+  getStateConverter,
+  type ReactStatePattern,
+  type FlutterStatePattern,
+  type StateConversionResult,
+  type ReducerDefinition,
+  type ReducerActionDefinition,
+  type ReduxDefinition,
+  type ReduxSlice,
+  type MobXDefinition,
+  type BlocDefinition,
+  type BlocEvent,
+  type BlocState,
+  type BlocTransition,
+} from './state-management/state-converter';
+
+// Animation & Gesture Conversion
+export {
+  AnimationConverter,
+  getAnimationConverter,
+  type AnimationDefinition,
+  type AnimatedProperty,
+  type GestureDefinition,
+  type GestureConstraints,
+  type AnimationConversionResult,
+} from './animations/animation-converter';
 
 // Navigation System
 export {

@@ -21,6 +21,22 @@ enum NetworkRequestState {
   cancelled,
 }
 
+/// Network error class for handling error states
+class NetworkError {
+  final String message;
+  final int? statusCode;
+  final dynamic originalError;
+
+  NetworkError({
+    required this.message,
+    this.statusCode,
+    this.originalError,
+  });
+
+  @override
+  String toString() => 'NetworkError: $message${statusCode != null ? ' (Status: $statusCode)' : ''}';
+}
+
 /// Network request info for state tracking
 class NetworkRequestInfo {
   final String endpointId;

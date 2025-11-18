@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:lumora_core/lumora_core.dart';
+import 'package:lumora_core/lumora_core.dart' hide DeltaDebouncer;
 import 'services/kiro_client_service.dart';
 import 'services/session_manager.dart';
 import 'services/dev_proxy_connection.dart' as proxy;
@@ -11,24 +11,47 @@ import 'widgets/qr_scanner_screen.dart';
 import 'widgets/protocol_error_dialog.dart';
 import 'interpreter/navigation_manager.dart';
 import 'interpreter/schema_interpreter.dart' as local;
+import 'interpreter/delta_debouncer.dart';
+import 'dev_tools/dev_tools_overlay.dart';
 
 void main() {
-  runApp(const KiroDevClientApp());
+  runApp(const FlutterDevClient());
 }
 
-class KiroDevClientApp extends StatelessWidget {
-  const KiroDevClientApp({super.key});
+class FlutterDevClient extends StatelessWidget {
+  const FlutterDevClient({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Kiro Dev Client',
+      title: 'Lumora Go',
+      debugShowCheckedModeBanner: false, // Hide debug banner (like Expo Go)
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF667eea), // Lumora brand color
+          brightness: Brightness.light,
+        ),
         useMaterial3: true,
         // Platform-adaptive styling
         platform: TargetPlatform.android,
+        appBarTheme: const AppBarTheme(
+          centerTitle: true,
+          elevation: 0,
+        ),
       ),
+      darkTheme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF667eea),
+          brightness: Brightness.dark,
+        ),
+        useMaterial3: true,
+        platform: TargetPlatform.android,
+        appBarTheme: const AppBarTheme(
+          centerTitle: true,
+          elevation: 0,
+        ),
+      ),
+      themeMode: ThemeMode.system, // Respect system theme
       home: const ConnectionScreen(),
     );
   }
@@ -634,10 +657,25 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: const Text('Kiro Dev Client'),
+    final scaffoldContent = Scaffold(
+      appBar: _renderedUI == null ? AppBar(
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        foregroundColor: Colors.white,
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(Icons.rocket_launch, size: 20),
+            ),
+            const SizedBox(width: 12),
+            const Text('Lumora Go', style: TextStyle(fontWeight: FontWeight.bold)),
+          ],
+        ),
         actions: [
           if (_service != null)
             IconButton(
@@ -646,7 +684,7 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
               tooltip: 'Disconnect',
             ),
         ],
-      ),
+      ) : null, // Hide app bar when showing rendered UI (like Expo Go)
       body: Column(
         children: [
           OfflineIndicator(isVisible: _showOfflineIndicator),
@@ -744,5 +782,19 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
         ],
       ),
     );
+
+    // Wrap with DevToolsOverlay only when connected and rendering UI
+    if (_renderedUI != null && _service != null) {
+      return DevToolsOverlay(
+        enabled: true,
+        connection: _service!.connection,
+        currentSchema: _updateHandler?.currentSchema,
+        onReload: _manualReload,
+        onDisconnect: _disconnect,
+        child: scaffoldContent,
+      );
+    }
+
+    return scaffoldContent;
   }
 }

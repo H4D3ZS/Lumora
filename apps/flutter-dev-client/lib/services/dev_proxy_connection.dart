@@ -48,7 +48,9 @@ class DevProxyConnection implements MessageSender {
   // Heartbeat timer for ping/pong
   Timer? _heartbeatTimer;
   DateTime? _lastPongReceived;
-  
+  DateTime? _lastPingSent;
+  int? _lastPingLatencyMs;
+
   // Sequence tracking for updates
   int _lastReceivedSequence = 0;
 
@@ -80,6 +82,9 @@ class DevProxyConnection implements MessageSender {
   
   /// Last received sequence number
   int get lastReceivedSequence => _lastReceivedSequence;
+
+  /// Last ping latency in milliseconds
+  int? get lastPingLatency => _lastPingLatencyMs;
 
   /// Stream of incoming WebSocket messages
   Stream<Map<String, dynamic>> get messages => _messageController.stream;
@@ -228,12 +233,13 @@ class DevProxyConnection implements MessageSender {
   
   /// Sends ping message to server
   void _sendPing() {
+    _lastPingSent = DateTime.now();
     final pingMessage = {
       'type': 'ping',
       'sessionId': sessionId,
-      'timestamp': DateTime.now().millisecondsSinceEpoch,
+      'timestamp': _lastPingSent!.millisecondsSinceEpoch,
     };
-    
+
     sendMessage(pingMessage);
     developer.log('Sent ping', name: 'DevProxyConnection');
   }
@@ -332,7 +338,14 @@ class DevProxyConnection implements MessageSender {
   /// Handles pong message from server
   void _handlePongMessage(Map<String, dynamic> data) {
     _lastPongReceived = DateTime.now();
-    developer.log('Received pong', name: 'DevProxyConnection');
+
+    // Calculate latency if we have a ping timestamp
+    if (_lastPingSent != null) {
+      _lastPingLatencyMs = _lastPongReceived!.difference(_lastPingSent!).inMilliseconds;
+      developer.log('Received pong (latency: ${_lastPingLatencyMs}ms)', name: 'DevProxyConnection');
+    } else {
+      developer.log('Received pong', name: 'DevProxyConnection');
+    }
   }
   
   /// Handles error message from server

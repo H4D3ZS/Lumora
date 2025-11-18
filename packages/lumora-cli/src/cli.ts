@@ -8,6 +8,20 @@ import { Command } from 'commander';
 import { startCommand } from './commands/start';
 import { initCommand } from './commands/init';
 import { buildCommand } from './commands/build';
+import { createPublishCommand } from './commands/publish';
+import { createUpdatesCommand } from './commands/updates';
+import {
+  createInstallCommand,
+  createUninstallCommand,
+  createListCommand,
+  createLinkCommand,
+  createUpdateCommand,
+  createDoctorCommand,
+} from './commands/install';
+import { createPluginCommand } from './commands/plugin';
+import { createStoreCommand } from './commands/store';
+import { createDocsCommand, createTemplateCommand, createTutorialCommand } from './commands/docs';
+import { createCollaborateCommand, createTeamCommand } from './commands/collaborate';
 import chalk from 'chalk';
 import { readFileSync } from 'fs';
 import { join } from 'path';
@@ -50,6 +64,51 @@ program
   .option('--platform <platform>', 'Platform: android, ios, or both', 'both')
   .option('--release', 'Build release version', true)
   .action(buildCommand);
+
+// lumora publish - Publish OTA update
+program.addCommand(createPublishCommand());
+
+// lumora updates - Manage updates
+program.addCommand(createUpdatesCommand());
+
+// lumora install - Install packages
+program.addCommand(createInstallCommand());
+
+// lumora uninstall - Uninstall packages
+program.addCommand(createUninstallCommand());
+
+// lumora list - List packages
+program.addCommand(createListCommand());
+
+// lumora link - Link native module
+program.addCommand(createLinkCommand());
+
+// lumora update - Update packages
+program.addCommand(createUpdateCommand());
+
+// lumora doctor - Health check
+program.addCommand(createDoctorCommand());
+
+// lumora plugin - Plugin management
+program.addCommand(createPluginCommand());
+
+// lumora store - App Store preparation
+program.addCommand(createStoreCommand());
+
+// lumora docs - Documentation generation
+program.addCommand(createDocsCommand());
+
+// lumora template - Template management
+program.addCommand(createTemplateCommand());
+
+// lumora tutorial - Interactive tutorials
+program.addCommand(createTutorialCommand());
+
+// lumora collab - Collaboration features
+program.addCommand(createCollaborateCommand());
+
+// lumora team - Team management
+program.addCommand(createTeamCommand());
 
 // Note: Conversion happens automatically in lumora start
 // No manual convert commands needed - it's all automatic!

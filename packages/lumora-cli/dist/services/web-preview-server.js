@@ -15,6 +15,7 @@ const chalk_1 = __importDefault(require("chalk"));
 class WebPreviewServer {
     constructor(config) {
         this.currentIR = null;
+        this.lastUpdate = Date.now();
         this.config = config;
         this.converter = new lumora_ir_1.BidirectionalConverter();
         this.app = (0, express_1.default)();
@@ -26,18 +27,14 @@ class WebPreviewServer {
         this.app.get('/', (req, res) => {
             res.send(this.generatePreviewPage());
         });
-        // API: Get current React code
-        this.app.get('/api/react-code', (req, res) => {
-            if (!this.currentIR) {
-                return res.json({ code: '// Waiting for code...' });
-            }
-            try {
-                const reactCode = this.converter.generateReact(this.currentIR);
-                res.json({ code: reactCode });
-            }
-            catch (error) {
-                res.status(500).json({ error: String(error) });
-            }
+        // API: Get current status
+        this.app.get('/api/status', (_req, res) => {
+            res.json({
+                hasIR: !!this.currentIR,
+                nodes: this.currentIR?.nodes.length || 0,
+                mode: this.config.mode,
+                lastUpdate: this.lastUpdate
+            });
         });
         // API: Update IR
         this.app.post('/api/update-ir', (req, res) => {
@@ -46,143 +43,162 @@ class WebPreviewServer {
         });
     }
     generatePreviewPage() {
+        // Generate React code from IR if available
+        let reactCode = '';
+        if (this.currentIR) {
+            try {
+                // Generate JavaScript (not TypeScript) for browser
+                reactCode = this.converter.generateReact(this.currentIR, {
+                    useTypeScript: false, // Generate plain JavaScript
+                    useFunctionComponents: true,
+                    styleFormat: 'inline',
+                });
+                // Comprehensive TypeScript stripping for browser compatibility
+                reactCode = reactCode
+                    // Remove import statements
+                    .replace(/^import\s+.*?from\s+['"].*?['"];?\s*$/gm, '')
+                    // Remove export keywords
+                    .replace(/^export\s+(const|function|class)\s+/gm, '$1 ')
+                    .replace(/^export\s+default\s+/gm, '')
+                    // Remove interface declarations (must be before type annotations)
+                    .replace(/interface\s+\w+\s*\{[^}]+\}\s*/gs, '')
+                    // Remove type aliases
+                    .replace(/type\s+\w+\s*=\s*[^;]+;\s*/g, '')
+                    // Remove React.FC type annotations
+                    .replace(/:\s*React\.FC<[^>]+>/g, '')
+                    // Remove generic type parameters
+                    .replace(/<[A-Z]\w+(?:Props|State)?>/g, '')
+                    // Remove function parameter type annotations (e.g., name: string)
+                    .replace(/(\w+)\s*:\s*\w+(\[\])?\s*([,)])/g, '$1$3')
+                    // Remove variable type annotations (e.g., const x: number = 5)
+                    .replace(/:\s*\w+(\[\])?\s*=/g, ' =')
+                    // Remove return type annotations (e.g., ): number {)
+                    .replace(/\)\s*:\s*\w+(\[\])?\s*\{/g, ') {')
+                    // Remove object type annotations
+                    .replace(/:\s*\{[^}]+\}/g, '')
+                    // Clean up any remaining standalone type annotations
+                    .replace(/:\s*\w+(\[\])?;/g, ';');
+            }
+            catch (error) {
+                console.error('Error generating React code:', error);
+            }
+        }
         return `
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Lumora Live Preview</title>
+  <title>Lumora Web Preview</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: system-ui, -apple-system, sans-serif; background: #f5f5f5; }
-    .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-    .header h1 { font-size: 20px; margin-bottom: 5px; }
-    .header p { font-size: 12px; opacity: 0.9; }
-    .status { display: inline-block; padding: 3px 10px; background: rgba(255,255,255,0.2); border-radius: 10px; font-size: 11px; margin-left: 10px; }
-    .preview-container { padding: 20px; }
-    .preview { background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); min-height: 400px; }
-    .loading { text-align: center; padding: 60px 20px; color: #999; }
-    .error { background: #fee; border: 1px solid #fcc; color: #c33; padding: 15px; border-radius: 8px; margin: 20px; }
+    body { font-family: system-ui, -apple-system, sans-serif; }
+    #root { width: 100%; height: 100vh; }
+    .loading { 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      height: 100vh; 
+      font-size: 18px; 
+      color: #666; 
+    }
+    .error {
+      padding: 20px;
+      background: #fee;
+      border-left: 4px solid #f00;
+      margin: 20px;
+      border-radius: 4px;
+    }
   </style>
 </head>
 <body>
-  <div class="header">
-    <h1>🚀 Lumora Live Preview <span class="status" id="status">● Connected</span></h1>
-    <p>Mode: ${this.config.mode.toUpperCase()} • Port: ${this.config.port} • Real-time React Preview</p>
-  </div>
-  <div class="preview-container">
-    <div class="preview" id="root">
-      <div class="loading">Loading preview...</div>
+  <div id="root">
+    <div class="loading">
+      ${this.currentIR ? '🚀 Loading your app...' : '⏳ Waiting for app code...'}
     </div>
   </div>
 
   <script type="text/babel">
     const { useState, useEffect } = React;
-    
-    function PreviewApp() {
-      const [Component, setComponent] = useState(null);
-      const [error, setError] = useState(null);
-      const [loading, setLoading] = useState(true);
-      
-      const loadComponent = async () => {
-        try {
-          const res = await fetch('/api/react-code');
-          const data = await res.json();
-          
-          if (data.error) {
-            setError(data.error);
-            setLoading(false);
-            return;
-          }
-          
-          if (!data.code || data.code.includes('Waiting for code')) {
-            setLoading(true);
-            return;
-          }
-          
-          // Try to evaluate and render the component
-          try {
-            // Create a function that returns the component
-            const componentCode = data.code;
-            
-            // Extract the component (look for export default or export function)
-            let ComponentToRender;
-            
-            if (componentCode.includes('export default')) {
-              // Execute the code and get the default export
-              const module = { exports: {} };
-              const func = new Function('React', 'useState', 'useEffect', 'module', 'exports', componentCode + '; return module.exports.default || exports.default;');
-              ComponentToRender = func(React, useState, useEffect, module, module.exports);
-            } else if (componentCode.includes('export function') || componentCode.includes('export const')) {
-              // Try to extract the function
-              const match = componentCode.match(/export (?:function|const) (\\w+)/);
-              if (match) {
-                const funcName = match[1];
-                const func = new Function('React', 'useState', 'useEffect', componentCode + \`; return \${funcName};\`);
-                ComponentToRender = func(React, useState, useEffect);
-              }
-            }
-            
-            if (ComponentToRender) {
-              setComponent(() => ComponentToRender);
-              setError(null);
-            } else {
-              // Fallback: just show the code
-              setComponent(() => () => React.createElement('pre', { style: { padding: 20, overflow: 'auto' } }, componentCode));
-            }
-            setLoading(false);
-          } catch (err) {
-            console.error('Component render error:', err);
-            // Show code as fallback
-            setComponent(() => () => React.createElement('pre', { style: { padding: 20, overflow: 'auto', fontSize: 13 } }, data.code));
-            setError(null);
-            setLoading(false);
-          }
-        } catch (err) {
-          setError(err.message);
-          setLoading(false);
-        }
-      };
-      
-      useEffect(() => {
-        loadComponent();
-        const interval = setInterval(loadComponent, 2000);
-        return () => clearInterval(interval);
-      }, []);
-      
-      if (loading) {
-        return React.createElement('div', { className: 'loading' }, 'Loading preview...');
-      }
-      
-      if (error) {
-        return React.createElement('div', { className: 'error' }, 
-          React.createElement('strong', null, 'Error: '),
-          error
-        );
-      }
-      
-      if (!Component) {
-        return React.createElement('div', { className: 'loading' }, 
-          React.createElement('p', null, 'Waiting for code...'),
-          React.createElement('p', { style: { fontSize: 14, marginTop: 10, color: '#999' } }, 
-            'Edit your ${this.config.mode === 'react' ? 'React' : 'Flutter'} files to see changes here'
-          )
-        );
-      }
-      
-      try {
-        return React.createElement(Component);
-      } catch (err) {
-        return React.createElement('div', { className: 'error' }, 
-          React.createElement('strong', null, 'Render Error: '),
-          err.message
-        );
-      }
+
+    ${reactCode || `
+    // Default component when no IR is loaded
+    function App() {
+      return (
+        <div style={{ padding: 40, fontFamily: 'system-ui', maxWidth: 800, margin: '0 auto' }}>
+          <h1 style={{ fontSize: 32, marginBottom: 20, color: '#667eea' }}>
+            🚀 Lumora Web Preview
+          </h1>
+          <div style={{ 
+            background: '#eff6ff', 
+            borderLeft: '4px solid #3b82f6', 
+            padding: 20, 
+            borderRadius: 8,
+            marginBottom: 20 
+          }}>
+            <p style={{ fontSize: 16, marginBottom: 10 }}>
+              <strong>💡 Getting Started:</strong>
+            </p>
+            <ol style={{ marginLeft: 20, lineHeight: 1.8 }}>
+              <li>Edit <code>src/App.tsx</code> in your project</li>
+              <li>Save the file</li>
+              <li>Watch this page update automatically!</li>
+            </ol>
+          </div>
+          <div style={{ 
+            background: '#f0fdf4', 
+            borderLeft: '4px solid #10b981', 
+            padding: 20, 
+            borderRadius: 8,
+            marginBottom: 20 
+          }}>
+            <p style={{ fontSize: 16, marginBottom: 10 }}>
+              <strong>📱 Mobile Preview:</strong>
+            </p>
+            <p style={{ lineHeight: 1.6, color: '#666' }}>
+              For the full native experience, scan the QR code in your terminal 
+              with the Lumora Dev Client app to see your app running on a real device!
+            </p>
+          </div>
+          <p style={{ color: '#999', fontSize: 14 }}>
+            Mode: ${this.config.mode.toUpperCase()} • Port: ${this.config.port}
+          </p>
+        </div>
+      );
     }
+    `}
+
+    // Render the app
+    const root = ReactDOM.createRoot(document.getElementById('root'));
     
-    ReactDOM.render(React.createElement(PreviewApp), document.getElementById('root'));
+    try {
+      root.render(<App />);
+    } catch (error) {
+      root.render(
+        <div className="error">
+          <h2>Error rendering app</h2>
+          <pre>{error.toString()}</pre>
+        </div>
+      );
+    }
+
+    // Auto-refresh on updates
+    let lastUpdate = Date.now();
+    setInterval(async () => {
+      try {
+        const res = await fetch('/api/status');
+        const data = await res.json();
+        if (data.hasIR && data.lastUpdate > lastUpdate) {
+          lastUpdate = data.lastUpdate;
+          window.location.reload();
+        }
+      } catch (err) {
+        console.error('Status check failed:', err);
+      }
+    }, 1000);
   </script>
 </body>
 </html>
@@ -190,6 +206,7 @@ class WebPreviewServer {
     }
     updateIR(ir) {
         this.currentIR = ir;
+        this.lastUpdate = Date.now();
     }
     start() {
         return new Promise((resolve) => {

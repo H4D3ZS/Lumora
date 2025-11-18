@@ -12,6 +12,13 @@ const commander_1 = require("commander");
 const start_1 = require("./commands/start");
 const init_1 = require("./commands/init");
 const build_1 = require("./commands/build");
+const publish_1 = require("./commands/publish");
+const updates_1 = require("./commands/updates");
+const install_1 = require("./commands/install");
+const plugin_1 = require("./commands/plugin");
+const store_1 = require("./commands/store");
+const docs_1 = require("./commands/docs");
+const collaborate_1 = require("./commands/collaborate");
 const chalk_1 = __importDefault(require("chalk"));
 const fs_1 = require("fs");
 const path_1 = require("path");
@@ -46,6 +53,36 @@ program
     .option('--platform <platform>', 'Platform: android, ios, or both', 'both')
     .option('--release', 'Build release version', true)
     .action(build_1.buildCommand);
+// lumora publish - Publish OTA update
+program.addCommand((0, publish_1.createPublishCommand)());
+// lumora updates - Manage updates
+program.addCommand((0, updates_1.createUpdatesCommand)());
+// lumora install - Install packages
+program.addCommand((0, install_1.createInstallCommand)());
+// lumora uninstall - Uninstall packages
+program.addCommand((0, install_1.createUninstallCommand)());
+// lumora list - List packages
+program.addCommand((0, install_1.createListCommand)());
+// lumora link - Link native module
+program.addCommand((0, install_1.createLinkCommand)());
+// lumora update - Update packages
+program.addCommand((0, install_1.createUpdateCommand)());
+// lumora doctor - Health check
+program.addCommand((0, install_1.createDoctorCommand)());
+// lumora plugin - Plugin management
+program.addCommand((0, plugin_1.createPluginCommand)());
+// lumora store - App Store preparation
+program.addCommand((0, store_1.createStoreCommand)());
+// lumora docs - Documentation generation
+program.addCommand((0, docs_1.createDocsCommand)());
+// lumora template - Template management
+program.addCommand((0, docs_1.createTemplateCommand)());
+// lumora tutorial - Interactive tutorials
+program.addCommand((0, docs_1.createTutorialCommand)());
+// lumora collab - Collaboration features
+program.addCommand((0, collaborate_1.createCollaborateCommand)());
+// lumora team - Team management
+program.addCommand((0, collaborate_1.createTeamCommand)());
 // Note: Conversion happens automatically in lumora start
 // No manual convert commands needed - it's all automatic!
 // Error handling

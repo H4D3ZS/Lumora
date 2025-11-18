@@ -5,7 +5,142 @@ All notable changes to the Lumora framework will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.0] - 2024-01-XX
+## [1.2.7] - 2025-11-12
+
+### Fixed
+- **lumora-cli**: Comprehensive TypeScript stripping for web preview
+  - Strip function parameter type annotations
+  - Strip variable type annotations
+  - Strip return type annotations
+  - Remove interface and type declarations
+  - Fixed all "is not defined" TypeScript errors in browser
+  - Web preview now properly converts TypeScript to JavaScript
+
+## [1.2.6] - 2025-11-12
+
+### Fixed
+- **lumora-cli**: Improved TypeScript type annotation stripping for web preview
+  - Better regex to remove generic type parameters like `<MyAppProps>`
+  - Fixed "Missing initializer in const declaration" syntax error
+  - Properly strips React.FC type annotations with generics
+  - Web preview now handles complex TypeScript patterns correctly
+
+## [1.2.5] - 2025-11-12
+
+### Fixed
+- **lumora-cli**: Web preview now generates plain JavaScript instead of TypeScript
+  - Generate JavaScript code without type annotations for browser
+  - Fixed "number is not defined" and other TypeScript type errors
+  - Strip all TypeScript type annotations from generated code
+  - Web preview now renders correctly without TypeScript errors
+
+## [1.2.4] - 2025-11-12
+
+### Fixed
+- **lumora-cli**: Web preview now strips import statements from generated React code
+  - Remove import statements that cause "require is not defined" error
+  - Use global React from CDN instead of module imports
+  - React code now runs correctly in browser without module system
+
+## [1.2.3] - 2025-11-12
+
+### Fixed
+- **lumora-cli**: Web preview now properly renders React code
+  - Strip export statements from generated React code for browser compatibility
+  - Fixed "exports is not defined" error in web preview
+  - React code now runs correctly in browser with Babel
+
+## [1.2.2] - 2025-11-12
+
+### Fixed
+- **lumora-cli**: Init command now creates `package.json` with React dependencies
+  - Added package.json creation with react, react-dom, and TypeScript
+  - Fixed "Cannot find module 'react'" error after `lumora init`
+  - Updated instructions to include `npm install` step
+
+## [1.2.1] - 2025-11-12
+
+### Fixed
+- **lumora-cli**: Flutter Dev Client no longer gets stuck on "Waiting for UI Schema"
+  - Fixed timing issue where initial schema wasn't flushed before device connection
+  - Initial files are now processed and schema is pushed with a 100ms wait for flush
+  - Ensures `session.currentSchema` is set before QR code is displayed
+  - Devices now receive initial schema immediately upon connection
+
+## [1.2.0] - 2025-11-12
+
+### Fixed
+- **lumora-cli**: Web preview now renders actual React UI instead of status page
+  - Added React 18 runtime via CDN with Babel JSX transformation
+  - Generates and renders actual React code from Lumora IR
+  - Interactive UI with working buttons, state updates, and events
+  - Auto-refresh mechanism polls for updates every second
+  - Fallback UI when no code is loaded yet
+  - Proper error handling and display
+
+- **lumora-cli**: Automatic code generation now works properly
+  - Smart detection: only generates if file doesn't exist or is marked as generated
+  - Prevents overwriting manually created files during `lumora init`
+  - Debouncing prevents infinite loops between React ↔ Flutter conversions
+  - Processing set tracks files being converted to avoid duplicates
+  - Better initial file processing on startup
+  - Respects `--codegen` flag properly
+
+### Changed
+- **lumora-cli**: Improved user feedback during file processing
+  - Better logging for initial file scans
+  - Shows which files are being generated
+  - Clearer status messages
+
+### Technical
+- Web preview uses BidirectionalConverter to generate React code from IR
+- Added lastUpdate timestamp tracking for efficient auto-refresh
+- Smart file generation checks for existing manual vs generated files
+- 1-second debouncing window prevents rapid re-processing
+
+## [1.0.5] - 2025-11-12
+
+### Fixed
+- **lumora-cli**: Init command now creates projects with complete TypeScript setup
+  - Added `react` and `@types/react` dependencies
+  - Added `typescript` as dev dependency
+  - Created `tsconfig.json` with proper React JSX configuration
+  - Fixed "requires module path 'react/jsx-runtime'" error
+  - Projects now have zero TypeScript errors out of the box
+
+## [1.0.4] - 2025-11-12
+
+### Fixed
+- **lumora-cli**: Init command now creates App.tsx with proper component declarations
+  - Added TypeScript declarations for Lumora components (View, Text, Button)
+  - Prevents TypeScript errors in generated example code
+  - Added comments explaining that components get converted to Flutter widgets
+
+## [1.0.3] - 2025-11-12
+
+### Fixed
+- **lumora-cli**: Init command now creates projects with correct dependency versions
+  - Updated generated package.json to use `lumora-cli@^1.0.3` and `lumora-ir@^1.0.0`
+  - Previously used non-existent `^0.1.0` versions causing npm install errors
+
+## [1.0.2] - 2025-11-12
+
+### Fixed
+- **lumora-cli**: Version command now shows correct version number
+  - Changed from hardcoded version to reading from package.json
+  - `lumora --version` now correctly displays version
+
+## [1.0.1] - 2025-11-12
+
+### Fixed
+- **lumora-cli**: Critical import path issue causing "Cannot find module 'lumora-ir/src/protocol/hot-reload-protocol'" error
+  - Added `rootDir: "./src"` to tsconfig.json to prevent compilation of workspace dependencies
+  - Excluded lumora_ir from TypeScript compilation
+  - Reduced package size from 126.1 kB to 71.7 kB (43% reduction)
+  - Reduced file count from 211 to 82 files (61% reduction)
+  - Fixed imports to use public API instead of internal paths
+
+## [1.0.0] - 2025-11-12
 
 ### Added
 
