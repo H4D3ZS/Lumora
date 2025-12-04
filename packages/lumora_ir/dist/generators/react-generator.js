@@ -17,6 +17,7 @@ const widget_mapping_registry_1 = require("../registry/widget-mapping-registry")
 class ReactGenerator {
     constructor(config = {}) {
         this.imports = new Set();
+        this.namedImports = new Map();
         this.config = {
             useTypeScript: true,
             useFunctionComponents: true,
@@ -34,12 +35,20 @@ class ReactGenerator {
      */
     generate(ir) {
         this.imports.clear();
+        this.namedImports.clear();
         // Add React import
         this.imports.add("import React from 'react';");
         // Generate components
         const components = ir.nodes.map(node => this.generateComponent(node));
         // Build final code
-        const importsCode = Array.from(this.imports).join('\n');
+        let importsCode = Array.from(this.imports).join('\n');
+        // Add named imports
+        if (this.namedImports.size > 0) {
+            const namedImportsCode = Array.from(this.namedImports.entries()).map(([source, names]) => {
+                return `import { ${Array.from(names).join(', ')} } from '${source}';`;
+            }).join('\n');
+            importsCode += '\n' + namedImportsCode;
+        }
         const componentsCode = components.join('\n\n');
         return `${importsCode}\n\n${componentsCode}`;
     }
@@ -254,6 +263,14 @@ class ReactGenerator {
         const mapping = this.registry.getMapping(node.type);
         // Get React component name
         const reactComponent = mapping?.react.component || node.type;
+        // Collect imports
+        if (mapping?.react?.import) {
+            const source = mapping.react.import;
+            if (!this.namedImports.has(source)) {
+                this.namedImports.set(source, new Set());
+            }
+            this.namedImports.get(source).add(reactComponent);
+        }
         // Generate props
         const propsStr = this.generateJSXProps(node.props, mapping);
         // Check if self-closing
@@ -332,7 +349,9 @@ class ReactGenerator {
         if (value === undefined)
             return 'undefined';
         if (typeof value === 'string') {
-            return `'${value.replace(/'/g, "\\'")}'`;
+            // Strip 'const ' prefix from Flutter/Dart values
+            const cleanValue = value.replace(/^const\s+/, '');
+            return `'${cleanValue.replace(/'/g, "\\'")}'`;
         }
         if (typeof value === 'number' || typeof value === 'boolean') {
             return String(value);
@@ -341,6 +360,10 @@ class ReactGenerator {
             return `[${value.map(v => this.serializeValue(v)).join(', ')}]`;
         }
         if (typeof value === 'object') {
+            // Handle expression objects
+            if (value && value.type === 'expression' && typeof value.content === 'string') {
+                return value.content.replace(/^const\s+/, '');
+            }
             const entries = Object.entries(value).map(([k, v]) => `${k}: ${this.serializeValue(v)}`);
             return `{ ${entries.join(', ')} }`;
         }

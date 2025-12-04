@@ -150,10 +150,10 @@ export class ReactParser {
 
     try {
       this.ast = this.parseAST(source);
-      
+
       // Extract TypeScript type definitions first
       this.extractTypeDefinitions(this.ast);
-      
+
       const components = this.extractComponents(this.ast);
       const nodes = components.map(c => this.convertComponent(c));
 
@@ -209,7 +209,7 @@ export class ReactParser {
     // Check cache first
     if (cacheKey && ReactParser.astCache.has(cacheKey)) {
       const cached = ReactParser.astCache.get(cacheKey)!;
-      
+
       // Check if cache entry is still valid
       if (Date.now() - cached.timestamp < ReactParser.AST_CACHE_TTL) {
         return cached.ast;
@@ -280,11 +280,11 @@ export class ReactParser {
       TSInterfaceDeclaration: (path: NodePath<t.TSInterfaceDeclaration>) => {
         const name = path.node.id.name;
         const properties: Record<string, string> = {};
-        
+
         path.node.body.body.forEach(member => {
           if (t.isTSPropertySignature(member) && t.isIdentifier(member.key)) {
             const propName = member.key.name;
-            const propType = member.typeAnnotation 
+            const propType = member.typeAnnotation
               ? this.serializeTSType(member.typeAnnotation.typeAnnotation)
               : 'any';
             properties[propName] = propType;
@@ -303,7 +303,7 @@ export class ReactParser {
       TSTypeAliasDeclaration: (path: NodePath<t.TSTypeAliasDeclaration>) => {
         const name = path.node.id.name;
         const definition = this.serializeTypeAliasDeclaration(path.node);
-        
+
         const typeInfo: TypeInfo = {
           name,
           kind: 'type',
@@ -356,13 +356,13 @@ export class ReactParser {
    */
   private serializeInterfaceDeclaration(node: t.TSInterfaceDeclaration): string {
     const name = node.id.name;
-    const typeParams = node.typeParameters 
+    const typeParams = node.typeParameters
       ? this.serializeTSTypeParameterDeclaration(node.typeParameters)
       : '';
     const extendsClause = node.extends && node.extends.length > 0
       ? ` extends ${node.extends.map(e => this.serializeTSExpressionWithTypeArguments(e)).join(', ')}`
       : '';
-    
+
     const members = node.body.body.map(member => {
       if (t.isTSPropertySignature(member)) {
         return this.serializeTSPropertySignature(member);
@@ -385,7 +385,7 @@ export class ReactParser {
       ? this.serializeTSTypeParameterDeclaration(node.typeParameters)
       : '';
     const typeAnnotation = this.serializeTSType(node.typeAnnotation);
-    
+
     return `type ${name}${typeParams} = ${typeAnnotation}`;
   }
 
@@ -395,9 +395,9 @@ export class ReactParser {
   private serializeEnumDeclaration(node: t.TSEnumDeclaration): string {
     const name = node.id.name;
     const members = node.members.map(member => {
-      const id = t.isIdentifier(member.id) ? member.id.name : 
-                 t.isStringLiteral(member.id) ? `'${member.id.value}'` : 'member';
-      const initializer = member.initializer 
+      const id = t.isIdentifier(member.id) ? member.id.name :
+        t.isStringLiteral(member.id) ? `'${member.id.value}'` : 'member';
+      const initializer = member.initializer
         ? ` = ${this.serializeExpression(member.initializer)}`
         : '';
       return `  ${id}${initializer}`;
@@ -669,7 +669,7 @@ export class ReactParser {
       if (state) {
         node.state = state;
       }
-      
+
       // Extract lifecycle events from hooks
       const lifecycle = this.extractLifecycle(component);
       if (lifecycle && lifecycle.length > 0) {
@@ -750,12 +750,12 @@ export class ReactParser {
         if (t.isObjectProperty(prop) && t.isIdentifier(prop.key)) {
           const propName = prop.key.name;
           let propType = 'any';
-          
+
           // Extract type from TypeScript type annotation
           if (t.isIdentifier(prop.value) && prop.value.typeAnnotation && t.isTSTypeAnnotation(prop.value.typeAnnotation)) {
             propType = this.serializeTSType(prop.value.typeAnnotation.typeAnnotation);
           }
-          
+
           props[propName] = { type: propType };
         }
       });
@@ -764,12 +764,12 @@ export class ReactParser {
       // Check if there's a TypeScript type annotation
       if (propsParam.typeAnnotation && t.isTSTypeAnnotation(propsParam.typeAnnotation)) {
         const tsType = propsParam.typeAnnotation.typeAnnotation;
-        
+
         // If it's a type reference, look up the type definition
         if (t.isTSTypeReference(tsType) && t.isIdentifier(tsType.typeName)) {
           const typeName = tsType.typeName.name;
           const typeInfo = this.typeDefinitions.get(typeName);
-          
+
           if (typeInfo && typeInfo.properties) {
             // Use the properties from the type definition
             Object.entries(typeInfo.properties).forEach(([propName, propType]) => {
@@ -822,7 +822,7 @@ export class ReactParser {
             mutable: true,
           });
           break;
-        
+
         case 'useContext':
           // Extract context value as state variable
           if (hook.stateName) {
@@ -834,7 +834,7 @@ export class ReactParser {
             });
           }
           break;
-        
+
         case 'useRef':
           // Extract ref as state variable
           if (hook.refName) {
@@ -846,7 +846,7 @@ export class ReactParser {
             });
           }
           break;
-        
+
         case 'useMemo':
           // Extract memoized value as state variable
           if (hook.stateName) {
@@ -858,7 +858,7 @@ export class ReactParser {
             });
           }
           break;
-        
+
         case 'useCallback':
           // Extract memoized callback as state variable
           if (hook.stateName) {
@@ -870,7 +870,7 @@ export class ReactParser {
             });
           }
           break;
-        
+
         default:
           // Handle custom hooks
           if (hook.stateName && hook.type.startsWith('use')) {
@@ -905,7 +905,7 @@ export class ReactParser {
         // Convert useEffect to lifecycle event
         const lifecycleType = this.determineLifecycleType(hook.dependencies);
         const handler = this.extractEffectHandler(hook.effectFunction);
-        
+
         lifecycle.push({
           type: lifecycleType,
           handler,
@@ -925,12 +925,12 @@ export class ReactParser {
       // No dependency array means run on every render
       return 'update';
     }
-    
+
     if (dependencies.length === 0) {
       // Empty dependency array means run only on mount
       return 'mount';
     }
-    
+
     // Has dependencies means run when dependencies change
     return 'effect';
   }
@@ -975,27 +975,27 @@ export class ReactParser {
                   hookInfo.initialValue = this.extractValue(hookInfo.args[0]);
                 }
                 break;
-              
+
               case 'useEffect':
                 this.extractUseEffectInfo(path, hookInfo);
                 break;
-              
+
               case 'useContext':
                 this.extractUseContextInfo(path, hookInfo);
                 break;
-              
+
               case 'useRef':
                 this.extractUseRefInfo(path, hookInfo);
                 break;
-              
+
               case 'useMemo':
                 this.extractUseMemoInfo(path, hookInfo);
                 break;
-              
+
               case 'useCallback':
                 this.extractUseCallbackInfo(path, hookInfo);
                 break;
-              
+
               default:
                 // Handle custom hooks
                 this.extractCustomHookInfo(path, hookInfo);
@@ -1019,14 +1019,14 @@ export class ReactParser {
   private extractUseStateInfo(path: NodePath<t.CallExpression>, hookInfo: HookInfo): void {
     // Look for the variable declarator pattern: const [state, setState] = useState(...)
     let parent = path.parent;
-    
+
     // Handle case where parent is VariableDeclarator
     if (t.isVariableDeclarator(parent)) {
       const id = parent.id;
       if (t.isArrayPattern(id) && id.elements.length >= 2) {
         const stateElement = id.elements[0];
         const setterElement = id.elements[1];
-        
+
         if (t.isIdentifier(stateElement)) {
           hookInfo.stateName = stateElement.name;
         }
@@ -1043,7 +1043,7 @@ export class ReactParser {
   private extractUseEffectInfo(path: NodePath<t.CallExpression>, hookInfo: HookInfo): void {
     // useEffect(effectFunction, [dependencies])
     const args = hookInfo.args;
-    
+
     // Extract effect function (first argument)
     if (args.length > 0) {
       const effectArg = args[0];
@@ -1051,7 +1051,7 @@ export class ReactParser {
         hookInfo.effectFunction = effectArg;
       }
     }
-    
+
     // Extract dependencies (second argument)
     if (args.length > 1) {
       const depsArg = args[1];
@@ -1069,7 +1069,7 @@ export class ReactParser {
   private extractUseContextInfo(path: NodePath<t.CallExpression>, hookInfo: HookInfo): void {
     // const value = useContext(MyContext)
     const args = hookInfo.args;
-    
+
     // Extract context name from argument
     if (args.length > 0) {
       const contextArg = args[0];
@@ -1077,7 +1077,7 @@ export class ReactParser {
         hookInfo.contextName = contextArg.name;
       }
     }
-    
+
     // Extract variable name from parent
     const parent = path.parent;
     if (t.isVariableDeclarator(parent) && t.isIdentifier(parent.id)) {
@@ -1091,12 +1091,12 @@ export class ReactParser {
   private extractUseRefInfo(path: NodePath<t.CallExpression>, hookInfo: HookInfo): void {
     // const ref = useRef(initialValue)
     const args = hookInfo.args;
-    
+
     // Extract initial value
     if (args.length > 0) {
       hookInfo.initialValue = this.extractValue(args[0]);
     }
-    
+
     // Extract ref variable name from parent
     const parent = path.parent;
     if (t.isVariableDeclarator(parent) && t.isIdentifier(parent.id)) {
@@ -1110,7 +1110,7 @@ export class ReactParser {
   private extractUseMemoInfo(path: NodePath<t.CallExpression>, hookInfo: HookInfo): void {
     // const memoizedValue = useMemo(() => computeExpensiveValue(a, b), [a, b])
     const args = hookInfo.args;
-    
+
     // Extract memo function (first argument)
     if (args.length > 0) {
       const memoArg = args[0];
@@ -1118,7 +1118,7 @@ export class ReactParser {
         hookInfo.memoFunction = memoArg;
       }
     }
-    
+
     // Extract dependencies (second argument)
     if (args.length > 1) {
       const depsArg = args[1];
@@ -1128,7 +1128,7 @@ export class ReactParser {
           .map(el => el.name);
       }
     }
-    
+
     // Extract variable name from parent
     const parent = path.parent;
     if (t.isVariableDeclarator(parent) && t.isIdentifier(parent.id)) {
@@ -1142,7 +1142,7 @@ export class ReactParser {
   private extractUseCallbackInfo(path: NodePath<t.CallExpression>, hookInfo: HookInfo): void {
     // const memoizedCallback = useCallback(() => { doSomething(a, b); }, [a, b])
     const args = hookInfo.args;
-    
+
     // Extract callback function (first argument)
     if (args.length > 0) {
       const callbackArg = args[0];
@@ -1150,7 +1150,7 @@ export class ReactParser {
         hookInfo.callbackFunction = callbackArg;
       }
     }
-    
+
     // Extract dependencies (second argument)
     if (args.length > 1) {
       const depsArg = args[1];
@@ -1160,7 +1160,7 @@ export class ReactParser {
           .map(el => el.name);
       }
     }
-    
+
     // Extract variable name from parent
     const parent = path.parent;
     if (t.isVariableDeclarator(parent) && t.isIdentifier(parent.id)) {
@@ -1576,7 +1576,13 @@ export class ReactParser {
         // Handle expressions in JSX
         const value = this.extractValue(child.expression);
         if (value !== null && value !== undefined) {
-          nodes.push(createNode('Text', { text: String(value) }, [], child.loc?.start.line || 0));
+          // If value is an expression object, pass it directly
+          // Otherwise stringify it
+          const textValue = (typeof value === 'object' && value.type === 'expression')
+            ? value
+            : String(value);
+
+          nodes.push(createNode('Text', { text: textValue }, [], child.loc?.start.line || 0));
         }
       }
       // TODO: Handle JSXFragment
@@ -1893,7 +1899,7 @@ export class ReactParser {
       // Template literals
       const quasis = expr.quasis.map(q => q.value.cooked || q.value.raw);
       const expressions = expr.expressions.map(e => this.serializeExpression(e as t.Expression));
-      
+
       let result = '`';
       for (let i = 0; i < quasis.length; i++) {
         result += quasis[i];
@@ -1955,7 +1961,7 @@ export class ReactParser {
    */
   private serializeMemberExpression(expr: t.MemberExpression): string {
     const object = this.serializeExpression(expr.object as t.Expression);
-    
+
     if (expr.computed) {
       // obj[prop]
       if (t.isExpression(expr.property)) {
@@ -2107,7 +2113,7 @@ export class ReactParser {
       } else if (t.isTSQualifiedName(tsType.typeName)) {
         typeName = this.serializeTSQualifiedName(tsType.typeName);
       }
-      
+
       const typeParams = tsType.typeParameters
         ? this.serializeTSTypeParameterInstantiation(tsType.typeParameters)
         : '';
@@ -2325,7 +2331,7 @@ export class ReactParser {
     }
 
     // For complex expressions, return a reference
-    return null;
+    return { type: 'expression', content: this.serializeExpression(expression) };
   }
 
   /**

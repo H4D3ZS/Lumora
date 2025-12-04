@@ -10,6 +10,7 @@ import 'json_patch_utils.dart';
 import 'navigation_manager.dart';
 import 'animation_manager.dart';
 import 'platform_manager.dart';
+import 'native_module_registry.dart';
 import '../widgets/error_widgets.dart';
 
 /// Core schema interpreter that converts JSON UI schemas to Flutter widgets
@@ -533,11 +534,14 @@ class SchemaInterpreter {
   }
 
   /// Generates a cache key for props resolution
-  /// OPTIMIZATION: Simple hash-based key generation
+  /// OPTIMIZATION: Uses jsonEncode for reliable content-based caching
   String _generatePropsCacheKey(String type, Map<String, dynamic> props) {
-    // Simple cache key based on type and props hash
-    // For better performance, we use a simple string concatenation
-    return '$type:${props.hashCode}';
+    if (props.isEmpty) {
+      return '$type:empty';
+    }
+    // jsonEncode is relatively fast for small prop maps and ensures
+    // that identical content produces the same key
+    return '$type:${jsonEncode(props)}';
   }
 
   /// Wraps a widget with animation based on animation schema
@@ -712,6 +716,16 @@ class SchemaInterpreter {
         builder = (props, children) => _renderInput(props);
         break;
       default:
+        // Check for Native Modules
+        if (type.startsWith('Native') || NativeModuleRegistry().hasWidget(type)) {
+          if (NativeModuleRegistry().hasWidget(type)) {
+             builder = (props, children) => NativeModuleRegistry().createWidget(type, props) ?? const SizedBox();
+          } else {
+             builder = (props, children) => MissingNativeModuleWidget(moduleName: type);
+          }
+          break;
+        }
+
         developer.log(
           'Unknown widget type: $type',
           name: 'SchemaInterpreter',

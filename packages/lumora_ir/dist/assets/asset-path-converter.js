@@ -79,16 +79,17 @@ class AssetPathConverter {
      * Convert image reference in IR node
      */
     convertImageReference(node, targetFramework) {
-        if (node.type !== 'Image' || !node.props?.source) {
+        if ((node.type !== 'Image' && node.type !== 'img') || (!node.props?.source && !node.props?.src)) {
             return node;
         }
         const updatedNode = { ...node };
-        const source = node.props.source;
+        const source = node.props.source || node.props.src;
+        const propName = node.props.source ? 'source' : 'src';
         if (typeof source === 'string') {
             // Simple string path
             updatedNode.props = {
                 ...node.props,
-                source: targetFramework === 'flutter'
+                [propName]: targetFramework === 'flutter'
                     ? this.reactToFlutter(source)
                     : this.flutterToReact(source),
             };
@@ -97,7 +98,7 @@ class AssetPathConverter {
             // Object with uri property
             updatedNode.props = {
                 ...node.props,
-                source: {
+                [propName]: {
                     ...source,
                     uri: targetFramework === 'flutter'
                         ? this.reactToFlutter(source.uri)
@@ -158,7 +159,7 @@ class AssetPathConverter {
                 return node;
             let updatedNode = { ...node };
             // Convert image references
-            if (node.type === 'Image') {
+            if (node.type === 'Image' || node.type === 'img') {
                 updatedNode = this.convertImageReference(updatedNode, targetFramework);
             }
             // Convert background images in styles

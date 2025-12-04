@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dev_client/services/event_bridge.dart';
-import '../lib/services/dev_proxy_connection.dart';
+import 'package:flutter_dev_client/services/dev_proxy_connection.dart';
 
 void main() {
   group('EventBridge createHandler', () {

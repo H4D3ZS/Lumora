@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import '../lib/services/dev_proxy_connection.dart';
+import 'package:flutter_dev_client/services/dev_proxy_connection.dart';
 
 void main() {
   group('DevProxyConnection', () {
@@ -94,7 +94,9 @@ void main() {
       expect(joinMessage['type'], equals('join'));
       expect(joinMessage['meta'], isA<Map>());
       expect(joinMessage['payload'], isA<Map>());
-      expect(joinMessage['payload']['clientType'], equals('device'));
+      
+      final payload = joinMessage['payload'] as Map<String, dynamic>;
+      expect(payload['clientType'], equals('device'));
     });
 
     test('validates event message structure', () {
@@ -120,8 +122,10 @@ void main() {
       };
 
       expect(eventMessage['type'], equals('event'));
-      expect(eventMessage['payload']['action'], equals('button_clicked'));
-      expect(eventMessage['payload']['data'], isA<Map>());
+      
+      final payload = eventMessage['payload'] as Map<String, dynamic>;
+      expect(payload['action'], equals('button_clicked'));
+      expect(payload['data'], isA<Map>());
     });
 
     test('validates schema message structure', () {
@@ -152,7 +156,9 @@ void main() {
 
       expect(schemaMessage['type'], equals('full_ui_schema'));
       expect(schemaMessage['payload'], isA<Map>());
-      expect(schemaMessage['payload']['schemaVersion'], equals('1.0'));
+      
+      final payload = schemaMessage['payload'] as Map<String, dynamic>;
+      expect(payload['schemaVersion'], equals('1.0'));
     });
   });
 }

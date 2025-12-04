@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import 'dart:developer' as developer;
 import 'dart:math' as math;
 
@@ -8,15 +9,49 @@ class AnimationManager {
   final Map<String, AnimationController> _controllers = {};
   final Map<String, Animation<double>> _animations = {};
   final Map<String, AnimationState> _states = {};
+  final Map<String, Timer> _timers = {};
   
   /// Disposes all animation controllers
   void dispose() {
-    for (final controller in _controllers.values) {
-      controller.dispose();
+    print('DEBUG: Disposing AnimationManager with ${_controllers.length} controllers');
+    for (final timer in _timers.values) {
+      timer.cancel();
+    }
+    _timers.clear();
+    
+    for (final key in _controllers.keys) {
+      print('DEBUG: Disposing controller $key');
+      try {
+        final controller = _controllers[key];
+        if (controller != null) {
+          if (controller.isAnimating) {
+            controller.stop();
+          }
+          controller.dispose();
+        }
+      } catch (e) {
+        print('DEBUG: Error disposing controller $key: $e');
+      }
     }
     _controllers.clear();
     _animations.clear();
     _states.clear();
+  }
+
+  /// Removes and disposes a controller by ID
+  void removeController(String id) {
+    _timers[id]?.cancel();
+    _timers.remove(id);
+    
+    try {
+      _controllers[id]?.dispose();
+    } catch (e) {
+      // Ignore if already disposed
+    }
+    _controllers.remove(id);
+    _states.remove(id);
+    // Also remove associated animations
+    _animations.removeWhere((key, _) => key.startsWith('$id-'));
   }
   
   /// Creates an animation controller from a schema
@@ -57,17 +92,20 @@ class AnimationManager {
     // Auto-start if requested
     if (autoStart) {
       if (delay != null && delay > 0) {
-        Future.delayed(Duration(milliseconds: delay), () {
+        final timer = Timer(Duration(milliseconds: delay), () {
+          _timers.remove(id);
           if (_controllers.containsKey(id)) {
             controller.forward();
           }
         });
+        _timers[id] = timer;
       } else {
         controller.forward();
       }
     }
     
     developer.log('Created animation controller: $id', name: 'AnimationManager');
+    print('DEBUG: Created controller $id');
     return controller;
   }
   
@@ -368,6 +406,7 @@ class AnimatedWidgetBuilder extends StatefulWidget {
 class _AnimatedWidgetBuilderState extends State<AnimatedWidgetBuilder>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
+  late String _animationId;
   final Map<String, Animation<double>> _propertyAnimations = {};
   final Map<String, double> _currentValues = {};
   
@@ -379,7 +418,8 @@ class _AnimatedWidgetBuilderState extends State<AnimatedWidgetBuilder>
   
   void _setupAnimation() {
     final schema = widget.animationSchema;
-    final id = schema['id'] as String? ?? 'animation-${hashCode}';
+    _animationId = schema['id'] as String? ?? 'animation-${hashCode}';
+    final id = _animationId;
     final type = schema['type'] as String? ?? 'timing';
     final duration = schema['duration'] as int? ?? 300;
     final delay = schema['delay'] as int?;
@@ -476,7 +516,9 @@ class _AnimatedWidgetBuilderState extends State<AnimatedWidgetBuilder>
   
   @override
   void dispose() {
-    _controller.dispose();
+    // Let AnimationManager handle disposal
+    widget.animationManager.removeController(_animationId);
+    
     super.dispose();
   }
   

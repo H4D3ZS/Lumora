@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:developer' as developer;
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'dev_proxy_connection.dart';
 
@@ -13,6 +15,8 @@ class SessionManager {
   
   final StreamController<SessionEvent> _eventController =
       StreamController<SessionEvent>.broadcast();
+
+  static const String _schemaCacheKey = 'lumora_last_schema';
 
   SessionManager({required this.connection});
 
@@ -124,6 +128,33 @@ class SessionManager {
     final errorMessage = payload?['message'] as String? ?? 'Unknown error';
     developer.log('Error received: $errorMessage', name: 'SessionManager');
     _eventController.add(SessionEvent.error);
+  }
+
+  /// Saves the schema to local cache
+  Future<void> saveSchema(Map<String, dynamic> schema) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final jsonString = jsonEncode(schema);
+      await prefs.setString(_schemaCacheKey, jsonString);
+      developer.log('Schema cached successfully', name: 'SessionManager');
+    } catch (e) {
+      developer.log('Failed to cache schema: $e', name: 'SessionManager', error: e);
+    }
+  }
+
+  /// Loads the cached schema
+  Future<Map<String, dynamic>?> loadCachedSchema() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final jsonString = prefs.getString(_schemaCacheKey);
+      if (jsonString != null) {
+        developer.log('Loaded schema from cache', name: 'SessionManager');
+        return jsonDecode(jsonString) as Map<String, dynamic>;
+      }
+    } catch (e) {
+      developer.log('Failed to load cached schema: $e', name: 'SessionManager', error: e);
+    }
+    return null;
   }
 
   /// Disconnects from the session

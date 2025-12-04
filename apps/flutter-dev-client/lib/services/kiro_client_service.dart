@@ -115,6 +115,28 @@ class KiroClientService {
       },
     };
 
+  sendMessage(envelope);
+  }
+
+  /// Sends a log message to the Dev-Proxy
+  void sendLog(String message, String level) {
+    // Don't send logs if not connected to avoid spamming connection logic
+    if (_connection.state != ConnectionState.connected) return;
+
+    final envelope = {
+      'type': 'log',
+      'meta': {
+        'sessionId': sessionId,
+        'source': 'device',
+        'timestamp': DateTime.now().millisecondsSinceEpoch,
+        'version': '1.0',
+      },
+      'payload': {
+        'message': message,
+        'level': level,
+      },
+    };
+
     sendMessage(envelope);
   }
 

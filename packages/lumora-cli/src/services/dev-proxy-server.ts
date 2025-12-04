@@ -17,6 +17,7 @@ export interface DevProxyConfig {
   port: number;
   enableQR: boolean;
   verbose?: boolean;
+  projectRoot?: string;
 }
 
 export interface Session {
@@ -42,7 +43,13 @@ export class DevProxyServer {
   private setupMiddleware() {
     this.app.use(express.json({ limit: '10mb' }));
     this.app.use(express.urlencoded({ extended: true }));
-    
+
+    // Serve static assets from project root
+    if (this.config.projectRoot) {
+      this.app.use(express.static(this.config.projectRoot));
+      console.log(chalk.gray(`Serving static assets from: ${this.config.projectRoot}`));
+    }
+
     // CORS
     this.app.use((req, res, next) => {
       res.header('Access-Control-Allow-Origin', '*');
@@ -286,14 +293,14 @@ export class DevProxyServer {
   /**
    * Get local network IP address
    */
-  private getNetworkIP(): string {
+  public getNetworkIP(): string {
     const interfaces = os.networkInterfaces();
-    
+
     // Try to find a non-internal IPv4 address
     for (const name of Object.keys(interfaces)) {
       const iface = interfaces[name];
       if (!iface) continue;
-      
+
       for (const addr of iface) {
         // Skip internal (loopback) and non-IPv4 addresses
         if (addr.family === 'IPv4' && !addr.internal) {
@@ -301,7 +308,7 @@ export class DevProxyServer {
         }
       }
     }
-    
+
     return 'localhost';
   }
 

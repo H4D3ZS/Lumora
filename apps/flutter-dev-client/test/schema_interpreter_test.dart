@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_dev_client/interpreter/schema_interpreter.dart';
+import 'package:flutter_dev_client/widgets/error_widgets.dart';
 
 void main() {
   group('SchemaInterpreter - Schema Parsing and Validation', () {

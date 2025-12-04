@@ -4,6 +4,7 @@ import 'package:flutter/widgets.dart';
 
 import '../interpreter/schema_interpreter.dart';
 import 'dev_proxy_connection.dart';
+import 'session_manager.dart';
 
 /// Handles schema update application from hot reload server
 /// Supports both full and incremental delta updates
@@ -23,165 +24,99 @@ class UpdateHandler {
   final StreamController<UpdateResult> _updateController =
       StreamController<UpdateResult>.broadcast();
   
+  final SessionManager? sessionManager;
+
   UpdateHandler({
     required this.interpreter,
     required this.connection,
+    this.sessionManager,
   });
-  
+
   /// Stream of update results
   Stream<UpdateResult> get updates => _updateController.stream;
-  
-  /// Current rendered widget
-  Widget? get currentWidget => _currentWidget;
-  
-  /// Current schema
-  Map<String, dynamic>? get currentSchema => _currentSchema;
-  
-  /// Update history
-  List<UpdateMetric> get updateHistory => List.unmodifiable(_updateHistory);
-  
+
   /// Handles an update message from the server
-  Future<UpdateResult> handleUpdate(Map<String, dynamic> message) async {
+  Future<void> handleUpdate(Map<String, dynamic> updateData) async {
     final startTime = DateTime.now().millisecondsSinceEpoch;
+    final type = updateData['type'] as String?;
+    final payload = updateData['payload'] as Map<String, dynamic>?;
+    
+    if (type != 'update' || payload == null) {
+      developer.log('Invalid update message format', name: 'UpdateHandler', error: updateData);
+      return;
+    }
+    
+    final updateType = payload['type'] as String?;
+    final sequenceNumber = payload['sequenceNumber'] as int? ?? 0;
+    
+    developer.log('Received update: $updateType (seq: $sequenceNumber)', name: 'UpdateHandler');
     
     try {
-      final payload = message['payload'] as Map<String, dynamic>?;
-      if (payload == null) {
-        throw Exception('Update message missing payload');
-      }
-      
-      final updateType = payload['type'] as String?;
-      final sequenceNumber = payload['sequenceNumber'] as int?;
-      final preserveState = payload['preserveState'] as bool? ?? true;
-      
-      if (sequenceNumber == null) {
-        throw Exception('Update message missing sequence number');
-      }
-      
-      developer.log(
-        'Handling $updateType update (sequence: $sequenceNumber, preserveState: $preserveState)',
-        name: 'UpdateHandler',
-      );
-      
-      Widget? updatedWidget;
-      
-      switch (updateType) {
-        case 'full':
-          updatedWidget = await _applyFullUpdate(payload, preserveState);
-          break;
-          
-        case 'incremental':
-          updatedWidget = await _applyIncrementalUpdate(payload, preserveState);
-          break;
-          
-        default:
-          throw Exception('Unknown update type: $updateType');
-      }
-      
-      if (updatedWidget != null) {
-        _currentWidget = updatedWidget;
-      }
-      
+      final widget = await _applyUpdate(payload);
       final endTime = DateTime.now().millisecondsSinceEpoch;
-      final applyTime = endTime - startTime;
-      
-      // Send acknowledgment to server
-      connection.sendAck(sequenceNumber, true, applyTime: applyTime);
+      final duration = endTime - startTime;
       
       // Record metric
-      final metric = UpdateMetric(
+      _updateHistory.add(UpdateMetric(
         sequenceNumber: sequenceNumber,
         updateType: updateType ?? 'unknown',
-        applyTime: applyTime,
+        applyTime: duration,
         success: true,
-        timestamp: startTime,
-      );
-      _updateHistory.add(metric);
+        timestamp: endTime,
+      ));
       
-      // Keep only last 50 metrics
-      if (_updateHistory.length > 50) {
-        _updateHistory.removeAt(0);
-      }
-      
-      final result = UpdateResult(
+      // Notify listeners
+      _updateController.add(UpdateResult(
         success: true,
-        widget: updatedWidget,
-        applyTime: applyTime,
-        updateType: updateType ?? 'unknown',
-      );
-      
-      _updateController.add(result);
-      
-      developer.log(
-        'Update applied successfully in ${applyTime}ms',
-        name: 'UpdateHandler',
-      );
-      
-      return result;
+        widget: widget,
+        applyTime: duration,
+        updateType: updateType,
+      ));
       
     } catch (e, stackTrace) {
-      // Log detailed error information
-      developer.log(
-        'Failed to apply update: $e',
-        name: 'UpdateHandler',
-        error: e,
-        stackTrace: stackTrace,
-        level: 1000, // Error level
-      );
-      
-      // Log the message that caused the error for debugging
-      developer.log(
-        'Failed update message: ${message.toString()}',
-        name: 'UpdateHandler',
-        level: 900, // Warning level
-      );
-      
       final endTime = DateTime.now().millisecondsSinceEpoch;
-      final applyTime = endTime - startTime;
+      final duration = endTime - startTime;
       
-      // Send failure acknowledgment
-      final payload = message['payload'] as Map<String, dynamic>?;
-      final sequenceNumber = payload?['sequenceNumber'] as int?;
-      if (sequenceNumber != null) {
-        connection.sendAck(sequenceNumber, false, error: e.toString());
-        
-        developer.log(
-          'Sent failure ack for sequence $sequenceNumber',
-          name: 'UpdateHandler',
-        );
-      }
+      developer.log('Update failed: $e', name: 'UpdateHandler', error: e, stackTrace: stackTrace);
       
-      // Record failed metric
-      if (sequenceNumber != null) {
-        final metric = UpdateMetric(
-          sequenceNumber: sequenceNumber,
-          updateType: payload?['type'] as String? ?? 'unknown',
-          applyTime: applyTime,
-          success: false,
-          error: e.toString(),
-          timestamp: startTime,
-        );
-        _updateHistory.add(metric);
-        
-        // Keep only last 50 metrics
-        if (_updateHistory.length > 50) {
-          _updateHistory.removeAt(0);
-        }
-      }
+      // Record metric
+      _updateHistory.add(UpdateMetric(
+        sequenceNumber: sequenceNumber,
+        updateType: updateType ?? 'unknown',
+        applyTime: duration,
+        success: false,
+        error: e.toString(),
+        timestamp: endTime,
+      ));
       
-      final result = UpdateResult(
+      // Notify listeners
+      _updateController.add(UpdateResult(
         success: false,
         error: e.toString(),
         stackTrace: stackTrace.toString(),
-        applyTime: applyTime,
-      );
+        applyTime: duration,
+        updateType: updateType,
+      ));
       
-      _updateController.add(result);
-      
-      return result;
+      rethrow;
     }
   }
-  
+
+  /// Applies an update based on its type
+  Future<Widget?> _applyUpdate(Map<String, dynamic> payload) async {
+    final updateType = payload['type'] as String?;
+    final preserveState = payload['preserveState'] as bool? ?? true;
+    
+    switch (updateType) {
+      case 'full':
+        return _applyFullUpdate(payload, preserveState);
+      case 'incremental':
+        return _applyIncrementalUpdate(payload, preserveState);
+      default:
+        throw Exception('Unknown update type: $updateType');
+    }
+  }
+
   /// Applies a full schema update
   Future<Widget?> _applyFullUpdate(
     Map<String, dynamic> payload,
@@ -202,6 +137,11 @@ class UpdateHandler {
     // Update current schema
     _currentSchema = Map<String, dynamic>.from(schema);
     
+    // Cache the schema if session manager is available
+    if (sessionManager != null) {
+      sessionManager!.saveSchema(_currentSchema!);
+    }
+
     // Interpret new schema
     final widget = interpreter.interpretSchema(_currentSchema!);
     
@@ -239,6 +179,11 @@ class UpdateHandler {
     // Update current schema from interpreter
     _currentSchema = interpreter.currentSchema;
     
+    // Cache the schema if session manager is available
+    if (sessionManager != null && _currentSchema != null) {
+      sessionManager!.saveSchema(_currentSchema!);
+    }
+
     return widget;
   }
   
@@ -266,6 +211,9 @@ class UpdateHandler {
     developer.log('Update handler reset', name: 'UpdateHandler');
   }
   
+  /// Gets the current schema
+  Map<String, dynamic>? get currentSchema => _currentSchema;
+
   /// Disposes resources
   void dispose() {
     _updateController.close();

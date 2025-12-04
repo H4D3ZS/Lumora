@@ -1356,7 +1356,12 @@ class ReactParser {
                 // Handle expressions in JSX
                 const value = this.extractValue(child.expression);
                 if (value !== null && value !== undefined) {
-                    nodes.push((0, ir_utils_1.createNode)('Text', { text: String(value) }, [], child.loc?.start.line || 0));
+                    // If value is an expression object, pass it directly
+                    // Otherwise stringify it
+                    const textValue = (typeof value === 'object' && value.type === 'expression')
+                        ? value
+                        : String(value);
+                    nodes.push((0, ir_utils_1.createNode)('Text', { text: textValue }, [], child.loc?.start.line || 0));
                 }
             }
             // TODO: Handle JSXFragment
@@ -2044,7 +2049,7 @@ class ReactParser {
             return obj;
         }
         // For complex expressions, return a reference
-        return null;
+        return { type: 'expression', content: this.serializeExpression(expression) };
     }
     /**
      * Infer type from value

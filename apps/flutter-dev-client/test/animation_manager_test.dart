@@ -207,7 +207,7 @@ void main() {
 
     testWidgets('AnimatedWidgetBuilder renders with animation', (WidgetTester tester) async {
       final animationSchema = {
-        'id': 'test-widget-animation',
+        'id': 'test-widget-animation-${DateTime.now().millisecondsSinceEpoch}',
         'type': 'timing',
         'duration': 300,
         'easing': 'ease-in-out',
@@ -254,7 +254,7 @@ void main() {
 
     testWidgets('AnimatedWidgetBuilder handles spring animation', (WidgetTester tester) async {
       final animationSchema = {
-        'id': 'spring-widget-animation',
+        'id': 'spring-widget-animation-${DateTime.now().millisecondsSinceEpoch}',
         'type': 'spring',
         'springConfig': {
           'mass': 1.0,
@@ -298,7 +298,7 @@ void main() {
 
     testWidgets('AnimatedWidgetBuilder handles multiple properties', (WidgetTester tester) async {
       final animationSchema = {
-        'id': 'multi-prop-animation',
+        'id': 'multi-prop-animation-${DateTime.now().millisecondsSinceEpoch}',
         'type': 'timing',
         'duration': 300,
         'easing': 'linear',
@@ -350,7 +350,7 @@ void main() {
 
     testWidgets('AnimatedWidgetBuilder handles infinite iterations', (WidgetTester tester) async {
       final animationSchema = {
-        'id': 'infinite-animation',
+        'id': 'infinite-animation-${DateTime.now().millisecondsSinceEpoch}',
         'type': 'timing',
         'duration': 100,
         'easing': 'linear',

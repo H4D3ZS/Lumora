@@ -141,6 +141,17 @@ export declare class HotReloadServer {
     /**
      * Log message if verbose mode is enabled
      */
+    /**
+     * Handle log message from device
+     */
+    private handleLog;
+    /**
+     * Emit log event (to be handled by CLI)
+     */
+    private emitLog;
+    /**
+     * Log message if verbose mode is enabled
+     */
     private log;
     private updateBatches;
     private readonly BATCH_DELAY_MS;

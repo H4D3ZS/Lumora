@@ -1,0 +1,376 @@
+Resolving dependencies...
+Downloading packages...
+  _fe_analyzer_shared 91.0.0 (92.0.0 available)
+  analyzer 8.4.1 (9.0.0 available)
+  build 4.0.2 (4.0.3 available)
+  build_daemon 4.1.0 (4.1.1 available)
+  build_runner 2.10.1 (2.10.4 available)
+  built_value 8.12.0 (8.12.1 available)
+  characters 1.4.0 (1.4.1 available)
+  dart_style 3.1.2 (3.1.3 available)
+  flutter_lints 3.0.2 (6.0.0 available)
+  http 1.5.0 (1.6.0 available)
+  json_serializable 6.11.1 (6.11.3 available)
+  lints 3.0.0 (6.0.0 available)
+  matcher 0.12.17 (0.12.18 available)
+  material_color_utilities 0.11.1 (0.13.0 available)
+  meta 1.16.0 (1.17.0 available)
+  mobile_scanner 3.5.7 (7.1.3 available)
+  mockito 5.5.1 (5.6.1 available)
+  path_provider_android 2.2.20 (2.2.22 available)
+  path_provider_foundation 2.4.3 (2.5.1 available)
+  shared_preferences_android 2.4.15 (2.4.18 available)
+  shared_preferences_foundation 2.5.5 (2.5.6 available)
+  source_gen 4.0.2 (4.1.1 available)
+  source_helper 1.3.8 (1.3.9 available)
+  test_api 0.7.6 (0.7.8 available)
+  web_socket_channel 2.4.0 (3.0.3 available)
+Got dependencies!
+25 packages have newer versions incompatible with dependency constraints.
+Try `flutter pub outdated` for more information.
+00:00 +0: loading /Users/hades/Desktop/Lumora/apps/flutter-dev-client/test/animation_manager_test.dart                                                                                                 00:01 +0: loading /Users/hades/Desktop/Lumora/apps/flutter-dev-client/test/animation_manager_test.dart                                                                                                 00:01 +0: AnimationManager creates timing animation controller                                                                                                                                         00:01 +1: AnimationManager creates timing animation controller                                                                                                                                         00:01 +1: AnimationManager creates spring animation                                                                                                                                                    00:01 +2: AnimationManager creates spring animation                                                                                                                                                    00:01 +2: AnimationManager creates tween animation                                                                                                                                                     00:01 +3: AnimationManager creates tween animation                                                                                                                                                     00:01 +3: AnimationManager starts and stops animation                                                                                                                                                  00:01 +4: AnimationManager starts and stops animation                                                                                                                                                  00:01 +4: AnimationManager resets animation                                                                                                                                                            00:01 +5: AnimationManager resets animation                                                                                                                                                            00:01 +5: AnimationManager parses easing curves correctly                                                                                                                                              00:01 +6: AnimationManager parses easing curves correctly                                                                                                                                              00:01 +6: AnimationManager handles auto-start                                                                                                                                                          00:01 +6: AnimationManager handles auto-start                                                                                                                                                          
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following assertion was thrown running a test:
+A Ticker was active at the end of the test.
+All Tickers must be disposed.
+Tickers used by AnimationControllers should be disposed by calling dispose() on the
+AnimationController itself. Otherwise, the ticker will leak.
+The offending ticker was:
+  _TestTicker()
+  The stack trace when the _TestTicker was actually created was:
+  #0      new Ticker.<anonymous closure> (package:flutter/src/scheduler/ticker.dart:86:40)
+  #1      new Ticker (package:flutter/src/scheduler/ticker.dart:88:6)
+  #2      new _TestTicker (package:flutter_test/src/widget_tester.dart)
+  #3      WidgetTester.createTicker (package:flutter_test/src/widget_tester.dart:1025:32)
+  #4      new AnimationController (package:flutter/src/animation/animation_controller.dart:257:21)
+  #5      AnimationManager.createController
+  (package:flutter_dev_client/interpreter/animation_manager.dart:46:24)
+  #6      main.<anonymous closure>.<anonymous closure>.<anonymous closure>
+  (file:///Users/hades/Desktop/Lumora/apps/flutter-dev-client/test/animation_manager_test.dart:164:32)
+  #7      Builder.build (package:flutter/src/widgets/basic.dart:8226:48)
+  #8      StatelessElement.build (package:flutter/src/widgets/framework.dart:5791:49)
+  #9      ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5723:15)
+  #10     Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+  #11     ComponentElement._firstBuild (package:flutter/src/widgets/framework.dart:5705:5)
+  #12     ComponentElement.mount (package:flutter/src/widgets/framework.dart:5699:5)
+  ...     Normal element mounting (228 frames)
+  #240    Element.inflateWidget (package:flutter/src/widgets/framework.dart:4548:16)
+  #241    MultiChildRenderObjectElement.inflateWidget
+  (package:flutter/src/widgets/framework.dart:7169:36)
+  #242    MultiChildRenderObjectElement.mount (package:flutter/src/widgets/framework.dart:7185:32)
+  ...     Normal element mounting (465 frames)
+  #707    Element.inflateWidget (package:flutter/src/widgets/framework.dart:4548:16)
+  #708    Element.updateChild (package:flutter/src/widgets/framework.dart:3998:20)
+  #709    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+  #710    Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+  #711    ProxyElement.update (package:flutter/src/widgets/framework.dart:6051:5)
+  #712    _InheritedNotifierElement.update
+  (package:flutter/src/widgets/inherited_notifier.dart:108:11)
+  #713    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+  #714    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+  #715    StatefulElement.performRebuild (package:flutter/src/widgets/framework.dart:5884:11)
+  #716    Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+  #717    StatefulElement.update (package:flutter/src/widgets/framework.dart:5909:5)
+  #718    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+  #719    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+  #720    Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+  #721    ProxyElement.update (package:flutter/src/widgets/framework.dart:6051:5)
+  #722    _InheritedNotifierElement.update
+  (package:flutter/src/widgets/inherited_notifier.dart:108:11)
+  #723    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+  #724    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+  #725    StatefulElement.performRebuild (package:flutter/src/widgets/framework.dart:5884:11)
+  #726    Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+  #727    StatefulElement.update (package:flutter/src/widgets/framework.dart:5909:5)
+  #728    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+  #729    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+  #730    StatefulElement.performRebuild (package:flutter/src/widgets/framework.dart:5884:11)
+  #731    Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+  #732    StatefulElement.update (package:flutter/src/widgets/framework.dart:5909:5)
+  #733    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+  #734    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+  #735    Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+  #736    ProxyElement.update (package:flutter/src/widgets/framework.dart:6051:5)
+  #737    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+  #738    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+  #739    StatefulElement.performRebuild (package:flutter/src/widgets/framework.dart:5884:11)
+  #740    Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+  #741    StatefulElement.update (package:flutter/src/widgets/framework.dart:5909:5)
+  #742    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+  #743    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+  #744    Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+  #745    ProxyElement.update (package:flutter/src/widgets/framework.dart:6051:5)
+  #746    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+  #747    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+  #748    Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+  #749    ProxyElement.update (package:flutter/src/widgets/framework.dart:6051:5)
+  #750    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+  #751    _RawViewElement._updateChild (package:flutter/src/widgets/view.dart:481:16)
+  #752    _RawViewElement.update (package:flutter/src/widgets/view.dart:568:5)
+  #753    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+  #754    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+  #755    Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+  #756    StatelessElement.update (package:flutter/src/widgets/framework.dart:5797:5)
+  #757    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+  #758    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+  #759    StatefulElement.performRebuild (package:flutter/src/widgets/framework.dart:5884:11)
+  #760    Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+  #761    StatefulElement.update (package:flutter/src/widgets/framework.dart:5909:5)
+  #762    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+  #763    RootElement._rebuild (package:flutter/src/widgets/binding.dart:1716:16)
+  #764    RootElement.update (package:flutter/src/widgets/binding.dart:1694:5)
+  #765    RootElement.performRebuild (package:flutter/src/widgets/binding.dart:1708:7)
+  #766    Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+  #767    BuildScope._tryRebuild (package:flutter/src/widgets/framework.dart:2695:15)
+  #768    BuildScope._flushDirtyElements (package:flutter/src/widgets/framework.dart:2752:11)
+  #769    BuildOwner.buildScope (package:flutter/src/widgets/framework.dart:3056:18)
+  #770    AutomatedTestWidgetsFlutterBinding.drawFrame
+  (package:flutter_test/src/binding.dart:1506:19)
+  #771    RendererBinding._handlePersistentFrameCallback
+  (package:flutter/src/rendering/binding.dart:495:5)
+  #772    SchedulerBinding._invokeFrameCallback (package:flutter/src/scheduler/binding.dart:1434:15)
+  #773    SchedulerBinding.handleDrawFrame (package:flutter/src/scheduler/binding.dart:1347:9)
+  #774    AutomatedTestWidgetsFlutterBinding.pump.<anonymous closure>
+  (package:flutter_test/src/binding.dart:1335:9)
+  #777    TestAsyncUtils.guard (package:flutter_test/src/test_async_utils.dart:74:41)
+  #778    AutomatedTestWidgetsFlutterBinding.pump (package:flutter_test/src/binding.dart:1324:27)
+  #779    WidgetTester.pumpWidget.<anonymous closure>
+  (package:flutter_test/src/widget_tester.dart:598:22)
+  #782    TestAsyncUtils.guard (package:flutter_test/src/test_async_utils.dart:74:41)
+  #783    WidgetTester.pumpWidget (package:flutter_test/src/widget_tester.dart:595:27)
+  #784    main.<anonymous closure>.<anonymous closure>
+  (file:///Users/hades/Desktop/Lumora/apps/flutter-dev-client/test/animation_manager_test.dart:160:20)
+  #785    testWidgets.<anonymous closure>.<anonymous closure>
+  (package:flutter_test/src/widget_tester.dart:192:29)
+  <asynchronous suspension>
+  #786    TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1059:5)
+  <asynchronous suspension>
+  <asynchronous suspension>
+  (elided 5 frames from dart:async and package:stack_trace)
+
+When the exception was thrown, this was the stack:
+#0      WidgetTester.verifyTickersWereDisposed (package:flutter_test/src/widget_tester.dart:1046:11)
+#1      WidgetTester._endOfTestVerifications (package:flutter_test/src/widget_tester.dart:1062:5)
+#2      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1073:22)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+The test description was:
+  handles auto-start
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:01 +6 -1: AnimationManager handles auto-start [E]                                                                                                                                                   
+  Test failed. See exception logs above.
+  The test description was: handles auto-start
+  
+
+To run this test again: /Users/hades/Dev_Tools/flutter/bin/cache/dart-sdk/bin/dart test /Users/hades/Desktop/Lumora/apps/flutter-dev-client/test/animation_manager_test.dart -p vm --plain-name 'AnimationManager handles auto-start'
+00:01 +6 -1: AnimationManager handles delayed start                                                                                                                                                    00:01 +6 -1: AnimationManager handles delayed start                                                                                                                                                    
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following assertion was thrown running a test:
+A Ticker was active at the end of the test.
+All Tickers must be disposed.
+Tickers used by AnimationControllers should be disposed by calling dispose() on the
+AnimationController itself. Otherwise, the ticker will leak.
+The offending ticker was:
+  _TestTicker()
+  The stack trace when the _TestTicker was actually created was:
+  #0      new Ticker.<anonymous closure> (package:flutter/src/scheduler/ticker.dart:86:40)
+  #1      new Ticker (package:flutter/src/scheduler/ticker.dart:88:6)
+  #2      new _TestTicker (package:flutter_test/src/widget_tester.dart)
+  #3      WidgetTester.createTicker (package:flutter_test/src/widget_tester.dart:1025:32)
+  #4      new AnimationController (package:flutter/src/animation/animation_controller.dart:257:21)
+  #5      AnimationManager.createController
+  (package:flutter_dev_client/interpreter/animation_manager.dart:46:24)
+  #6      main.<anonymous closure>.<anonymous closure>.<anonymous closure>
+  (file:///Users/hades/Desktop/Lumora/apps/flutter-dev-client/test/animation_manager_test.dart:186:32)
+  #7      Builder.build (package:flutter/src/widgets/basic.dart:8226:48)
+  #8      StatelessElement.build (package:flutter/src/widgets/framework.dart:5791:49)
+  #9      ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5723:15)
+  #10     Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+  #11     ComponentElement._firstBuild (package:flutter/src/widgets/framework.dart:5705:5)
+  #12     ComponentElement.mount (package:flutter/src/widgets/framework.dart:5699:5)
+  ...     Normal element mounting (228 frames)
+  #240    Element.inflateWidget (package:flutter/src/widgets/framework.dart:4548:16)
+  #241    MultiChildRenderObjectElement.inflateWidget
+  (package:flutter/src/widgets/framework.dart:7169:36)
+  #242    MultiChildRenderObjectElement.mount (package:flutter/src/widgets/framework.dart:7185:32)
+  ...     Normal element mounting (465 frames)
+  #707    Element.inflateWidget (package:flutter/src/widgets/framework.dart:4548:16)
+  #708    Element.updateChild (package:flutter/src/widgets/framework.dart:3998:20)
+  #709    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+  #710    Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+  #711    ProxyElement.update (package:flutter/src/widgets/framework.dart:6051:5)
+  #712    _InheritedNotifierElement.update
+  (package:flutter/src/widgets/inherited_notifier.dart:108:11)
+  #713    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+  #714    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+  #715    StatefulElement.performRebuild (package:flutter/src/widgets/framework.dart:5884:11)
+  #716    Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+  #717    StatefulElement.update (package:flutter/src/widgets/framework.dart:5909:5)
+  #718    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+  #719    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+  #720    Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+  #721    ProxyElement.update (package:flutter/src/widgets/framework.dart:6051:5)
+  #722    _InheritedNotifierElement.update
+  (package:flutter/src/widgets/inherited_notifier.dart:108:11)
+  #723    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+  #724    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+  #725    StatefulElement.performRebuild (package:flutter/src/widgets/framework.dart:5884:11)
+  #726    Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+  #727    StatefulElement.update (package:flutter/src/widgets/framework.dart:5909:5)
+  #728    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+  #729    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+  #730    StatefulElement.performRebuild (package:flutter/src/widgets/framework.dart:5884:11)
+  #731    Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+  #732    StatefulElement.update (package:flutter/src/widgets/framework.dart:5909:5)
+  #733    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+  #734    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+  #735    Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+  #736    ProxyElement.update (package:flutter/src/widgets/framework.dart:6051:5)
+  #737    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+  #738    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+  #739    StatefulElement.performRebuild (package:flutter/src/widgets/framework.dart:5884:11)
+  #740    Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+  #741    StatefulElement.update (package:flutter/src/widgets/framework.dart:5909:5)
+  #742    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+  #743    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+  #744    Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+  #745    ProxyElement.update (package:flutter/src/widgets/framework.dart:6051:5)
+  #746    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+  #747    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+  #748    Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+  #749    ProxyElement.update (package:flutter/src/widgets/framework.dart:6051:5)
+  #750    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+  #751    _RawViewElement._updateChild (package:flutter/src/widgets/view.dart:481:16)
+  #752    _RawViewElement.update (package:flutter/src/widgets/view.dart:568:5)
+  #753    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+  #754    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+  #755    Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+  #756    StatelessElement.update (package:flutter/src/widgets/framework.dart:5797:5)
+  #757    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+  #758    ComponentElement.performRebuild (package:flutter/src/widgets/framework.dart:5747:16)
+  #759    StatefulElement.performRebuild (package:flutter/src/widgets/framework.dart:5884:11)
+  #760    Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+  #761    StatefulElement.update (package:flutter/src/widgets/framework.dart:5909:5)
+  #762    Element.updateChild (package:flutter/src/widgets/framework.dart:3982:15)
+  #763    RootElement._rebuild (package:flutter/src/widgets/binding.dart:1716:16)
+  #764    RootElement.update (package:flutter/src/widgets/binding.dart:1694:5)
+  #765    RootElement.performRebuild (package:flutter/src/widgets/binding.dart:1708:7)
+  #766    Element.rebuild (package:flutter/src/widgets/framework.dart:5435:7)
+  #767    BuildScope._tryRebuild (package:flutter/src/widgets/framework.dart:2695:15)
+  #768    BuildScope._flushDirtyElements (package:flutter/src/widgets/framework.dart:2752:11)
+  #769    BuildOwner.buildScope (package:flutter/src/widgets/framework.dart:3056:18)
+  #770    AutomatedTestWidgetsFlutterBinding.drawFrame
+  (package:flutter_test/src/binding.dart:1506:19)
+  #771    RendererBinding._handlePersistentFrameCallback
+  (package:flutter/src/rendering/binding.dart:495:5)
+  #772    SchedulerBinding._invokeFrameCallback (package:flutter/src/scheduler/binding.dart:1434:15)
+  #773    SchedulerBinding.handleDrawFrame (package:flutter/src/scheduler/binding.dart:1347:9)
+  #774    AutomatedTestWidgetsFlutterBinding.pump.<anonymous closure>
+  (package:flutter_test/src/binding.dart:1335:9)
+  #777    TestAsyncUtils.guard (package:flutter_test/src/test_async_utils.dart:74:41)
+  #778    AutomatedTestWidgetsFlutterBinding.pump (package:flutter_test/src/binding.dart:1324:27)
+  #779    WidgetTester.pumpWidget.<anonymous closure>
+  (package:flutter_test/src/widget_tester.dart:598:22)
+  #782    TestAsyncUtils.guard (package:flutter_test/src/test_async_utils.dart:74:41)
+  #783    WidgetTester.pumpWidget (package:flutter_test/src/widget_tester.dart:595:27)
+  #784    main.<anonymous closure>.<anonymous closure>
+  (file:///Users/hades/Desktop/Lumora/apps/flutter-dev-client/test/animation_manager_test.dart:182:20)
+  #785    testWidgets.<anonymous closure>.<anonymous closure>
+  (package:flutter_test/src/widget_tester.dart:192:29)
+  <asynchronous suspension>
+  #786    TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1059:5)
+  <asynchronous suspension>
+  <asynchronous suspension>
+  (elided 5 frames from dart:async and package:stack_trace)
+
+When the exception was thrown, this was the stack:
+#0      WidgetTester.verifyTickersWereDisposed (package:flutter_test/src/widget_tester.dart:1046:11)
+#1      WidgetTester._endOfTestVerifications (package:flutter_test/src/widget_tester.dart:1062:5)
+#2      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1073:22)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+The test description was:
+  handles delayed start
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:01 +6 -2: AnimationManager handles delayed start [E]                                                                                                                                                
+  Test failed. See exception logs above.
+  The test description was: handles delayed start
+  
+
+To run this test again: /Users/hades/Dev_Tools/flutter/bin/cache/dart-sdk/bin/dart test /Users/hades/Desktop/Lumora/apps/flutter-dev-client/test/animation_manager_test.dart -p vm --plain-name 'AnimationManager handles delayed start'
+00:01 +6 -2: AnimationManager AnimatedWidgetBuilder renders with animation                                                                                                                             00:01 +6 -2: AnimationManager AnimatedWidgetBuilder renders with animation                                                                                                                             
+══╡ EXCEPTION CAUGHT BY SCHEDULER LIBRARY ╞═════════════════════════════════════════════════════════
+The following assertion was thrown during a scheduler callback:
+'package:flutter/src/animation/animation_controller.dart': Failed assertion: line 949 pos 12:
+'elapsedInSeconds >= 0.0': is not true.
+
+Either the assertion indicates an error in the framework itself, or we should provide substantially
+more information in this error message to help you determine and fix the underlying cause.
+In either case, please report this assertion by filing a bug on GitHub:
+  https://github.com/flutter/flutter/issues/new?template=02_bug.yml
+
+When the exception was thrown, this was the stack:
+#2      AnimationController._tick (package:flutter/src/animation/animation_controller.dart:949:12)
+#3      Ticker._tick (package:flutter/src/scheduler/ticker.dart:269:12)
+#4      SchedulerBinding._invokeFrameCallback (package:flutter/src/scheduler/binding.dart:1434:15)
+#5      SchedulerBinding.handleBeginFrame.<anonymous closure> (package:flutter/src/scheduler/binding.dart:1265:11)
+#6      _LinkedHashMapMixin.forEach (dart:_compact_hash:764:13)
+#7      SchedulerBinding.handleBeginFrame (package:flutter/src/scheduler/binding.dart:1263:17)
+#8      AutomatedTestWidgetsFlutterBinding.pump.<anonymous closure> (package:flutter_test/src/binding.dart:1333:9)
+#11     TestAsyncUtils.guard (package:flutter_test/src/test_async_utils.dart:74:41)
+#12     AutomatedTestWidgetsFlutterBinding.pump (package:flutter_test/src/binding.dart:1324:27)
+#13     TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1048:11)
+#16     TestWidgetsFlutterBinding._runTest (package:flutter_test/src/binding.dart:1033:10)
+#17     AutomatedTestWidgetsFlutterBinding.runTest.<anonymous closure> (package:flutter_test/src/binding.dart:1564:24)
+#18     FakeAsync.run.<anonymous closure>.<anonymous closure> (package:fake_async/fake_async.dart:182:47)
+#23     withClock (package:clock/src/default.dart:52:10)
+#24     FakeAsync.run.<anonymous closure> (package:fake_async/fake_async.dart:182:15)
+#29     FakeAsync.run (package:fake_async/fake_async.dart:181:52)
+#30     AutomatedTestWidgetsFlutterBinding.runTest (package:flutter_test/src/binding.dart:1561:15)
+#31     testWidgets.<anonymous closure> (package:flutter_test/src/widget_tester.dart:184:24)
+#32     Declarer.test.<anonymous closure>.<anonymous closure> (package:test_api/src/backend/declarer.dart:242:19)
+<asynchronous suspension>
+#33     Declarer.test.<anonymous closure> (package:test_api/src/backend/declarer.dart:240:7)
+<asynchronous suspension>
+#34     Invoker._waitForOutstandingCallbacks.<anonymous closure> (package:test_api/src/backend/invoker.dart:282:9)
+<asynchronous suspension>
+(elided 14 frames from class _AssertionError and dart:async)
+
+
+This exception was thrown in the context of a scheduler callback. When the scheduler callback was _registered_ (as opposed to when the exception was thrown), this was the stack:
+#2      SchedulerBinding.scheduleFrameCallback (package:flutter/src/scheduler/binding.dart:617:49)
+#3      Ticker.scheduleTick (package:flutter/src/scheduler/ticker.dart:285:46)
+#4      Ticker.start (package:flutter/src/scheduler/ticker.dart:192:7)
+#5      AnimationController._startSimulation (package:flutter/src/animation/animation_controller.dart:870:42)
+#6      AnimationController._animateToInternal (package:flutter/src/animation/animation_controller.dart:687:12)
+#7      AnimationController.forward (package:flutter/src/animation/animation_controller.dart:484:12)
+#8      AnimationManager.createController.<anonymous closure> (package:flutter_dev_client/interpreter/animation_manager.dart:75:24)
+#19     FakeTimer._fire (package:fake_async/fake_async.dart:364:13)
+#20     FakeAsync._fireTimersWhile (package:fake_async/fake_async.dart:247:13)
+#21     FakeAsync.elapse (package:fake_async/fake_async.dart:141:5)
+#22     AutomatedTestWidgetsFlutterBinding.pump.<anonymous closure> (package:flutter_test/src/binding.dart:1328:28)
+#25     TestAsyncUtils.guard (package:flutter_test/src/test_async_utils.dart:74:41)
+#26     AutomatedTestWidgetsFlutterBinding.pump (package:flutter_test/src/binding.dart:1324:27)
+#27     WidgetTester.pump.<anonymous closure> (package:flutter_test/src/widget_tester.dart:652:53)
+#30     TestAsyncUtils.guard (package:flutter_test/src/test_async_utils.dart:74:41)
+#31     WidgetTester.pump (package:flutter_test/src/widget_tester.dart:652:27)
+#32     main.<anonymous closure>.<anonymous closure> (file:///Users/hades/Desktop/Lumora/apps/flutter-dev-client/test/animation_manager_test.dart:205:20)
+<asynchronous suspension>
+#33     testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#34     TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1059:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided 17 frames from class _FrameCallbackEntry, dart:async, and package:stack_trace)
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:01 +6 -3: AnimationManager AnimatedWidgetBuilder renders with animation [E]                                                                                                                         
+  Test failed. See exception logs above.
+  The test description was: AnimatedWidgetBuilder renders with animation
+  
+
+To run this test again: /Users/hades/Dev_Tools/flutter/bin/cache/dart-sdk/bin/dart test /Users/hades/Desktop/Lumora/apps/flutter-dev-client/test/animation_manager_test.dart -p vm --plain-name 'AnimationManager AnimatedWidgetBuilder renders with animation'
+00:01 +6 -3: AnimationManager AnimatedWidgetBuilder handles spring animation                                                                                                                           00:01 +7 -3: AnimationManager AnimatedWidgetBuilder handles spring animation                                                                                                                           00:01 +7 -3: AnimationManager AnimatedWidgetBuilder handles multiple properties                                                                                                                        00:01 +8 -3: AnimationManager AnimatedWidgetBuilder handles multiple properties                                                                                                                        00:01 +8 -3: AnimationManager AnimatedWidgetBuilder handles infinite iterations                                                                                                                        00:01 +9 -3: AnimationManager AnimatedWidgetBuilder handles infinite iterations                                                                                                                        00:01 +9 -3: Some tests failed.                                                                                                                                                                        

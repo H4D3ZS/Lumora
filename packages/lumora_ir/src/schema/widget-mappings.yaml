@@ -1089,3 +1089,48 @@ AnimatedContainer:
       react: "children"
       flutter: "child"
       type: "widget"
+
+# App Root Widgets
+MaterialApp:
+  react:
+    component: "div"
+  flutter:
+    widget: "MaterialApp"
+    import: "package:flutter/material.dart"
+  props:
+    home:
+      react: "children"
+      flutter: "home"
+      type: "widget"
+    title:
+      react: "title"
+      flutter: "title"
+      type: "string"
+    theme:
+      react: "theme"
+      flutter: "theme"
+      type: "object"
+    debugShowCheckedModeBanner:
+      react: "debugShowCheckedModeBanner"
+      flutter: "debugShowCheckedModeBanner"
+      type: "boolean"
+
+CupertinoApp:
+  react:
+    component: "div"
+  flutter:
+    widget: "CupertinoApp"
+    import: "package:flutter/cupertino.dart"
+  props:
+    home:
+      react: "children"
+      flutter: "home"
+      type: "widget"
+    title:
+      react: "title"
+      flutter: "title"
+      type: "string"
+    theme:
+      react: "theme"
+      flutter: "theme"
+      type: "object"

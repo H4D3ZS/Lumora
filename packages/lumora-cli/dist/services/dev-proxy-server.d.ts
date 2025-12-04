@@ -10,6 +10,7 @@ export interface DevProxyConfig {
     port: number;
     enableQR: boolean;
     verbose?: boolean;
+    projectRoot?: string;
 }
 export interface Session {
     id: string;
@@ -36,7 +37,7 @@ export declare class DevProxyServer {
     /**
      * Get local network IP address
      */
-    private getNetworkIP;
+    getNetworkIP(): string;
     displayQRCode(sessionId: string): void;
     getPort(): number;
     getSessions(): Map<string, Session>;

@@ -40,28 +40,28 @@ import { LumoraIR } from 'lumora-ir';
 export interface DeviceConnection {
   /** Unique connection ID */
   connectionId: string;
-  
+
   /** Device ID from client */
   deviceId: string;
-  
+
   /** Device platform */
   platform: string;
-  
+
   /** Device name */
   deviceName?: string;
-  
+
   /** WebSocket connection */
   ws: WebSocket;
-  
+
   /** Connection timestamp */
   connectedAt: number;
-  
+
   /** Last ping timestamp */
   lastPing: number;
-  
+
   /** Client protocol version */
   clientVersion: string;
-  
+
   /** Last acknowledged sequence number */
   lastAckSequence: number;
 }
@@ -72,19 +72,19 @@ export interface DeviceConnection {
 export interface HotReloadSession {
   /** Session ID */
   id: string;
-  
+
   /** Session creation timestamp */
   createdAt: number;
-  
+
   /** Connected devices */
   devices: Map<string, DeviceConnection>;
-  
+
   /** Current schema */
   currentSchema?: LumoraIR;
-  
+
   /** Update sequence number */
   sequenceNumber: number;
-  
+
   /** Session expiry timestamp */
   expiresAt: number;
 }
@@ -95,19 +95,19 @@ export interface HotReloadSession {
 export interface HotReloadServerConfig {
   /** HTTP server to attach WebSocket to */
   server: http.Server;
-  
+
   /** WebSocket path */
   path?: string;
-  
+
   /** Session timeout in milliseconds (default: 8 hours) */
   sessionTimeout?: number;
-  
+
   /** Heartbeat interval in milliseconds (default: 30 seconds) */
   heartbeatInterval?: number;
-  
+
   /** Connection timeout in milliseconds (default: 60 seconds) */
   connectionTimeout?: number;
-  
+
   /** Enable verbose logging */
   verbose?: boolean;
 }
@@ -240,6 +240,8 @@ export class HotReloadServer {
           this.handlePing(deviceConnection, message);
         } else if (isAckMessage(message)) {
           this.handleAck(deviceConnection, message);
+        } else if ((message.type as string) === 'log') {
+          this.handleLog(deviceConnection, message);
         } else {
           this.log(`Unknown message type: ${message.type}`);
         }
@@ -550,6 +552,36 @@ export class HotReloadServer {
   /**
    * Log message if verbose mode is enabled
    */
+
+
+  /**
+   * Handle log message from device
+   */
+  private handleLog(connection: DeviceConnection, message: any): void {
+    const { payload } = message;
+    const { message: logMessage, level } = payload;
+
+    // Emit log event for CLI to display
+    this.emitLog(connection, logMessage, level);
+  }
+
+  /**
+   * Emit log event (to be handled by CLI)
+   */
+  private emitLog(connection: DeviceConnection, message: string, level: string): void {
+    const chalk = require('chalk');
+    const levelColor = level === 'error' ? chalk.red : (level === 'warn' ? chalk.yellow : chalk.blue);
+    const platformIcon = connection.platform === 'ios' ? '🍎' : (connection.platform === 'android' ? '🤖' : '📱');
+    const deviceName = connection.deviceName || connection.deviceId.substring(0, 8);
+
+    console.log(
+      `${platformIcon} ${chalk.bold(deviceName)} ${levelColor(`[${level.toUpperCase()}]`)} ${message}`
+    );
+  }
+
+  /**
+   * Log message if verbose mode is enabled
+   */
   private log(message: string): void {
     if (this.config.verbose) {
       console.log(`[HotReload] ${message}`);
@@ -596,16 +628,16 @@ export class HotReloadServer {
     if (existingBatch) {
       // Clear existing timeout
       clearTimeout(existingBatch.timeout);
-      
+
       // Update the batch with new schema
       existingBatch.schema = schema;
       existingBatch.preserveState = preserveState;
-      
+
       // Set new timeout
       existingBatch.timeout = setTimeout(() => {
         this.flushUpdate(sessionId);
       }, this.BATCH_DELAY_MS);
-      
+
       return {
         success: true,
         devicesUpdated: 0,
@@ -682,8 +714,8 @@ export class HotReloadServer {
         updateType = 'incremental';
         this.log(
           `Incremental update for session ${sessionId}: ` +
-            `${delta.added.length} added, ${delta.modified.length} modified, ` +
-            `${delta.removed.length} removed`
+          `${delta.added.length} added, ${delta.modified.length} modified, ` +
+          `${delta.removed.length} removed`
         );
       } else {
         update = createFullUpdate(batch.schema, session.sequenceNumber, batch.preserveState);
@@ -731,7 +763,7 @@ export class HotReloadServer {
     this.updateBatches.set(sessionId, {
       schema,
       preserveState,
-      timeout: setTimeout(() => {}, 0), // Dummy timeout
+      timeout: setTimeout(() => { }, 0), // Dummy timeout
     });
 
     return this.flushUpdate(sessionId);

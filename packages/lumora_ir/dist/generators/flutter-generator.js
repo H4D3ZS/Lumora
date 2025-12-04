@@ -161,7 +161,7 @@ class FlutterGenerator {
     generateStateVariables(state) {
         let code = '';
         for (const variable of state.variables) {
-            const type = variable.type || 'dynamic';
+            const type = this.mapTypeScriptTypeToDart(variable.type || 'dynamic');
             const initialValue = this.serializeValue(variable.initialValue);
             if (variable.mutable) {
                 code += `${this.config.indent}${type} ${variable.name} = ${initialValue};\n`;
@@ -242,9 +242,20 @@ class FlutterGenerator {
      */
     generateWidgetTree(node, indentLevel) {
         const indent = this.config.indent.repeat(indentLevel);
-        const mapping = this.registry.getMapping(node.type);
+        let mapping = this.registry.getMapping(node.type);
+        // If no direct mapping, try to find by React component name
+        if (!mapping) {
+            const widgetName = this.registry.getWidgetNameFromReact(node.type);
+            if (widgetName) {
+                mapping = this.registry.getMapping(widgetName);
+            }
+        }
         // Get Flutter widget name
         const flutterWidget = mapping?.flutter.widget || node.type;
+        // Add import if specified
+        if (mapping?.flutter?.import) {
+            this.imports.add(`import '${mapping.flutter.import}';`);
+        }
         // Check if self-closing (no children)
         if (!node.children || node.children.length === 0) {
             const props = this.generateWidgetProps(node.props, mapping, indentLevel);
@@ -322,7 +333,7 @@ class FlutterGenerator {
     mapTypeScriptTypeToDart(tsType) {
         const typeMap = {
             'string': 'String',
-            'number': 'double',
+            'number': 'int',
             'boolean': 'bool',
             'any': 'dynamic',
             'void': 'void',
@@ -356,6 +367,11 @@ class FlutterGenerator {
             return `[${value.map(v => this.serializeValue(v)).join(', ')}]`;
         }
         if (typeof value === 'object') {
+            // Handle expression objects
+            if (value && value.type === 'expression' && typeof value.content === 'string') {
+                return value.content;
+            }
+            // Handle other objects (maps)
             const entries = Object.entries(value).map(([k, v]) => `'${k}': ${this.serializeValue(v)}`);
             return `{ ${entries.join(', ')} }`;
         }

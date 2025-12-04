@@ -106,6 +106,9 @@ class HotReloadServer {
                 else if ((0, lumora_ir_1.isAckMessage)(message)) {
                     this.handleAck(deviceConnection, message);
                 }
+                else if (message.type === 'log') {
+                    this.handleLog(deviceConnection, message);
+                }
                 else {
                     this.log(`Unknown message type: ${message.type}`);
                 }
@@ -323,6 +326,28 @@ class HotReloadServer {
      */
     generateConnectionId() {
         return (0, crypto_1.randomBytes)(8).toString('hex');
+    }
+    /**
+     * Log message if verbose mode is enabled
+     */
+    /**
+     * Handle log message from device
+     */
+    handleLog(connection, message) {
+        const { payload } = message;
+        const { message: logMessage, level } = payload;
+        // Emit log event for CLI to display
+        this.emitLog(connection, logMessage, level);
+    }
+    /**
+     * Emit log event (to be handled by CLI)
+     */
+    emitLog(connection, message, level) {
+        const chalk = require('chalk');
+        const levelColor = level === 'error' ? chalk.red : (level === 'warn' ? chalk.yellow : chalk.blue);
+        const platformIcon = connection.platform === 'ios' ? '🍎' : (connection.platform === 'android' ? '🤖' : '📱');
+        const deviceName = connection.deviceName || connection.deviceId.substring(0, 8);
+        console.log(`${platformIcon} ${chalk.bold(deviceName)} ${levelColor(`[${level.toUpperCase()}]`)} ${message}`);
     }
     /**
      * Log message if verbose mode is enabled

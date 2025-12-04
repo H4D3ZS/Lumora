@@ -1041,7 +1041,7 @@ function build${widgetName}(props: ${widgetName}Props): Widget {
         const widgets = [];
         widgetCode = widgetCode.trim();
         // Extract widget type
-        const widgetMatch = /^(\w+)\s*\(/.exec(widgetCode);
+        const widgetMatch = /^([\w.]+)\s*\(/.exec(widgetCode);
         if (!widgetMatch) {
             // Handle simple widget references without parentheses (e.g., variable names)
             // For now, return empty array
@@ -1235,8 +1235,8 @@ function build${widgetName}(props: ${widgetName}Props): Widget {
         if (/^['"].*['"]$/.test(value)) {
             return value.slice(1, -1);
         }
-        // Keep as string for complex expressions
-        return value;
+        // Keep as expression object for complex expressions/variables
+        return { type: 'expression', content: value };
     }
     /**
      * Map Dart types to TypeScript types

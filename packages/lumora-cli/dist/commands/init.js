@@ -142,7 +142,10 @@ function createConfigFiles(projectPath, projectName) {
         private: true,
         scripts: {
             start: 'lumora start',
-            build: 'flutter build apk',
+            dev: 'vite',
+            build: 'vite build',
+            'build:mobile': 'flutter build apk',
+            preview: 'vite preview',
         },
         dependencies: {
             react: '^18.2.0',
@@ -151,7 +154,9 @@ function createConfigFiles(projectPath, projectName) {
         devDependencies: {
             '@types/react': '^18.2.0',
             '@types/react-dom': '^18.2.0',
+            '@vitejs/plugin-react': '^4.2.0',
             typescript: '^5.0.0',
+            vite: '^5.0.0',
         },
     };
     fs.writeFileSync(path.join(projectPath, 'package.json'), JSON.stringify(packageJson, null, 2));
@@ -187,33 +192,94 @@ dev:
     const tsconfig = {
         compilerOptions: {
             target: 'ES2020',
-            lib: ['ES2020', 'DOM'],
-            jsx: 'react-jsx',
+            useDefineForClassFields: true,
+            lib: ['ES2020', 'DOM', 'DOM.Iterable'],
             module: 'ESNext',
-            moduleResolution: 'bundler',
-            strict: true,
-            esModuleInterop: true,
             skipLibCheck: true,
-            forceConsistentCasingInFileNames: true,
+            moduleResolution: 'bundler',
+            allowImportingTsExtensions: true,
+            resolveJsonModule: true,
+            isolatedModules: true,
+            noEmit: true,
+            jsx: 'react-jsx',
+            strict: true,
+            noUnusedLocals: true,
+            noUnusedParameters: true,
+            noFallthroughCasesInSwitch: true,
         },
-        include: ['src/**/*'],
-        exclude: ['node_modules', 'lib'],
+        include: ['src'],
+        references: [{ path: './tsconfig.node.json' }],
     };
     fs.writeFileSync(path.join(projectPath, 'tsconfig.json'), JSON.stringify(tsconfig, null, 2));
+    // tsconfig.node.json
+    const tsconfigNode = {
+        compilerOptions: {
+            composite: true,
+            skipLibCheck: true,
+            module: 'ESNext',
+            moduleResolution: 'bundler',
+            allowSyntheticDefaultImports: true,
+        },
+        include: ['vite.config.ts'],
+    };
+    fs.writeFileSync(path.join(projectPath, 'tsconfig.node.json'), JSON.stringify(tsconfigNode, null, 2));
+    // vite.config.ts
+    const viteConfig = `import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+
+// https://vitejs.dev/config/
+export default defineConfig({
+  plugins: [react()],
+  server: {
+    port: 3000,
+  },
+})
+`;
+    fs.writeFileSync(path.join(projectPath, 'vite.config.ts'), viteConfig);
+    // index.html
+    const indexHtml = `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>${projectName}</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+`;
+    fs.writeFileSync(path.join(projectPath, 'index.html'), indexHtml);
     // Update .gitignore to include Lumora-specific ignores
     const gitignorePath = path.join(projectPath, '.gitignore');
     let gitignore = fs.readFileSync(gitignorePath, 'utf-8');
     gitignore += `\n# Lumora
 .lumora/
 *.log
+dist/
+node_modules/
 `;
     fs.writeFileSync(gitignorePath, gitignore);
 }
 function createExampleFiles(projectPath) {
+    // src/main.tsx
+    const mainTsx = `import React from 'react'
+import ReactDOM from 'react-dom/client'
+import App from './App'
+
+ReactDOM.createRoot(document.getElementById('root')!).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>,
+)
+`;
+    fs.writeFileSync(path.join(projectPath, 'src/main.tsx'), mainTsx);
     // Example React component (src/App.tsx)
     const appTsx = `import React, { useState } from 'react';
 
-export function App() {
+export default function App() {
   const [count, setCount] = useState(0);
 
   return (
@@ -244,8 +310,6 @@ export function App() {
     </div>
   );
 }
-
-export default App;
 `;
     fs.writeFileSync(path.join(projectPath, 'src/App.tsx'), appTsx);
     // Also create a matching Flutter file manually to avoid broken generation
@@ -334,14 +398,24 @@ A Lumora project - True bidirectional React ↔ Flutter development!
 
 ## 🚀 Getting Started
 
-1. Start development server:
+1. **Install dependencies**:
    \`\`\`bash
-   lumora start
+   npm install
    \`\`\`
 
-2. **Web Preview**: Open http://localhost:3001 in your browser
+2. **Start Development**:
+   - **Magic Mode (Web + Mobile Sync)**:
+     \`\`\`bash
+     lumora start
+     \`\`\`
+   - **Standard Web Dev (Vite)**:
+     \`\`\`bash
+     npm run dev
+     \`\`\`
 
-3. **Mobile Preview**: Scan QR code with Lumora Dev Client
+3. **Previews**:
+   - **Web**: http://localhost:3001 (Lumora) or http://localhost:3000 (Vite)
+   - **Mobile**: Scan QR code with Lumora Dev Client
 
 4. **Edit and Watch**:
    - Edit \`src/App.tsx\` → \`lib/main.dart\` updates automatically
@@ -352,6 +426,7 @@ A Lumora project - True bidirectional React ↔ Flutter development!
 \`\`\`
 ${path.basename(projectPath)}/
 ├── src/              # React/TypeScript source (edit here)
+│   ├── main.tsx      # Web entry point
 │   ├── App.tsx       # Main app component
 │   ├── components/   # Your React components
 │   └── screens/      # Your app screens
@@ -361,21 +436,25 @@ ${path.basename(projectPath)}/
 │   └── screens/      # Auto-generated screens
 ├── android/          # Android native code
 ├── ios/              # iOS native code
-└── web/              # Web build output
+├── web/              # Web build output
+├── index.html        # Web entry HTML
+└── vite.config.ts    # Vite configuration
 \`\`\`
 
 ## 🎯 Key Features
 
 - ✅ **Bidirectional Sync**: React ↔ Flutter automatic conversion
 - ✅ **Real-time Preview**: See changes instantly on web AND mobile
-- ✅ **No Manual Commands**: Everything happens automatically
+- ✅ **Standard Tooling**: Uses Vite for web, Flutter for mobile
 - ✅ **Native Performance**: True Flutter native, not WebView
 - ✅ **Like Expo Go**: But for Flutter with React syntax
 
 ## 📝 Commands
 
-- \`lumora start\` - Start development server (web + mobile)
-- \`lumora build\` - Build production Flutter app
+- \`lumora start\` - Start bidirectional development server
+- \`npm run dev\` - Start standard Vite dev server
+- \`npm run build\` - Build web app
+- \`npm run build:mobile\` - Build Android APK
 
 ## 💡 How It Works
 
@@ -406,6 +485,7 @@ ${path.basename(projectPath)}/
 - [Lumora Documentation](https://lumora.dev)
 - [Flutter Documentation](https://flutter.dev)
 - [React Documentation](https://react.dev)
+- [Vite Documentation](https://vitejs.dev)
 
 ## 🙏 Credits
 

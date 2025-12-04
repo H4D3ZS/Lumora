@@ -89,7 +89,7 @@ void main() {
       // In a real app, this would be called with a valid context
       
       // We can test the history tracking logic directly
-      final entry = NavigationHistoryEntry(
+      NavigationHistoryEntry(
         route: 'home',
         params: {},
         timestamp: DateTime.now().millisecondsSinceEpoch,

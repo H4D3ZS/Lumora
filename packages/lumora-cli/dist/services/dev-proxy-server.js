@@ -61,6 +61,11 @@ class DevProxyServer {
     setupMiddleware() {
         this.app.use(express_1.default.json({ limit: '10mb' }));
         this.app.use(express_1.default.urlencoded({ extended: true }));
+        // Serve static assets from project root
+        if (this.config.projectRoot) {
+            this.app.use(express_1.default.static(this.config.projectRoot));
+            console.log(chalk_1.default.gray(`Serving static assets from: ${this.config.projectRoot}`));
+        }
         // CORS
         this.app.use((req, res, next) => {
             res.header('Access-Control-Allow-Origin', '*');

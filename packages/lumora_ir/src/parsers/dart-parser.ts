@@ -435,7 +435,7 @@ function build${widgetName}(props: ${widgetName}Props): Widget {
         let tsType = this.mapDartTypeToTS(prop.type);
         const optional = !prop.isRequired ? '?' : '';
         const defaultComment = prop.defaultValue ? ` // default: ${prop.defaultValue}` : '';
-        
+
         // For nullable types, the optional marker is redundant with | null
         // But we keep it for clarity in the interface
         return `  ${prop.name}${optional}: ${tsType};${defaultComment}`;
@@ -451,7 +451,7 @@ function build${widgetName}(props: ${widgetName}Props): Widget {
 
     // Find Bloc classes (extends Bloc<Event, State>)
     const blocPattern = /class\s+(\w+)\s+extends\s+Bloc<(\w+),\s*(\w+)>\s*\{/g;
-    
+
     let match;
     while ((match = blocPattern.exec(source)) !== null) {
       const blocName = match[1];
@@ -462,7 +462,7 @@ function build${widgetName}(props: ${widgetName}Props): Widget {
 
       try {
         const classBody = this.extractMethodBody(source, classStartIndex);
-        
+
         // Find event and state definitions
         const events = this.findBlocEvents(source, eventType);
         const states = this.findBlocStates(source, stateType);
@@ -494,22 +494,22 @@ function build${widgetName}(props: ${widgetName}Props): Widget {
    */
   private findBlocEvents(source: string, baseEventName: string): BlocEventInfo[] {
     const events: BlocEventInfo[] = [];
-    
+
     // Pattern to match event class definitions that extend the base event
     const eventPattern = new RegExp(
       `class\\s+(\\w+)\\s+extends\\s+${baseEventName}\\s*\\{`,
       'g'
     );
-    
+
     let match;
     while ((match = eventPattern.exec(source)) !== null) {
       const eventName = match[1];
       const classStartIndex = match.index + match[0].length;
-      
+
       try {
         const classBody = this.extractMethodBody(source, classStartIndex);
         const properties = this.extractProperties(classBody);
-        
+
         events.push({
           name: eventName,
           properties,
@@ -527,25 +527,25 @@ function build${widgetName}(props: ${widgetName}Props): Widget {
    */
   private findBlocStates(source: string, baseStateName: string): BlocStateInfo[] {
     const states: BlocStateInfo[] = [];
-    
+
     // Pattern to match state class definitions that extend the base state
     const statePattern = new RegExp(
       `class\\s+(\\w+)\\s+extends\\s+${baseStateName}\\s*\\{`,
       'g'
     );
-    
+
     let match;
     while ((match = statePattern.exec(source)) !== null) {
       const stateName = match[1];
       const classStartIndex = match.index + match[0].length;
-      
+
       try {
         const classBody = this.extractMethodBody(source, classStartIndex);
         const properties = this.extractProperties(classBody);
-        
+
         // Check if this is the initial state (often named with "Initial" suffix)
         const isInitial = stateName.includes('Initial');
-        
+
         states.push({
           name: stateName,
           properties,
@@ -564,24 +564,24 @@ function build${widgetName}(props: ${widgetName}Props): Widget {
    */
   private extractBlocEventHandlers(classBody: string): BlocEventHandlerInfo[] {
     const handlers: BlocEventHandlerInfo[] = [];
-    
+
     // Pattern to match on<Event> handlers
     const handlerPattern = /on<(\w+)>\s*\(\s*\(([^,]+),\s*([^)]+)\)\s*(?:async)?\s*\{/g;
-    
+
     let match;
     while ((match = handlerPattern.exec(classBody)) !== null) {
       const eventName = match[1];
       const eventParam = match[2].trim();
       const emitParam = match[3].trim();
-      
+
       const handlerStartIndex = match.index + match[0].length;
       const handlerBody = this.extractMethodBody(classBody, handlerStartIndex);
-      
+
       // Extract emitted state from handler
       const emitPattern = /emit\s*\(\s*(\w+)\s*\(/;
       const emitMatch = emitPattern.exec(handlerBody);
       const stateName = emitMatch ? emitMatch[1] : '';
-      
+
       handlers.push({
         eventName,
         stateName,
@@ -605,7 +605,7 @@ function build${widgetName}(props: ${widgetName}Props): Widget {
       const providerName = match[1];
       const valueType = match[2];
       const lineNumber = this.getLineNumber(source, match.index);
-      
+
       providers.push({
         name: providerName,
         type: 'Provider',
@@ -621,7 +621,7 @@ function build${widgetName}(props: ${widgetName}Props): Widget {
       const valueType = match[2];
       const initialValue = match[3].trim();
       const lineNumber = this.getLineNumber(source, match.index);
-      
+
       providers.push({
         name: providerName,
         type: 'StateProvider',
@@ -639,7 +639,7 @@ function build${widgetName}(props: ${widgetName}Props): Widget {
       const valueType = match[3].trim();
       const initialValue = match[4];
       const lineNumber = this.getLineNumber(source, match.index);
-      
+
       providers.push({
         name: providerName,
         type: 'StateNotifierProvider',
@@ -656,7 +656,7 @@ function build${widgetName}(props: ${widgetName}Props): Widget {
       const providerName = match[1];
       const valueType = match[2];
       const lineNumber = this.getLineNumber(source, match.index);
-      
+
       providers.push({
         name: providerName,
         type: 'FutureProvider',
@@ -671,7 +671,7 @@ function build${widgetName}(props: ${widgetName}Props): Widget {
       const providerName = match[1];
       const valueType = match[2];
       const lineNumber = this.getLineNumber(source, match.index);
-      
+
       providers.push({
         name: providerName,
         type: 'StreamProvider',
@@ -691,7 +691,7 @@ function build${widgetName}(props: ${widgetName}Props): Widget {
 
     // Pattern to match StateNotifier classes
     const notifierPattern = /class\s+(\w+)\s+extends\s+StateNotifier<([^>]+)>\s*\{/g;
-    
+
     let match;
     while ((match = notifierPattern.exec(source)) !== null) {
       const notifierName = match[1];
@@ -701,7 +701,7 @@ function build${widgetName}(props: ${widgetName}Props): Widget {
 
       try {
         const classBody = this.extractMethodBody(source, classStartIndex);
-        
+
         // Find constructor to get initial state
         const constructorPattern = new RegExp(`${notifierName}\\s*\\([^)]*\\)\\s*:\\s*super\\s*\\(([^)]+)\\)`);
         const constructorMatch = constructorPattern.exec(classBody);
@@ -773,10 +773,10 @@ function build${widgetName}(props: ${widgetName}Props): Widget {
    */
   private findStatelessWidgets(source: string): WidgetInfo[] {
     const widgets: WidgetInfo[] = [];
-    
+
     // Pattern to match StatelessWidget class declarations (just the start)
     const classPattern = /class\s+(\w+)\s+extends\s+StatelessWidget\s*\{/g;
-    
+
     let match;
     while ((match = classPattern.exec(source)) !== null) {
       const className = match[1];
@@ -786,7 +786,7 @@ function build${widgetName}(props: ${widgetName}Props): Widget {
       try {
         // Extract full class body by matching braces
         const classBody = this.extractMethodBody(source, classStartIndex);
-        
+
         const properties = this.extractProperties(classBody);
         const buildMethod = this.extractBuildMethod(classBody);
 
@@ -816,10 +816,10 @@ function build${widgetName}(props: ${widgetName}Props): Widget {
    */
   private findStatefulWidgets(source: string): WidgetInfo[] {
     const widgets: WidgetInfo[] = [];
-    
+
     // Pattern to match StatefulWidget class declarations (just the start)
     const classPattern = /class\s+(\w+)\s+extends\s+StatefulWidget\s*\{/g;
-    
+
     let match;
     while ((match = classPattern.exec(source)) !== null) {
       const className = match[1];
@@ -829,9 +829,9 @@ function build${widgetName}(props: ${widgetName}Props): Widget {
       try {
         // Extract full class body by matching braces
         const classBody = this.extractMethodBody(source, classStartIndex);
-        
+
         const properties = this.extractProperties(classBody);
-        
+
         // Find corresponding State class
         const stateClassName = `_${className}State`;
         const stateClass = this.findStateClass(source, stateClassName);
@@ -880,7 +880,7 @@ function build${widgetName}(props: ${widgetName}Props): Widget {
 
     const classStartIndex = match.index + match[0].length;
     const classBody = this.extractMethodBody(source, classStartIndex);
-    
+
     return {
       buildMethod: this.extractBuildMethod(classBody),
       stateVariables: this.extractStateVariables(classBody),
@@ -894,17 +894,17 @@ function build${widgetName}(props: ${widgetName}Props): Widget {
    */
   private extractProperties(classBody: string): PropertyInfo[] {
     const properties: PropertyInfo[] = [];
-    
+
     // Pattern to match property declarations including nullable types
     const propPattern = /(?:final\s+)?(\w+(?:<[^>]+>)?(\?)?)\s+(\w+)\s*(?:=\s*([^;]+))?;/g;
-    
+
     let match;
     while ((match = propPattern.exec(classBody)) !== null) {
       const type = match[1]; // Includes ? if nullable
       const name = match[3];
       const defaultValue = match[4]?.trim();
       const isFinal = classBody.substring(Math.max(0, match.index - 10), match.index).includes('final');
-      
+
       // Skip if it's inside a method
       if (this.isInsideMethod(classBody, match.index)) {
         continue;
@@ -933,17 +933,17 @@ function build${widgetName}(props: ${widgetName}Props): Widget {
     // Handles: MyWidget(this.title, {this.value = 0})
     const constructorPattern = /\w+\s*\(([^)]*)\)/s;
     const match = constructorPattern.exec(classBody);
-    
+
     if (!match) {
       return;
     }
 
     const allParams = match[1];
-    
+
     // Extract named parameters section (inside {})
     const namedParamsMatch = /\{([^}]+)\}/.exec(allParams);
     const namedParams = namedParamsMatch ? namedParamsMatch[1] : '';
-    
+
     properties.forEach(prop => {
       // Check if required (only in named parameters)
       if (namedParams) {
@@ -951,7 +951,7 @@ function build${widgetName}(props: ${widgetName}Props): Widget {
         if (requiredPattern.test(namedParams)) {
           prop.isRequired = true;
         }
-        
+
         // Extract default value from named parameters
         // Pattern: this.propName = value
         const defaultPattern = new RegExp(`this\\.${prop.name}\\s*=\\s*([^,}\\n]+)`);
@@ -970,7 +970,7 @@ function build${widgetName}(props: ${widgetName}Props): Widget {
     // Pattern to match build method
     const buildPattern = /@override\s+Widget\s+build\s*\([^)]*\)\s*\{/;
     const match = buildPattern.exec(classBody);
-    
+
     if (!match) {
       return '';
     }
@@ -978,7 +978,7 @@ function build${widgetName}(props: ${widgetName}Props): Widget {
     // Find the matching closing brace
     const startIndex = match.index + match[0].length;
     const methodBody = this.extractMethodBody(classBody, startIndex);
-    
+
     return this.extractReturnStatement(methodBody);
   }
 
@@ -988,13 +988,13 @@ function build${widgetName}(props: ${widgetName}Props): Widget {
   private extractMethodBody(text: string, startIndex: number): string {
     let braceCount = 1;
     let endIndex = startIndex;
-    
+
     while (braceCount > 0 && endIndex < text.length) {
       if (text[endIndex] === '{') braceCount++;
       if (text[endIndex] === '}') braceCount--;
       endIndex++;
     }
-    
+
     return text.substring(startIndex, endIndex - 1);
   }
 
@@ -1004,7 +1004,7 @@ function build${widgetName}(props: ${widgetName}Props): Widget {
   private extractReturnStatement(methodBody: string): string {
     const returnPattern = /return\s+([\s\S]+?);/;
     const match = returnPattern.exec(methodBody.trim());
-    
+
     return match ? match[1].trim() : '';
   }
 
@@ -1013,11 +1013,11 @@ function build${widgetName}(props: ${widgetName}Props): Widget {
    */
   private extractStateVariables(classBody: string): StateVariableInfo[] {
     const variables: StateVariableInfo[] = [];
-    
+
     // Pattern to match state variable declarations
     // Handles: Type name; Type? name; late Type name; final Type name = value;
     const varPattern = /(late\s+)?(final\s+)?(\w+(?:<[^>]+>)?(\?)?)\s+(\w+)\s*(?:=\s*([^;]+))?;/g;
-    
+
     let match;
     while ((match = varPattern.exec(classBody)) !== null) {
       const isLate = !!match[1];
@@ -1025,7 +1025,7 @@ function build${widgetName}(props: ${widgetName}Props): Widget {
       const type = match[3]; // Includes ? if nullable
       const name = match[5];
       const initialValue = match[6]?.trim();
-      
+
       // Skip if it's inside a method
       if (this.isInsideMethod(classBody, match.index)) {
         continue;
@@ -1048,16 +1048,16 @@ function build${widgetName}(props: ${widgetName}Props): Widget {
    */
   private extractSetStateCalls(classBody: string): SetStateCall[] {
     const setStateCalls: SetStateCall[] = [];
-    
+
     // Pattern to match setState calls
     const setStatePattern = /setState\s*\(\s*\(\s*\)\s*\{([^}]+)\}\s*\)/g;
-    
+
     let match;
     while ((match = setStatePattern.exec(classBody)) !== null) {
       const code = match[1].trim();
       const lineNumber = this.getLineNumber(classBody, match.index);
       const updatedVariables = this.extractUpdatedVariables(code);
-      
+
       setStateCalls.push({
         lineNumber,
         updatedVariables,
@@ -1067,12 +1067,12 @@ function build${widgetName}(props: ${widgetName}Props): Widget {
 
     // Also match arrow function syntax: setState(() => variable = value)
     const arrowSetStatePattern = /setState\s*\(\s*\(\s*\)\s*=>\s*([^)]+)\)/g;
-    
+
     while ((match = arrowSetStatePattern.exec(classBody)) !== null) {
       const code = match[1].trim();
       const lineNumber = this.getLineNumber(classBody, match.index);
       const updatedVariables = this.extractUpdatedVariables(code);
-      
+
       setStateCalls.push({
         lineNumber,
         updatedVariables,
@@ -1088,10 +1088,10 @@ function build${widgetName}(props: ${widgetName}Props): Widget {
    */
   private extractUpdatedVariables(code: string): string[] {
     const variables: string[] = [];
-    
+
     // Pattern to match variable assignments: variableName = value
     const assignmentPattern = /(\w+)\s*=\s*/g;
-    
+
     let match;
     while ((match = assignmentPattern.exec(code)) !== null) {
       const varName = match[1];
@@ -1109,16 +1109,16 @@ function build${widgetName}(props: ${widgetName}Props): Widget {
    */
   private extractMethods(classBody: string): MethodInfo[] {
     const methods: MethodInfo[] = [];
-    
+
     // Pattern to match method declarations (simplified)
     const methodPattern = /(\w+)\s+(\w+)\s*\(([^)]*)\)\s*\{/g;
-    
+
     let match;
     while ((match = methodPattern.exec(classBody)) !== null) {
       const returnType = match[1];
       const name = match[2];
       const params = match[3];
-      
+
       // Skip build method as it's handled separately
       if (name === 'build') {
         continue;
@@ -1144,13 +1144,13 @@ function build${widgetName}(props: ${widgetName}Props): Widget {
     }
 
     const parameters: ParameterInfo[] = [];
-    
+
     // Check if there are named parameters (enclosed in {})
     const namedParamsMatch = /\{([^}]+)\}/.exec(paramsString);
-    const positionalParamsStr = namedParamsMatch 
+    const positionalParamsStr = namedParamsMatch
       ? paramsString.substring(0, namedParamsMatch.index).trim()
       : paramsString;
-    
+
     // Parse positional parameters
     if (positionalParamsStr) {
       const positionalParams = this.splitAtDepth(positionalParamsStr, ',');
@@ -1161,12 +1161,12 @@ function build${widgetName}(props: ${widgetName}Props): Widget {
         }
       }
     }
-    
+
     // Parse named parameters
     if (namedParamsMatch) {
       const namedParamsStr = namedParamsMatch[1];
       const namedParams = this.splitAtDepth(namedParamsStr, ',');
-      
+
       for (const param of namedParams) {
         const paramInfo = this.parseParameter(param.trim(), true);
         if (paramInfo) {
@@ -1183,17 +1183,17 @@ function build${widgetName}(props: ${widgetName}Props): Widget {
    */
   private parseParameter(paramStr: string, isNamed: boolean): ParameterInfo | null {
     paramStr = paramStr.trim();
-    
+
     if (!paramStr) {
       return null;
     }
-    
+
     // Check if required
     const isRequired = paramStr.startsWith('required ');
     if (isRequired) {
       paramStr = paramStr.substring('required '.length).trim();
     }
-    
+
     // Extract default value if present
     let defaultValue: string | undefined;
     const defaultMatch = /=\s*(.+)$/.exec(paramStr);
@@ -1201,12 +1201,12 @@ function build${widgetName}(props: ${widgetName}Props): Widget {
       defaultValue = defaultMatch[1].trim();
       paramStr = paramStr.substring(0, defaultMatch.index).trim();
     }
-    
+
     // Parse type and name
     // Patterns: "Type name", "Type? name" (nullable), or "this.name" (for constructor parameters)
     let type: string;
     let name: string;
-    
+
     if (paramStr.startsWith('this.')) {
       // Constructor parameter: this.name
       name = paramStr.substring(5);
@@ -1222,7 +1222,7 @@ function build${widgetName}(props: ${widgetName}Props): Widget {
         return null;
       }
     }
-    
+
     return {
       name,
       type,
@@ -1238,10 +1238,10 @@ function build${widgetName}(props: ${widgetName}Props): Widget {
   private isInsideMethod(text: string, position: number): boolean {
     const beforeText = text.substring(0, position);
     const methodPattern = /\w+\s+\w+\s*\([^)]*\)\s*\{/g;
-    
+
     let lastMethodStart = -1;
     let match;
-    
+
     while ((match = methodPattern.exec(beforeText)) !== null) {
       lastMethodStart = match.index;
     }
@@ -1253,7 +1253,7 @@ function build${widgetName}(props: ${widgetName}Props): Widget {
     // Count braces to see if we're still inside the method
     const textSinceMethod = text.substring(lastMethodStart, position);
     let braceCount = 0;
-    
+
     for (const char of textSinceMethod) {
       if (char === '{') braceCount++;
       if (char === '}') braceCount--;
@@ -1298,7 +1298,7 @@ function build${widgetName}(props: ${widgetName}Props): Widget {
    */
   private convertProperties(properties: PropertyInfo[]): Record<string, any> {
     const props: Record<string, any> = {};
-    
+
     properties.forEach(prop => {
       // Include properties with default values (from constructor or field declaration)
       if (prop.defaultValue) {
@@ -1324,7 +1324,7 @@ function build${widgetName}(props: ${widgetName}Props): Widget {
     const required: string[] = [];
     const optional: string[] = [];
     const defaults: Record<string, any> = {};
-    
+
     parameters.forEach(param => {
       // Track required vs optional
       if (param.isRequired) {
@@ -1332,7 +1332,7 @@ function build${widgetName}(props: ${widgetName}Props): Widget {
       } else {
         optional.push(param.name);
       }
-      
+
       // Store default values
       if (param.defaultValue) {
         const parsedValue = this.parseValue(param.defaultValue);
@@ -1340,7 +1340,7 @@ function build${widgetName}(props: ${widgetName}Props): Widget {
         props[param.name] = parsedValue;
       }
     });
-    
+
     return {
       props,
       metadata: {
@@ -1371,7 +1371,7 @@ function build${widgetName}(props: ${widgetName}Props): Widget {
    */
   convertBlocToState(bloc: BlocInfo): StateDefinition {
     const variables: StateVariable[] = [];
-    
+
     // Extract variables from all state classes
     bloc.states.forEach(state => {
       state.properties.forEach(prop => {
@@ -1399,12 +1399,12 @@ function build${widgetName}(props: ${widgetName}Props): Widget {
   private parseWidgetTree(widgetCode: string): LumoraNode[] {
     // This is a simplified parser - a full implementation would need
     // proper AST parsing or a more sophisticated approach
-    
+
     const widgets: LumoraNode[] = [];
     widgetCode = widgetCode.trim();
-    
+
     // Extract widget type
-    const widgetMatch = /^(\w+)\s*\(/.exec(widgetCode);
+    const widgetMatch = /^([\w.]+)\s*\(/.exec(widgetCode);
     if (!widgetMatch) {
       // Handle simple widget references without parentheses (e.g., variable names)
       // For now, return empty array
@@ -1421,7 +1421,7 @@ function build${widgetName}(props: ${widgetName}Props): Widget {
       if (parenIndex !== -1) {
         const paramsSection = this.extractParenthesesContent(widgetCode, parenIndex);
         const params = this.parseNamedParameters(paramsSection);
-        
+
         // If no named parameters, first parameter is the text
         if (Object.keys(params).length === 0 || !params.child) {
           // Extract first positional parameter
@@ -1447,7 +1447,7 @@ function build${widgetName}(props: ${widgetName}Props): Widget {
    */
   private extractWidgetProps(widgetCode: string): Record<string, any> {
     const props: Record<string, any> = {};
-    
+
     // Find the opening parenthesis
     const parenIndex = widgetCode.indexOf('(');
     if (parenIndex === -1) {
@@ -1456,10 +1456,10 @@ function build${widgetName}(props: ${widgetName}Props): Widget {
 
     // Extract the parameters section
     const paramsSection = this.extractParenthesesContent(widgetCode, parenIndex);
-    
+
     // Parse named parameters
     const params = this.parseNamedParameters(paramsSection);
-    
+
     for (const [name, value] of Object.entries(params)) {
       // Skip 'child' and 'children' as they're handled separately
       if (name === 'child' || name === 'children') {
@@ -1478,13 +1478,13 @@ function build${widgetName}(props: ${widgetName}Props): Widget {
   private extractParenthesesContent(text: string, startIndex: number): string {
     let parenCount = 1;
     let endIndex = startIndex + 1;
-    
+
     while (parenCount > 0 && endIndex < text.length) {
       if (text[endIndex] === '(') parenCount++;
       if (text[endIndex] === ')') parenCount--;
       endIndex++;
     }
-    
+
     return text.substring(startIndex + 1, endIndex - 1);
   }
 
@@ -1493,26 +1493,26 @@ function build${widgetName}(props: ${widgetName}Props): Widget {
    */
   private parseNamedParameters(paramsString: string): Record<string, string> {
     const params: Record<string, string> = {};
-    
+
     let currentParam = '';
     let currentValue = '';
     let inValue = false;
     let depth = 0;
-    
+
     for (let i = 0; i < paramsString.length; i++) {
       const char = paramsString[i];
-      
+
       if (char === '(' || char === '[' || char === '{') {
         depth++;
       } else if (char === ')' || char === ']' || char === '}') {
         depth--;
       }
-      
+
       if (char === ':' && depth === 0 && !inValue) {
         inValue = true;
         continue;
       }
-      
+
       if (char === ',' && depth === 0) {
         if (currentParam && currentValue) {
           params[currentParam.trim()] = currentValue.trim();
@@ -1522,19 +1522,19 @@ function build${widgetName}(props: ${widgetName}Props): Widget {
         inValue = false;
         continue;
       }
-      
+
       if (inValue) {
         currentValue += char;
       } else {
         currentParam += char;
       }
     }
-    
+
     // Add last parameter
     if (currentParam && currentValue) {
       params[currentParam.trim()] = currentValue.trim();
     }
-    
+
     return params;
   }
 
@@ -1543,7 +1543,7 @@ function build${widgetName}(props: ${widgetName}Props): Widget {
    */
   private extractWidgetChildren(widgetCode: string): LumoraNode[] {
     const children: LumoraNode[] = [];
-    
+
     // Find the opening parenthesis
     const parenIndex = widgetCode.indexOf('(');
     if (parenIndex === -1) {
@@ -1553,13 +1553,13 @@ function build${widgetName}(props: ${widgetName}Props): Widget {
     // Extract the parameters section
     const paramsSection = this.extractParenthesesContent(widgetCode, parenIndex);
     const params = this.parseNamedParameters(paramsSection);
-    
+
     // Look for child parameter
     if (params.child) {
       const childWidgets = this.parseWidgetTree(params.child);
       children.push(...childWidgets);
     }
-    
+
     // Look for children parameter
     if (params.children) {
       // Remove brackets
@@ -1567,7 +1567,7 @@ function build${widgetName}(props: ${widgetName}Props): Widget {
       if (childrenStr.startsWith('[')) {
         childrenStr = childrenStr.substring(1, childrenStr.length - 1);
       }
-      
+
       // Split by commas at depth 0
       const childrenList = this.splitAtDepth(childrenStr, ',');
       for (const child of childrenList) {
@@ -1586,16 +1586,16 @@ function build${widgetName}(props: ${widgetName}Props): Widget {
     const parts: string[] = [];
     let current = '';
     let depth = 0;
-    
+
     for (let i = 0; i < text.length; i++) {
       const char = text[i];
-      
+
       if (char === '(' || char === '[' || char === '{') {
         depth++;
       } else if (char === ')' || char === ']' || char === '}') {
         depth--;
       }
-      
+
       if (char === delimiter && depth === 0) {
         if (current.trim()) {
           parts.push(current.trim());
@@ -1605,11 +1605,11 @@ function build${widgetName}(props: ${widgetName}Props): Widget {
         current += char;
       }
     }
-    
+
     if (current.trim()) {
       parts.push(current.trim());
     }
-    
+
     return parts;
   }
 
@@ -1618,26 +1618,26 @@ function build${widgetName}(props: ${widgetName}Props): Widget {
    */
   private parseValue(value: string): any {
     value = value.trim();
-    
+
     // Boolean
     if (value === 'true') return true;
     if (value === 'false') return false;
-    
+
     // Null
     if (value === 'null') return null;
-    
+
     // Number
     if (/^-?\d+(\.\d+)?$/.test(value)) {
       return parseFloat(value);
     }
-    
+
     // String
     if (/^['"].*['"]$/.test(value)) {
       return value.slice(1, -1);
     }
-    
-    // Keep as string for complex expressions
-    return value;
+
+    // Keep as expression object for complex expressions/variables
+    return { type: 'expression', content: value };
   }
 
   /**
@@ -1669,11 +1669,11 @@ function build${widgetName}(props: ${widgetName}Props): Widget {
     if (genericMatch) {
       const baseType = genericMatch[1];
       const genericType = genericMatch[2];
-      
+
       if (baseType === 'List') {
         return `${this.mapDartTypeToTS(genericType)}[]`;
       }
-      
+
       if (baseType === 'Map') {
         // Map<K, V> -> Record<K, V>
         const types = genericType.split(',').map(t => t.trim());
@@ -1681,7 +1681,7 @@ function build${widgetName}(props: ${widgetName}Props): Widget {
           return `Record<${this.mapDartTypeToTS(types[0])}, ${this.mapDartTypeToTS(types[1])}>`;
         }
       }
-      
+
       return typeMap[baseType] || dartType;
     }
 
@@ -1693,19 +1693,19 @@ function build${widgetName}(props: ${widgetName}Props): Widget {
    */
   convertNullAwareOperators(dartCode: string): string {
     let tsCode = dartCode;
-    
+
     // Convert null-aware access (?.) to optional chaining (?.)
     // Already the same in TypeScript, no conversion needed
-    
+
     // Convert null coalescing (??) to TypeScript (??)
     // Already the same in TypeScript, no conversion needed
-    
+
     // Convert null assertion (!) to TypeScript (!)
     // Already the same in TypeScript, no conversion needed
-    
+
     // Convert late keyword - remove it as TypeScript doesn't have equivalent
     tsCode = tsCode.replace(/\blate\s+/g, '');
-    
+
     return tsCode;
   }
 
@@ -1728,18 +1728,18 @@ function build${widgetName}(props: ${widgetName}Props): Widget {
    */
   private parseValueWithNullSafety(value: string, type?: string): any {
     value = value.trim();
-    
+
     // Handle null
     if (value === 'null') {
       return null;
     }
-    
+
     // Handle null-aware operators in expressions
     if (value.includes('?.') || value.includes('??') || value.includes('!')) {
       // Keep as expression string for complex null-aware operations
       return this.convertNullAwareOperators(value);
     }
-    
+
     // Use regular parsing for simple values
     return this.parseValue(value);
   }

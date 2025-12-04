@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:lumora_core/lumora_core.dart' hide DeltaDebouncer;
+import 'package:lumora_core/lumora_core.dart' hide DeltaDebouncer, ErrorOverlay;
 import 'services/kiro_client_service.dart';
 import 'services/session_manager.dart';
 import 'services/dev_proxy_connection.dart' as proxy;
@@ -14,12 +14,57 @@ import 'interpreter/schema_interpreter.dart' as local;
 import 'interpreter/delta_debouncer.dart';
 import 'dev_tools/dev_tools_overlay.dart';
 
+import 'dart:async';
+import 'services/global_error_handler.dart';
+
 void main() {
-  runApp(const FlutterDevClient());
+  runZonedGuarded(() {
+    WidgetsFlutterBinding.ensureInitialized();
+    
+    FlutterError.onError = (FlutterErrorDetails details) {
+      FlutterError.presentError(details);
+      GlobalErrorHandler().handleError(details.exception, details.stack);
+    };
+    
+    runApp(const FlutterDevClient());
+  }, (error, stack) {
+    debugPrint('Caught global error: $error');
+    GlobalErrorHandler().handleError(error, stack);
+  });
 }
 
-class FlutterDevClient extends StatelessWidget {
+class FlutterDevClient extends StatefulWidget {
   const FlutterDevClient({super.key});
+
+  @override
+  State<FlutterDevClient> createState() => _FlutterDevClientState();
+}
+
+class _FlutterDevClientState extends State<FlutterDevClient> {
+  AppError? _currentError;
+  StreamSubscription? _errorSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    _errorSubscription = GlobalErrorHandler().errorStream.listen((error) {
+      setState(() {
+        _currentError = error;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _errorSubscription?.cancel();
+    super.dispose();
+  }
+
+  void _dismissError() {
+    setState(() {
+      _currentError = null;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -52,6 +97,24 @@ class FlutterDevClient extends StatelessWidget {
         ),
       ),
       themeMode: ThemeMode.system, // Respect system theme
+      builder: (context, child) {
+        return Stack(
+          children: [
+            if (child != null) child,
+            if (_currentError != null)
+              ErrorOverlay(
+                title: 'Runtime Error',
+                message: _currentError!.error.toString(),
+                stackTrace: _currentError!.stackTrace?.toString(),
+                onDismiss: _dismissError,
+                onRetry: () {
+                  _dismissError();
+                  // Ideally trigger a reload here if possible, but for now just dismiss
+                },
+              ),
+          ],
+        );
+      },
       home: const ConnectionScreen(),
     );
   }
@@ -124,6 +187,19 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
         token: _token,
       );
 
+      // Intercept logs and send to Dev Proxy
+      // Note: This is a simple interception. For production, use runZonedGuarded.
+      final originalPrint = debugPrint;
+      debugPrint = (String? message, {int? wrapWidth}) {
+        originalPrint(message, wrapWidth: wrapWidth);
+        if (message != null && _service != null) {
+          _service!.sendLog(message, 'info');
+        }
+      };
+
+      // Create SessionManager
+      final sessionManager = SessionManager(connection: _service!.connection);
+
       // Create EventBridge with the service's connection
       _eventBridge = EventBridge(connection: _service!.connection);
 
@@ -140,7 +216,11 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
       _updateHandler = UpdateHandler(
         interpreter: _interpreter!,
         connection: _service!.connection,
+        sessionManager: sessionManager,
       );
+
+      // Attempt to load cached schema if available
+      _loadCachedSchema(sessionManager);
 
       // Listen to connection state changes
       _service!.connection.stateChanges.listen((state) {
@@ -194,6 +274,36 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
             _status = 'Connected and joined session';
             
             debugPrint('Update applied successfully in ${result.applyTime}ms');
+
+            // Show feedback toast
+            if (mounted) {
+              final isFullUpdate = result.updateType == 'full';
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Row(
+                    children: [
+                      Icon(
+                        isFullUpdate ? Icons.refresh : Icons.bolt,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 12),
+                      Text(isFullUpdate 
+                        ? 'Hot Restarted (State Reset)' 
+                        : 'Hot Reloaded'
+                      ),
+                    ],
+                  ),
+                  backgroundColor: Colors.black87,
+                  behavior: SnackBarBehavior.floating,
+                  width: 280,
+                  duration: const Duration(milliseconds: 1500),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                ),
+              );
+            }
           } else {
             // Failure - show error overlay but keep previous widget
             _lastUpdateError = result.error;
@@ -610,6 +720,24 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
       });
     } else {
       debugPrint('Invalid WebSocket URL: $url');
+    }
+  }
+
+  /// Loads cached schema from SessionManager
+  Future<void> _loadCachedSchema(SessionManager sessionManager) async {
+    final cachedSchema = await sessionManager.loadCachedSchema();
+    if (cachedSchema != null && mounted) {
+      debugPrint('Found cached schema, rendering...');
+      try {
+        final widget = _interpreter!.interpretSchema(cachedSchema);
+        setState(() {
+          _renderedUI = widget;
+          _lastSuccessfulWidget = widget;
+          _status = 'Loaded from cache (Offline)';
+        });
+      } catch (e) {
+        debugPrint('Failed to render cached schema: $e');
+      }
     }
   }
 

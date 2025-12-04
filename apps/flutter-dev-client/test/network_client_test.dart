@@ -1,23 +1,23 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_dev_client/interpreter/network_client.dart';
-import 'package:flutter_dev_client/interpreter/network_manager.dart';
+import 'package:flutter_dev_client/interpreter/network_client.dart' as client;
+import 'package:flutter_dev_client/interpreter/network_manager.dart' as manager;
 
 void main() {
   group('NetworkClient', () {
     test('creates request with correct properties', () {
-      final request = NetworkRequest(
+      final request = client.NetworkRequest(
         url: 'https://api.example.com/users',
-        method: HttpMethod.get,
+        method: client.HttpMethod.get,
         headers: {'Authorization': 'Bearer token'},
       );
 
       expect(request.url, 'https://api.example.com/users');
-      expect(request.method, HttpMethod.get);
+      expect(request.method, client.HttpMethod.get);
       expect(request.headers?['Authorization'], 'Bearer token');
     });
 
     test('NetworkResponse indicates success for 2xx status codes', () {
-      const response = NetworkResponse(
+      const response = client.NetworkResponse(
         statusCode: 200,
         statusText: 'OK',
         headers: {},
@@ -29,7 +29,7 @@ void main() {
     });
 
     test('NetworkResponse indicates error for 4xx status codes', () {
-      const response = NetworkResponse(
+      const response = client.NetworkResponse(
         statusCode: 404,
         statusText: 'Not Found',
         headers: {},
@@ -40,7 +40,7 @@ void main() {
     });
 
     test('NetworkError contains correct information', () {
-      const error = NetworkError(
+      const error = client.NetworkError(
         message: 'Request failed',
         code: 'HTTP_ERROR',
         statusCode: 500,
@@ -52,7 +52,7 @@ void main() {
     });
 
     test('RetryConfig calculates delay correctly', () {
-      const config = RetryConfig(
+      const config = client.RetryConfig(
         initialDelay: Duration(seconds: 1),
         backoffMultiplier: 2.0,
         maxDelay: Duration(seconds: 10),
@@ -67,7 +67,7 @@ void main() {
     });
 
     test('RetryConfig determines retry eligibility', () {
-      const config = RetryConfig(
+      const config = client.RetryConfig(
         maxAttempts: 3,
         retryableStatusCodes: [500, 502, 503],
         retryOnNetworkError: true,
@@ -76,7 +76,7 @@ void main() {
       // Should retry on retryable status code
       expect(
         config.shouldRetry(
-          const NetworkError(message: 'Server error', statusCode: 500),
+          const client.NetworkError(message: 'Server error', statusCode: 500),
           0,
         ),
         true,
@@ -85,7 +85,7 @@ void main() {
       // Should not retry on non-retryable status code
       expect(
         config.shouldRetry(
-          const NetworkError(message: 'Not found', statusCode: 404),
+          const client.NetworkError(message: 'Not found', statusCode: 404),
           0,
         ),
         false,
@@ -94,7 +94,7 @@ void main() {
       // Should retry on network error
       expect(
         config.shouldRetry(
-          const NetworkError(message: 'Network error', code: 'NETWORK_ERROR'),
+          const client.NetworkError(message: 'Network error', code: 'NETWORK_ERROR'),
           0,
         ),
         true,
@@ -103,7 +103,7 @@ void main() {
       // Should not retry after max attempts
       expect(
         config.shouldRetry(
-          const NetworkError(message: 'Server error', statusCode: 500),
+          const client.NetworkError(message: 'Server error', statusCode: 500),
           3,
         ),
         false,
@@ -113,26 +113,26 @@ void main() {
 
   group('NetworkManager', () {
     test('tracks request state correctly', () {
-      final manager = NetworkManager(baseURL: 'https://api.example.com');
+      final managerInstance = manager.NetworkManager(baseURL: 'https://api.example.com');
 
-      expect(manager.hasLoadingRequests, false);
-      expect(manager.requests.isEmpty, true);
+      expect(managerInstance.hasLoadingRequests, false);
+      expect(managerInstance.requests.isEmpty, true);
     });
 
     test('identifies loading state for endpoint', () {
-      final manager = NetworkManager(baseURL: 'https://api.example.com');
+      final managerInstance = manager.NetworkManager(baseURL: 'https://api.example.com');
 
-      expect(manager.isEndpointLoading('test-endpoint'), false);
+      expect(managerInstance.isEndpointLoading('test-endpoint'), false);
     });
 
     test('NetworkRequestInfo calculates duration', () {
       final startTime = DateTime.now();
       final endTime = startTime.add(const Duration(seconds: 2));
 
-      final info = NetworkRequestInfo(
+      final info = manager.NetworkRequestInfo(
         endpointId: 'test',
         requestId: 'req-1',
-        state: NetworkRequestState.success,
+        state: manager.NetworkRequestState.success,
         startTime: startTime,
         endTime: endTime,
       );
@@ -141,17 +141,17 @@ void main() {
     });
 
     test('NetworkRequestInfo copyWith creates new instance', () {
-      const original = NetworkRequestInfo(
+      const original = manager.NetworkRequestInfo(
         endpointId: 'test',
         requestId: 'req-1',
-        state: NetworkRequestState.loading,
+        state: manager.NetworkRequestState.loading,
       );
 
       final updated = original.copyWith(
-        state: NetworkRequestState.success,
+        state: manager.NetworkRequestState.success,
       );
 
-      expect(updated.state, NetworkRequestState.success);
+      expect(updated.state, manager.NetworkRequestState.success);
       expect(updated.endpointId, 'test');
       expect(updated.requestId, 'req-1');
     });
@@ -159,25 +159,25 @@ void main() {
 
   group('HttpMethod', () {
     test('has all standard HTTP methods', () {
-      expect(HttpMethod.values.length, 7);
-      expect(HttpMethod.values.contains(HttpMethod.get), true);
-      expect(HttpMethod.values.contains(HttpMethod.post), true);
-      expect(HttpMethod.values.contains(HttpMethod.put), true);
-      expect(HttpMethod.values.contains(HttpMethod.patch), true);
-      expect(HttpMethod.values.contains(HttpMethod.delete), true);
-      expect(HttpMethod.values.contains(HttpMethod.head), true);
-      expect(HttpMethod.values.contains(HttpMethod.options), true);
+      expect(client.HttpMethod.values.length, 7);
+      expect(client.HttpMethod.values.contains(client.HttpMethod.get), true);
+      expect(client.HttpMethod.values.contains(client.HttpMethod.post), true);
+      expect(client.HttpMethod.values.contains(client.HttpMethod.put), true);
+      expect(client.HttpMethod.values.contains(client.HttpMethod.patch), true);
+      expect(client.HttpMethod.values.contains(client.HttpMethod.delete), true);
+      expect(client.HttpMethod.values.contains(client.HttpMethod.head), true);
+      expect(client.HttpMethod.values.contains(client.HttpMethod.options), true);
     });
   });
 
   group('NetworkRequestState', () {
     test('has all required states', () {
-      expect(NetworkRequestState.values.length, 5);
-      expect(NetworkRequestState.values.contains(NetworkRequestState.idle), true);
-      expect(NetworkRequestState.values.contains(NetworkRequestState.loading), true);
-      expect(NetworkRequestState.values.contains(NetworkRequestState.success), true);
-      expect(NetworkRequestState.values.contains(NetworkRequestState.error), true);
-      expect(NetworkRequestState.values.contains(NetworkRequestState.cancelled), true);
+      expect(manager.NetworkRequestState.values.length, 5);
+      expect(manager.NetworkRequestState.values.contains(manager.NetworkRequestState.idle), true);
+      expect(manager.NetworkRequestState.values.contains(manager.NetworkRequestState.loading), true);
+      expect(manager.NetworkRequestState.values.contains(manager.NetworkRequestState.success), true);
+      expect(manager.NetworkRequestState.values.contains(manager.NetworkRequestState.error), true);
+      expect(manager.NetworkRequestState.values.contains(manager.NetworkRequestState.cancelled), true);
     });
   });
 }

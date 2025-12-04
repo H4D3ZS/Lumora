@@ -24,17 +24,26 @@ enum NetworkRequestState {
 /// Network error class for handling error states
 class NetworkError {
   final String message;
+  final String? code;
   final int? statusCode;
   final dynamic originalError;
 
-  NetworkError({
+  const NetworkError({
     required this.message,
+    this.code,
     this.statusCode,
     this.originalError,
   });
 
   @override
-  String toString() => 'NetworkError: $message${statusCode != null ? ' (Status: $statusCode)' : ''}';
+  String toString() => 'NetworkError: $message${code != null ? ' (Code: $code)' : ''}${statusCode != null ? ' (Status: $statusCode)' : ''}';
+
+  Map<String, dynamic> toJson() => {
+        'message': message,
+        'code': code,
+        'statusCode': statusCode,
+        'originalError': originalError?.toString(),
+      };
 }
 
 /// Network request info for state tracking
@@ -208,7 +217,7 @@ class NetworkManager extends ChangeNotifier {
       final networkError = NetworkError(
         message: 'Unexpected error: $error',
         code: 'UNKNOWN_ERROR',
-        details: error.toString(),
+        originalError: error,
       );
 
       _updateRequestState(

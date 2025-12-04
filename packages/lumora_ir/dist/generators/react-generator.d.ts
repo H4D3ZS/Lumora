@@ -23,6 +23,7 @@ export declare class ReactGenerator {
     private config;
     private registry;
     private imports;
+    private namedImports;
     constructor(config?: ReactGeneratorConfig);
     /**
      * Generate React component from Lumora IR

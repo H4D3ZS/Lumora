@@ -27,7 +27,7 @@ export class AssetPathConverter {
   reactToFlutter(reactPath: string): string {
     // Remove leading slash or ./
     let cleanPath = reactPath.replace(/^\//, '').replace(/^\.\//, '');
-    
+
     // Remove public path prefix if present
     if (this.reactPublicPath !== '/' && cleanPath.startsWith(this.reactPublicPath)) {
       cleanPath = cleanPath.substring(this.reactPublicPath.length);
@@ -51,7 +51,7 @@ export class AssetPathConverter {
 
     // Add React public path prefix
     const reactPath = path.join(this.reactPublicPath, cleanPath).replace(/\\/g, '/');
-    
+
     // Ensure leading slash for absolute paths
     return reactPath.startsWith('/') ? reactPath : '/' + reactPath;
   }
@@ -60,18 +60,19 @@ export class AssetPathConverter {
    * Convert image reference in IR node
    */
   convertImageReference(node: any, targetFramework: 'react' | 'flutter'): any {
-    if (node.type !== 'Image' || !node.props?.source) {
+    if ((node.type !== 'Image' && node.type !== 'img') || (!node.props?.source && !node.props?.src)) {
       return node;
     }
 
     const updatedNode = { ...node };
-    const source = node.props.source;
+    const source = node.props.source || node.props.src;
+    const propName = node.props.source ? 'source' : 'src';
 
     if (typeof source === 'string') {
       // Simple string path
       updatedNode.props = {
         ...node.props,
-        source: targetFramework === 'flutter' 
+        [propName]: targetFramework === 'flutter'
           ? this.reactToFlutter(source)
           : this.flutterToReact(source),
       };
@@ -79,7 +80,7 @@ export class AssetPathConverter {
       // Object with uri property
       updatedNode.props = {
         ...node.props,
-        source: {
+        [propName]: {
           ...source,
           uri: targetFramework === 'flutter'
             ? this.reactToFlutter(source.uri)
@@ -101,7 +102,7 @@ export class AssetPathConverter {
 
     const bgImage = style.backgroundImage;
     const match = bgImage.match(/url\(['"]?([^'"]+)['"]?\)/);
-    
+
     if (!match) {
       return style;
     }
@@ -149,7 +150,7 @@ export class AssetPathConverter {
       let updatedNode = { ...node };
 
       // Convert image references
-      if (node.type === 'Image') {
+      if (node.type === 'Image' || node.type === 'img') {
         updatedNode = this.convertImageReference(updatedNode, targetFramework);
       }
 
