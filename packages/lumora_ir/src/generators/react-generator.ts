@@ -111,8 +111,10 @@ export class ReactGenerator {
     }
 
     // Function signature
+    // Function signature
     const propsParam = this.config.useTypeScript ? `props: ${name}Props` : 'props';
-    code += `export const ${name}: React.FC${this.config.useTypeScript ? `<${name}Props>` : ''} = (${propsParam}) => {\n`;
+    const typeAnnotation = this.config.useTypeScript ? `: React.FC<${name}Props>` : '';
+    code += `export const ${name}${typeAnnotation} = (${propsParam}) => {\n`;
 
     // State hooks
     if (state) {
@@ -164,8 +166,9 @@ export class ReactGenerator {
     }
 
     // Class declaration
-    const propsType = this.config.useTypeScript ? `<${name}Props${state ? `, ${name}State` : ''}` : '';
-    code += `export class ${name} extends React.Component${propsType}> {\n`;
+    // Class declaration
+    const propsType = this.config.useTypeScript ? `<${name}Props${state ? `, ${name}State` : ''}>` : '';
+    code += `export class ${name} extends React.Component${propsType} {\n`;
 
     // Constructor with state
     if (state) {
