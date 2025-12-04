@@ -1,6 +1,6 @@
 {
   "name": "lumora-cli",
-  "version": "1.2.13",
+  "version": "1.2.14",
   "description": "Lumora CLI - Expo-like development experience for Flutter",
   "main": "dist/index.js",
   "bin": {
@@ -50,7 +50,7 @@
     "fs-extra": "^10.1.0",
     "glob": "^10.3.10",
     "inquirer": "^8.2.7",
-    "lumora-ir": "^1.1.0",
+    "lumora-ir": "^1.1.2",
     "ora": "^5.4.1",
     "prompts": "^2.4.2",
     "qrcode-terminal": "^0.12.0",
